@@ -1,10 +1,10 @@
 mod matrix;
 mod counting;
 use gfaR::{Gfa};
-use crate::matrix::{matrix_wrapper, test1};
+use crate::matrix::{matrix_wrapper, test1, test22};
 use std::collections::HashMap;
 use clap::{App, Arg};
-use gfaR_wrapper::NGfa;
+use gfaR_wrapper::{NGfa, GraphWrapper};
 use std::mem::size_of_val;
 use std::{thread, time::Duration};
 
@@ -67,16 +67,30 @@ fn main() {
     println!("We read a graph");
     // Change this for read in
     let g1 = "/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa";
-    let g1 = "/home/svorbrugg_local/Rust/data/chr1.wfmash.n20.a90.s10000.p1,19,39,3,81,1.seqwish.sort.smooth.sort.noC.gfa";
-    let mut graph = Gfa::new();
-    graph.read_file(g1);
-    println!("{}", graph.nodes.len());
-     let mut j: NGfa = NGfa::new();
-     j.from_graph(g1);
-     println!("{}", std::mem::size_of_val(&j));
-    //let nodes = all_nodes(&graph);
-    //let k = test1(&graph);
-    //k.matrix.write_bed();
+    //let g1 = "/home/svorbrugg_local/Rust/data/sixRef.noC.gfa";
+
+    //let g1 = "/home/svorbrugg_local/Rust/data/chr1.wfmash.n20.a90.s10000.p1,19,39,3,81,1.seqwish.sort.smooth.sort.noC.gfa";
+
+    // Read the graph
+    let mut graph = NGfa::new();
+    graph.from_graph(g1);
+
+    // Make graph, wrapper
+    let mut gwrapper: GraphWrapper = GraphWrapper::new();
+    gwrapper.fromNGfa(&graph, "_");
+
+
+    println!("{}", gwrapper.genomes.len());
+
+    // Make matrix
+    println!("matrix1");
+    //let h = test1(&gwrapper, &graph);
+    let h = test22(&gwrapper, &graph);
+
+    // Write matrix
+    h.matrix.write_bed(_output);
+    h.bim_helper();
+    h.matrix.write_bimbam();
 
 
 
