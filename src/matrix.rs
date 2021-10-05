@@ -88,13 +88,19 @@ impl Matrix {
         let _dummy_vec1: Vec<u8> = vec![108, 27, 0];
 
         let h = self.copy(1);
-        let j: Vec<&[bool]> = h[0].chunks(4).collect();
-        let mut j2: Vec<u8> = vec![108, 27, 1];
-        for x in j{
-            j2.push(binary2dec_bed(x));
+        let mut buff: Vec<u8> = vec![108, 27, 1];
+        for x in h.iter(){
+            let j: Vec<&[bool]> = x.chunks(4).collect();
+            for x in j{
+                buff.push(binary2dec_bed(x));
+            }
+            //println!("Number of bytes {}", buff.len());
+            //println!("x {}", x.len());
         }
+
+
         let mut file = File::create([out_prefix, t, "bed"].join(".")).expect("Not able to write ");
-        file.write_all(&j2).expect("Not able to write ")
+        file.write_all(&buff).expect("Not able to write ")
 
     }
 

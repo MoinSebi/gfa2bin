@@ -34,7 +34,7 @@ impl <T>MatrixWrapper<T>
         let f = File::create([out_prefix, t,  "bim"].join(".")).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         let mut helper_vec = Vec::new();
-        for (index, (k,v)) in self.row_name.iter().enumerate(){
+        for (index, (k,_v)) in self.row_name.iter().enumerate(){
             write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, index, "A", "T").expect("Not able to write ");
             helper_vec.push(k);
         }
