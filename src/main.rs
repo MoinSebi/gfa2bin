@@ -1,19 +1,13 @@
 mod matrix;
 mod counting;
-use gfaR::{Gfa};
-use crate::matrix::{matrix_wrapper, test1, test22};
-use std::collections::HashMap;
+mod matrix_wrapper;
+mod helper;
+
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
-use std::mem::size_of_val;
-use std::{thread, time::Duration};
+use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper};
 
 
-fn all_nodes(graph: &Gfa) -> Vec<String>{
-    let mut g1: Vec<String> = graph.nodes.keys().cloned().collect();
-    g1.sort();
-    g1
-}
 
 
 
@@ -21,8 +15,8 @@ fn main() {
     let matches = App::new("panSV")
         .version("0.1.0")
         .author("Sebastian V")
-        .about("Bubble detection")
-        .arg(Arg::new("gfa2")
+        .about("gfa2bin")
+        .arg(Arg::new("gfa")
             .short('g')
             .long("gfa")
             .about("Sets the input file to use")
@@ -33,9 +27,19 @@ fn main() {
             .long("output")
             .about("Output prefix")
             .takes_value(true)
-            .default_value("panSV.output"))
-        .arg(Arg::new("traversal")
+            .default_value("gfa2bin.default"))
+        .arg(Arg::new("type")
             .short('t')
+            .long("type")
+            .about("Type of the matrix (when on graph)")
+            .takes_value(true))
+        .arg(Arg::new("bed")
+            .long("bed")
+            .about("Output bed + bim file"))
+        .arg(Arg::new("bimbam")
+            .long("bimbam")
+            .about("Output bimbam format"))
+        .arg(Arg::new("traversal")
             .long("traversal")
             .about("Additional traversaloutput file")
             .takes_value(true))
@@ -59,38 +63,63 @@ fn main() {
 
         .get_matches();
 
+
+    //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
+
+
     // removed .default stuff
-    let _input = matches.value_of("gfa2").unwrap();
+    let _input = matches.value_of("gfa").unwrap();
     let _output: &str = matches.value_of("output").unwrap();
-
-
-    println!("We read a graph");
-    // Change this for read in
-    let g1 = "/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa";
-    //let g1 = "/home/svorbrugg_local/Rust/data/sixRef.noC.gfa";
-
-    //let g1 = "/home/svorbrugg_local/Rust/data/chr1.wfmash.n20.a90.s10000.p1,19,39,3,81,1.seqwish.sort.smooth.sort.noC.gfa";
-
     // Read the graph
     let mut graph = NGfa::new();
-    graph.from_graph(g1);
+    graph.from_graph(_input);
 
     // Make graph, wrapper
     let mut gwrapper: GraphWrapper = GraphWrapper::new();
     gwrapper.fromNGfa(&graph, "_");
 
 
-    println!("{}", gwrapper.genomes.len());
+    println!("{} genomes and {} paths", gwrapper.genomes.len(), graph.paths.len());
+    let type_out;
+
+    if matches.is_present("bed") & matches.is_present("bimbam"){
+        type_out = "all"
+    }
+    else if matches.is_present("bed"){
+        type_out = "bed"
+
+    } else if matches.is_present("bimbam") {
+        type_out = "bimbam"
+    } else {
+        type_out = "bed"
+    }
 
     // Make matrix
-    println!("matrix1");
     //let h = test1(&gwrapper, &graph);
-    let h = test22(&gwrapper, &graph);
+    let mat_node: MatrixWrapper<u32>;
+    let mat_dir: MatrixWrapper<(u32, bool)>;
+    let mat_edge: MatrixWrapper<(u32, bool, u32, bool)>;
 
-    // Write matrix
-    h.matrix.write_bed(_output);
-    h.bim_helper();
-    h.matrix.write_bimbam();
+    if matches.is_present("type"){
+        let values: &str = matches.value_of("type").unwrap();
+        if values.contains('n'){
+            mat_node = matrix_node(&gwrapper, &graph);
+            mat_node.write(type_out, _output, "node");
+        }
+        if values.contains('e'){
+            mat_edge = matrix_edge(&gwrapper, &graph);
+            mat_edge.write(type_out, _output, "edge");
+
+        }
+        if values.contains('d'){
+            mat_dir = matrix_dir_node(&gwrapper, &graph);
+            mat_dir.write(type_out,  _output, "dir");
+        }
+    } else {
+        mat_node = matrix_node(&gwrapper, &graph);
+        mat_node.write(type_out, _output, "node");
+    }
+
 
 
 
