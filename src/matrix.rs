@@ -88,8 +88,9 @@ impl Matrix {
         let _dummy_vec1: Vec<u8> = vec![108, 27, 0];
 
         let h = self.copy(1);
-        let mut buff: Vec<u8> = vec![108, 27, 0];
-        for x in h.iter(){
+        let mut buff: Vec<u8> = vec![108, 27, 1];
+        let h2 = transpose(h);
+        for x in h2.iter(){
             let j: Vec<&[bool]> = x.chunks(4).collect();
             for x in j{
                 buff.push(binary2dec_bed(x));
@@ -106,6 +107,16 @@ impl Matrix {
 
 
 
+}
+
+fn transpose<T>(v: Vec<Vec<T>>) -> Vec<Vec<T>>
+    where
+        T: Clone,
+{
+    assert!(!v.is_empty());
+    (0..v[0].len())
+        .map(|i| v.iter().map(|inner| inner[i].clone()).collect::<Vec<T>>())
+        .collect()
 }
 
 
