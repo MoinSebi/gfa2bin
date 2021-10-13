@@ -88,8 +88,10 @@ impl Matrix {
         let _dummy_vec1: Vec<u8> = vec![108, 27, 0];
 
         let h = self.copy(1);
+        println!("{} {}", h.len(), h[0].len());
         let mut buff: Vec<u8> = vec![108, 27, 1];
         let h2 = transpose(h);
+        println!("{} {}", h2.len(), h2[0].len());
         for x in h2.iter(){
             let j: Vec<&[bool]> = x.chunks(4).collect();
             for x in j{
