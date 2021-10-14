@@ -2,13 +2,12 @@ mod matrix;
 mod counting;
 mod matrix_wrapper;
 mod helper;
+mod pack_reader;
 
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
-use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper};
-
-
-
+use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage};
+use crate::pack_reader::{get_file_as_byte_vec, wrapper2};
 
 
 fn main() {
@@ -22,6 +21,12 @@ fn main() {
             .about("Sets the input file to use")
             .takes_value(true)
             .default_value("/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa"))
+        .arg(Arg::new("pack")
+            .short('p')
+            .long("pack")
+            .about("if the input is coverage")
+            .takes_value(true))
+
         .arg(Arg::new("output")
             .short('o')
             .long("output")
@@ -66,21 +71,8 @@ fn main() {
 
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
 
-
-    // removed .default stuff
-    let _input = matches.value_of("gfa").unwrap();
-    let _output: &str = matches.value_of("output").unwrap();
-    // Read the graph
-    let mut graph = NGfa::new();
-    graph.from_graph(_input);
-
-    // Make graph, wrapper
-    let mut gwrapper: GraphWrapper = GraphWrapper::new();
-    gwrapper.fromNGfa(&graph, "_");
-
-
-    println!("{} genomes and {} paths", gwrapper.genomes.len(), graph.paths.len());
     let type_out;
+    let _output: &str = matches.value_of("output").unwrap();
 
     if matches.is_present("bed") & matches.is_present("bimbam"){
         type_out = "all"
@@ -94,31 +86,58 @@ fn main() {
         type_out = "bed"
     }
 
-    // Make matrix
-    //let h = test1(&gwrapper, &graph);
-    let mat_node: MatrixWrapper<u32>;
-    let mat_dir: MatrixWrapper<(u32, bool)>;
-    let mat_edge: MatrixWrapper<(u32, bool, u32, bool)>;
+    // removed .default stuff
+    if matches.is_present("pack") {
+        let ii = matches.value_of("pack").unwrap();
+        let h = get_file_as_byte_vec(ii);
+        let h2 = wrapper2(&h);
+        let gw = matrix_node_coverage(h2);
+        gw.write(type_out, _output , "node");
 
-    if matches.is_present("type"){
-        let values: &str = matches.value_of("type").unwrap();
-        if values.contains('n'){
+    } else {
+        let _input = matches.value_of("gfa").unwrap();
+        let _output: &str = matches.value_of("output").unwrap();
+        // Read the graph
+        let mut graph = NGfa::new();
+        graph.from_graph(_input);
+
+        // Make graph, wrapper
+        let mut gwrapper: GraphWrapper = GraphWrapper::new();
+        gwrapper.fromNGfa(&graph, "_");
+
+        println!("{} genomes and {} paths", gwrapper.genomes.len(), graph.paths.len());
+
+        // Make matrix
+        //let h = test1(&gwrapper, &graph);
+        let mat_node: MatrixWrapper<u32>;
+        let mat_dir: MatrixWrapper<(u32, bool)>;
+        let mat_edge: MatrixWrapper<(u32, bool, u32, bool)>;
+
+        if matches.is_present("type"){
+            let values: &str = matches.value_of("type").unwrap();
+            if values.contains('n'){
+                mat_node = matrix_node(&gwrapper, &graph);
+                mat_node.write(type_out, _output, "node");
+            }
+            if values.contains('e'){
+                mat_edge = matrix_edge(&gwrapper, &graph);
+                mat_edge.write(type_out, _output, "edge");
+
+            }
+            if values.contains('d'){
+                mat_dir = matrix_dir_node(&gwrapper, &graph);
+                mat_dir.write(type_out,  _output, "dir");
+            }
+        } else {
             mat_node = matrix_node(&gwrapper, &graph);
             mat_node.write(type_out, _output, "node");
         }
-        if values.contains('e'){
-            mat_edge = matrix_edge(&gwrapper, &graph);
-            mat_edge.write(type_out, _output, "edge");
-
-        }
-        if values.contains('d'){
-            mat_dir = matrix_dir_node(&gwrapper, &graph);
-            mat_dir.write(type_out,  _output, "dir");
-        }
-    } else {
-        mat_node = matrix_node(&gwrapper, &graph);
-        mat_node.write(type_out, _output, "node");
     }
+
+
+
+
+
 
 
 

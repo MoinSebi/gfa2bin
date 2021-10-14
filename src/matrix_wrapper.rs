@@ -4,6 +4,7 @@ use std::fmt::Debug;
 use std::io::{Write, BufWriter};
 use std::fs::File;
 use gfaR_wrapper::{GraphWrapper, NGfa};
+use crate::pack_reader::read_in2;
 
 pub struct MatrixWrapper<T: Debug>{
     pub matrix: Matrix,
@@ -154,6 +155,22 @@ pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa) -> MatrixWrapper<(u32,
             }
         }
         mw.matrix.matrix_core.push(dir_nodes);
+    }
+    mw
+}
+
+
+/// Make matrix for edges
+pub fn matrix_node_coverage(cov: Vec<read_in2>) -> MatrixWrapper<bool>{
+    let mut mw: MatrixWrapper<bool>  = MatrixWrapper::new();
+    for (i,x) in cov.iter().enumerate(){
+        mw.column_name.insert(i as u32,x.name.clone());
+        let mut k : Vec<u32> = Vec::new();
+        for y in x.cc.iter(){
+
+            k.push(*y as u32);
+        }
+        mw.matrix.matrix_core.push(k);
     }
     mw
 }
