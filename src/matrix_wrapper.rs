@@ -34,14 +34,20 @@ impl <T>MatrixWrapper<T>
         let f = File::create([out_prefix, t,  "bim"].join(".")).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         let mut helper_vec = Vec::new();
-        for (index, (k,_v)) in self.row_name.iter().enumerate(){
-            write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, index, "A", "T").expect("Not able to write ");
-            helper_vec.push(k);
+        for (k,v) in self.row_name.iter(){
+            helper_vec.push((v,k));
+        }
+        helper_vec.sort_by_key(|k| k.0);
+
+
+
+        for (k,v) in helper_vec.iter(){
+            write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, k, "A", "T").expect("Not able to write ");
         }
         let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
         let mut f = BufWriter::new(f);
-        for (i, x) in helper_vec.iter().enumerate(){
-            write!(f, "{}\t{:?}\n", i, x).expect("Not able to write");
+        for (v,k) in helper_vec.iter(){
+            write!(f, "{}\t{:?}\n", v, k).expect("Not able to write");
 
         }
     }
@@ -71,10 +77,13 @@ impl <T>MatrixWrapper<T>
 /// Make matrix for nodes
 pub fn matrix_node(gwrapper: &GraphWrapper, graph: &NGfa) -> MatrixWrapper<u32>{
     let mut mw: MatrixWrapper<u32> = MatrixWrapper::new();
+    let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
 
+    h.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    println!("{:?}", h);
 
-    for (i, x) in graph.nodes.iter().enumerate(){
-        let node:u32 = x.0.clone();
+    for (i, x) in h.iter().enumerate(){
+        let node:u32 = x.clone();
         mw.row_name.insert (node, i);
     }
 
