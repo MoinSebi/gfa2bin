@@ -4,10 +4,11 @@ mod matrix_wrapper;
 mod helper;
 mod pack_reader;
 
+
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
-use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage};
-use crate::pack_reader::{get_file_as_byte_vec, wrapper2};
+use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2};
+use crate::pack_reader::{get_file_as_byte_vec, wrapper2, read_be_u16, wrapper3};
 
 
 fn main() {
@@ -90,8 +91,15 @@ fn main() {
     if matches.is_present("pack") {
         let ii = matches.value_of("pack").unwrap();
         let h = get_file_as_byte_vec(ii);
-        let h2 = wrapper2(&h);
-        let gw = matrix_node_coverage(h2);
+        let j = read_be_u16(&mut & h[7..9]);
+        let gw: MatrixWrapper<u32>;
+        if j == 0{
+            let h2 = wrapper3(&h);
+            gw = matrix_node_coverage2(h2);
+        } else {
+            let h2 = wrapper2(&h);
+            gw = matrix_node_coverage(h2);
+        }
         gw.write(type_out, _output , "node");
 
     } else {
