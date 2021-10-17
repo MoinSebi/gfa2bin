@@ -92,14 +92,16 @@ fn main() {
         let ii = matches.value_of("pack").unwrap();
         let h = get_file_as_byte_vec(ii);
         let j = read_be_u16(&mut & h[7..9]);
-        let gw: MatrixWrapper<u32>;
+        let mut gw: MatrixWrapper<u32>;
         if j == 0{
             let h2 = wrapper3(&h);
+
             gw = matrix_node_coverage2(h2);
         } else {
             let h2 = wrapper2(&h);
             gw = matrix_node_coverage(h2);
         }
+
         gw.write(type_out, _output , "node");
 
     } else {
@@ -117,9 +119,9 @@ fn main() {
 
         // Make matrix
         //let h = test1(&gwrapper, &graph);
-        let mat_node: MatrixWrapper<u32>;
-        let mat_dir: MatrixWrapper<(u32, bool)>;
-        let mat_edge: MatrixWrapper<(u32, bool, u32, bool)>;
+        let mut mat_node: MatrixWrapper<u32>;
+        let mut mat_dir: MatrixWrapper<(u32, bool)>;
+        let mut mat_edge: MatrixWrapper<(u32, bool, u32, bool)>;
 
         if matches.is_present("type"){
             let values: &str = matches.value_of("type").unwrap();

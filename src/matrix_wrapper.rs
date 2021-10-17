@@ -5,11 +5,13 @@ use std::io::{Write, BufWriter};
 use std::fs::File;
 use gfaR_wrapper::{GraphWrapper, NGfa};
 use crate::pack_reader::{read_in2, read_in3};
+use crate::helper::{binary2dec_bed, transpose};
 
 pub struct MatrixWrapper<T: Debug>{
     pub matrix: Matrix,
     pub column_name: HashMap<u32, String>,
     pub row_name: HashMap<T, usize>,
+    pub matrix_bin: Vec<Vec<bool>>,
 
 }
 
@@ -22,10 +24,12 @@ impl <T>MatrixWrapper<T>
         let matrx = Matrix::new();
         let col: HashMap<u32, String> = HashMap::new();
         let row: HashMap<T, usize> = HashMap::new();
+        let matrx2 = Vec::new();
         Self{
             matrix: matrx,
             column_name: col,
             row_name: row,
+            matrix_bin: matrx2,
         }
     }
 
@@ -53,9 +57,38 @@ impl <T>MatrixWrapper<T>
         }
     }
 
-    pub fn write(&self, what: &str, out_prefix: &str, t: &str){
+    pub fn write_bed(&self, out_prefix: &str, t: &str){
+        //hexdump -C test.bin
+        // xxd -b file
+        // xxd file
+        // SNP: 00000001 , 0
+        // IND: 00000000, 1
+
+        println!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
+        let mut buff: Vec<u8> = vec![108, 27, 1];
+        let h2 = transpose( &self.matrix_bin);
+        println!("{} {}", h2.len(), h2[0].len());
+        for x in h2.iter(){
+            let j: Vec<&[bool]> = x.chunks(4).collect();
+            for x in j{
+                buff.push(binary2dec_bed(x));
+            }
+            //println!("Number of bytes {}", buff.len());
+            //println!("x {}", x.len());
+        }
+
+
+        let mut file = File::create([out_prefix, t, "bed"].join(".")).expect("Not able to write ");
+        file.write_all(&buff).expect("Not able to write ")
+
+    }
+
+    pub fn write(& mut self, what: &str, out_prefix: &str, t: &str){
         if (what == "bed") | (what == "all"){
-            self.matrix.write_bed(out_prefix, t);
+            if self.matrix_bin.is_empty(){
+                self.matrix_bin = self.matrix.copy(1);
+            };
+            self.write_bed(out_prefix, t);
             self.write_bim(out_prefix, t);
             self.write_helper2(out_prefix);
         }
@@ -81,7 +114,6 @@ pub fn matrix_node(gwrapper: &GraphWrapper, graph: &NGfa) -> MatrixWrapper<u32>{
     let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
 
     h.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    println!("{:?}", h);
 
     for (i, x) in h.iter().enumerate(){
         let node:u32 = x.clone();
@@ -164,23 +196,27 @@ pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa) -> MatrixWrapper<(u32,
 pub fn matrix_node_coverage(cov: Vec<read_in2>) -> MatrixWrapper<u32>{
     let mut mw: MatrixWrapper<u32>  = MatrixWrapper::new();
     for (i,x) in cov.iter().enumerate(){
+        println!("{}", x.name);
         mw.column_name.insert(i as u32,x.name.clone());
-        let mut k : Vec<u32> = Vec::new();
+        let mut k : Vec<bool> = Vec::new();
         for y in x.cc.iter(){
 
-            k.push(*y as u32);
+            k.push(*y);
         }
-        mw.matrix.matrix_core.push(k);
+        println!("{}", k.len());
+        mw.matrix_bin.push(k);
     }
-    for x in 0..mw.matrix.matrix_core[0].len(){
+    for x in 0..mw.matrix_bin[0].len(){
         mw.row_name.insert(x as u32, x);
     }
     mw
 }
 
+
 pub fn matrix_node_coverage2(cov: Vec<read_in3>) -> MatrixWrapper<u32>{
     let mut mw: MatrixWrapper<u32>  = MatrixWrapper::new();
     for (i,x) in cov.iter().enumerate(){
+        println!("{}", x.name);
         mw.column_name.insert(i as u32,x.name.clone());
         let mut k : Vec<u32> = Vec::new();
         for y in x.cc.iter(){

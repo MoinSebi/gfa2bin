@@ -108,7 +108,9 @@ fn byte_to_bitvec(buf: &u8) -> Vec<bool>{
 fn byte_to_string(input: &[u8]) -> String {
     let mut o = "".to_string();
     for x in input.iter(){
+
         o.push(x.clone() as char);
+
     }
     return o
 }
@@ -142,8 +144,9 @@ mod tests {
     #[test]
     fn it_works() {
         let h = get_file_as_byte_vec("/home/svorbrugg_local/Rust/packing/pack.2.bin");
+        let h = get_file_as_byte_vec("/home/svorbrugg_local/Rust/packing/test.cov2.bin");
         let h2 = wrapper2(&h);
-        let h3 = matrix_node_coverage(h2);
+        let mut h3 = matrix_node_coverage(h2);
         h3.write("bed", "test.1.2", "node");
 
     }
