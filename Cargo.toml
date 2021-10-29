@@ -9,3 +9,4 @@ edition = "2018"
 clap = "=3.0.0-beta.4"
 #gfaR_wrapper = {path = "../gfaR_wrapper"}
 gfaR_wrapper = {git = "https://github.com/MoinSebi/gfaR_wrapper"}
+packing = {path = "../packing"}

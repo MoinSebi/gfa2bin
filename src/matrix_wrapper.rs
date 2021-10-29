@@ -4,9 +4,11 @@ use std::fmt::Debug;
 use std::io::{Write, BufWriter};
 use std::fs::File;
 use gfaR_wrapper::{GraphWrapper, NGfa};
-use crate::pack_reader::{read_in2, read_in3};
-use crate::helper::{binary2dec_bed, transpose};
+use crate::helper::{binary2dec_bed, transpose, trans2};
+use packing_lib::reader::{ReaderU16, wrapper_bool, ReaderBit, wrapper_u16, get_file_as_byte_vec};
 
+
+/// Core data structure, which includes ever
 pub struct MatrixWrapper<T: Debug>{
     pub matrix: Matrix,
     pub column_name: HashMap<u32, String>,
@@ -33,7 +35,7 @@ impl <T>MatrixWrapper<T>
         }
     }
 
-    /// Wirting bim file
+    /// Writing bim file
     /// Information: https://www.cog-genomics.org/plink/1.9/formats#bim
     pub fn write_bim(&self, out_prefix: &str, t: &str){
         let f = File::create([out_prefix, t,  "bim"].join(".")).expect("Unable to create file");
@@ -46,7 +48,7 @@ impl <T>MatrixWrapper<T>
 
 
 
-        for (k,v) in helper_vec.iter(){
+        for (k,_v) in helper_vec.iter(){
             write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, k, "A", "T").expect("Not able to write ");
         }
         let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
@@ -66,10 +68,10 @@ impl <T>MatrixWrapper<T>
 
         println!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
         let mut buff: Vec<u8> = vec![108, 27, 1];
-        let h2 = transpose( &self.matrix_bin);
+        let h2 = trans2( &self.matrix_bin);
         println!("{} {}", h2.len(), h2[0].len());
         for x in h2.iter(){
-            let j: Vec<&[bool]> = x.chunks(4).collect();
+            let j: Vec<&[&bool]> = x.chunks(4).collect();
             for x in j{
                 buff.push(binary2dec_bed(x));
             }
@@ -101,7 +103,7 @@ impl <T>MatrixWrapper<T>
         let f = File::create([out_prefix,  "bimbim"].join(".")).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         for x in 0..self.column_name.len(){
-            write!(f, "{}\n", self.column_name.get(&(x as u32)).unwrap());
+            write!(f, "{}\n", self.column_name.get(&(x as u32)).unwrap()).expect("Can not write file");
         }
     }
 
@@ -169,6 +171,7 @@ pub fn matrix_dir_node(gwrapper: &GraphWrapper, graph: &NGfa) -> MatrixWrapper<(
 
 /// Make matrix for edges
 pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa) -> MatrixWrapper<(u32, bool, u32, bool)>{
+
     let mut mw: MatrixWrapper<(u32, bool, u32, bool)> = MatrixWrapper::new();
     for (i, x) in graph.edges.iter().enumerate(){
         let j: u32 = x.to;
@@ -193,9 +196,12 @@ pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa) -> MatrixWrapper<(u32,
 
 
 /// Make matrix for edges
-pub fn matrix_node_coverage(cov: Vec<read_in2>) -> MatrixWrapper<u32>{
+pub fn matrix_node_coverage(filename: &str) -> MatrixWrapper<u32>{
+    let g: Vec<u8> = get_file_as_byte_vec(filename);
+    let k: Vec<ReaderBit> = wrapper_bool(&g);
+
     let mut mw: MatrixWrapper<u32>  = MatrixWrapper::new();
-    for (i,x) in cov.iter().enumerate(){
+    for (i,x) in k.iter().enumerate(){
         println!("{}", x.name);
         mw.column_name.insert(i as u32,x.name.clone());
         let mut k : Vec<bool> = Vec::new();
@@ -213,9 +219,12 @@ pub fn matrix_node_coverage(cov: Vec<read_in2>) -> MatrixWrapper<u32>{
 }
 
 
-pub fn matrix_node_coverage2(cov: Vec<read_in3>) -> MatrixWrapper<u32>{
+pub fn matrix_node_coverage2(filename: &str) -> MatrixWrapper<u32>{
+    let g: Vec<u8> = get_file_as_byte_vec(filename);
+    let k: Vec<ReaderU16> = wrapper_u16(&g);
+
     let mut mw: MatrixWrapper<u32>  = MatrixWrapper::new();
-    for (i,x) in cov.iter().enumerate(){
+    for (i,x) in k.iter().enumerate(){
         println!("{}", x.name);
         mw.column_name.insert(i as u32,x.name.clone());
         let mut k : Vec<u32> = Vec::new();

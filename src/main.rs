@@ -2,13 +2,11 @@ mod matrix;
 mod counting;
 mod matrix_wrapper;
 mod helper;
-mod pack_reader;
-
-
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
 use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2};
-use crate::pack_reader::{get_file_as_byte_vec, wrapper2, read_be_u16, wrapper3};
+use packing_lib::helper::u8_u16;
+use packing_lib::reader::get_file_as_byte_vec;
 
 
 fn main() {
@@ -90,16 +88,12 @@ fn main() {
     // removed .default stuff
     if matches.is_present("pack") {
         let ii = matches.value_of("pack").unwrap();
-        let h = get_file_as_byte_vec(ii);
-        let j = read_be_u16(&mut & h[7..9]);
+        let j = u8_u16(&mut & get_file_as_byte_vec(ii)[7..9]);
         let mut gw: MatrixWrapper<u32>;
         if j == 0{
-            let h2 = wrapper3(&h);
-
-            gw = matrix_node_coverage2(h2);
+            gw = matrix_node_coverage2(ii);
         } else {
-            let h2 = wrapper2(&h);
-            gw = matrix_node_coverage(h2);
+            gw = matrix_node_coverage(ii);
         }
 
         gw.write(type_out, _output , "node");

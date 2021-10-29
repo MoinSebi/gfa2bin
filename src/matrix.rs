@@ -2,7 +2,6 @@
 use std::fmt::{Debug};
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use crate::helper::binary2dec_bed;
 
 
 /// Core structure
