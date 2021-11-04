@@ -7,6 +7,8 @@ use gfaR_wrapper::{NGfa, GraphWrapper};
 use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2};
 use packing_lib::helper::u8_u16;
 use packing_lib::reader::get_file_as_byte_vec;
+use std::process;
+use crate::matrix::Matrix;
 
 
 fn main() {
@@ -14,6 +16,7 @@ fn main() {
         .version("0.1.0")
         .author("Sebastian V")
         .about("gfa2bin")
+        // Input
         .arg(Arg::new("gfa")
             .short('g')
             .long("gfa")
@@ -25,18 +28,32 @@ fn main() {
             .long("pack")
             .about("if the input is coverage")
             .takes_value(true))
+        .arg(Arg::new("delimter")
+            .short('d')
+            .long("delimter")
+            .about("Delimter between genome and chromosome number")
+            .takes_value(true))
 
+        .arg(Arg::new("type")
+            .short('t')
+            .long("type")
+            .about("Type of the matrix (when on graph)")
+            .takes_value(true))
+
+
+        // Computational
+        .arg(Arg::new("threshhold")
+            .long("Copy number threshold")
+            .about("Normalize to this number")
+            .takes_value(true))
+
+        // Output
         .arg(Arg::new("output")
             .short('o')
             .long("output")
             .about("Output prefix")
             .takes_value(true)
             .default_value("gfa2bin.default"))
-        .arg(Arg::new("type")
-            .short('t')
-            .long("type")
-            .about("Type of the matrix (when on graph)")
-            .takes_value(true))
         .arg(Arg::new("bed")
             .long("bed")
             .about("Output bed + bim file"))
@@ -47,29 +64,14 @@ fn main() {
             .long("traversal")
             .about("Additional traversaloutput file")
             .takes_value(true))
-        .arg(Arg::new("delimter")
-            .short('d')
-            .long("delimter")
-            .about("Delimter between genome and chromosome number")
-            .takes_value(true))
-        .arg(Arg::new("threshhold")
-            .long("Copy number threshold")
-            .about("Normalize to this number")
-            .takes_value(true))
-        .arg(Arg::new("decopy")
-            .short('c')
-            .long("decopy this")
-            .takes_value(true))
-        .arg(Arg::new("bubble input")
-            .short('b')
-            .long("bubble")
-            .takes_value(true))
 
         .get_matches();
 
 
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
 
+
+    // This is to decide which output
     let type_out;
     let _output: &str = matches.value_of("output").unwrap();
 
@@ -85,7 +87,20 @@ fn main() {
         type_out = "bed"
     }
 
-    // removed .default stuff
+    // Check if del is set or not
+    let del: &str;
+    if matches.is_present("delimter"){
+        del = matches.value_of("delimter").unwrap();
+    } else {
+        del = " ";
+    }
+
+
+
+
+    // Comment: Because different wrapper are used, we need to check everything by itself
+    let mut i: & mut Matrix;
+    // Read from a pack file
     if matches.is_present("pack") {
         let ii = matches.value_of("pack").unwrap();
         let j = u8_u16(&mut & get_file_as_byte_vec(ii)[7..9]);
@@ -95,10 +110,11 @@ fn main() {
         } else {
             gw = matrix_node_coverage(ii);
         }
+        gw.matrix.filter();
 
         gw.write(type_out, _output , "node");
 
-    } else {
+    } else if matches.is_present("gfa") {
         let _input = matches.value_of("gfa").unwrap();
         let _output: &str = matches.value_of("output").unwrap();
         // Read the graph
@@ -107,7 +123,7 @@ fn main() {
 
         // Make graph, wrapper
         let mut gwrapper: GraphWrapper = GraphWrapper::new();
-        gwrapper.fromNGfa(&graph, "_");
+        gwrapper.fromNGfa(&graph, del);
 
         println!("{} genomes and {} paths", gwrapper.genomes.len(), graph.paths.len());
 
@@ -135,17 +151,50 @@ fn main() {
         } else {
             mat_node = matrix_node(&gwrapper, &graph);
             mat_node.write(type_out, _output, "node");
+            i = & mut mat_node.matrix;
+            i.filter();
         }
     }
 
 
+    else {
+        eprintln!("No input!");
+        process::exit(0x0100);
+    }
 
 
 
+}
 
+#[cfg(test)]
+mod main {
+    use packing_lib::helper::u8_u16;
+    use packing_lib::reader::get_file_as_byte_vec;
+    use crate::matrix_wrapper::{MatrixWrapper, matrix_node_coverage2};
+    use gfaR_wrapper::{GraphWrapper, NGfa};
 
+    #[test]
+    fn exploration() {
+        let j = u8_u16(&mut & get_file_as_byte_vec("/home/svorbrugg_local/Rust/gfa2bin/pack.test.bin")[7..9]);
+        eprintln!("Number {}", j);
+        let mut gw: MatrixWrapper<u32> = matrix_node_coverage2("/home/svorbrugg_local/Rust/gfa2bin/pack.test.bin");
 
+        gw.matrix.filter();
+    }
 
+    #[test]
+    fn normal_run() {
+        let input = "/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa";
+        let mut graph = NGfa::new();
+        graph.from_graph(input);
 
+        // Make graph, wrapper
+        let mut gwrapper: GraphWrapper = GraphWrapper::new();
+        gwrapper.fromNGfa(&graph, "_");
+        eprintln!("LONG {}", gwrapper.genomes.len());
+        gwrapper.fromNGfa(&graph, " ");
+        eprintln!("LONG {}", gwrapper.genomes.len());
+        eprintln!("LONG {}", graph.paths.len());
+    }
 
 }

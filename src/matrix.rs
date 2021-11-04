@@ -2,6 +2,7 @@
 use std::fmt::{Debug};
 use std::fs::File;
 use std::io::{Write, BufWriter};
+use crate::helper::transpose;
 
 
 /// Core structure
@@ -75,6 +76,27 @@ impl Matrix {
             write!(f, "{}\t{}\t{}\t", index, "A", "T").expect("Not able to write ");
             write!(f, "{}\n", j.join("\t")).expect("Not able to write");
         }
+    }
+
+    pub fn filter(&self){
+        eprintln!("Filtering");
+        let k: Vec<Vec<u32>>= transpose(&self.matrix_core);
+        let mut k2 = Vec::new();
+        for x in k.iter(){
+            let mut sum = 0;
+            for y in x.iter(){
+                if y != &0{
+                    sum += 1;
+                }
+                if sum as usize != x.len(){
+                    k2.push(x.clone());
+                }
+            }
+
+        }
+        let k3 = transpose(&k);
+
+        eprintln!("Length: {} {}", self.matrix_core[0].len(), k3[0].len());
     }
 
 
