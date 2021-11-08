@@ -21,8 +21,7 @@ fn main() {
             .short('g')
             .long("gfa")
             .about("Sets the input file to use")
-            .takes_value(true)
-            .default_value("/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa"))
+            .takes_value(true))
         .arg(Arg::new("pack")
             .short('p')
             .long("pack")
@@ -64,6 +63,10 @@ fn main() {
             .long("traversal")
             .about("Additional traversaloutput file")
             .takes_value(true))
+        .arg(Arg::new("smart")
+            .long("smart")
+            .about("Reduce the number of tests"))
+
 
         .get_matches();
 
@@ -125,7 +128,7 @@ fn main() {
         let mut gwrapper: GraphWrapper = GraphWrapper::new();
         gwrapper.fromNGfa(&graph, del);
 
-        println!("{} genomes and {} paths", gwrapper.genomes.len(), graph.paths.len());
+        eprintln!("{} genomes and {} paths", gwrapper.genomes.len(), graph.paths.len());
 
         // Make matrix
         //let h = test1(&gwrapper, &graph);
@@ -137,22 +140,32 @@ fn main() {
             let values: &str = matches.value_of("type").unwrap();
             if values.contains('n'){
                 mat_node = matrix_node(&gwrapper, &graph);
+                i = & mut mat_node.matrix;
+                let rem = i.filter();
+                mat_node.remove_stuff(rem);
                 mat_node.write(type_out, _output, "node");
             }
             if values.contains('e'){
                 mat_edge = matrix_edge(&gwrapper, &graph);
+                i = & mut mat_edge.matrix;
+                let rem = i.filter();
+                mat_edge.remove_stuff(rem);
                 mat_edge.write(type_out, _output, "edge");
 
             }
             if values.contains('d'){
                 mat_dir = matrix_dir_node(&gwrapper, &graph);
+                i = & mut mat_dir.matrix;
+                let rem = i.filter();
+                mat_dir.remove_stuff(rem);
                 mat_dir.write(type_out,  _output, "dir");
             }
         } else {
             mat_node = matrix_node(&gwrapper, &graph);
-            mat_node.write(type_out, _output, "node");
             i = & mut mat_node.matrix;
-            i.filter();
+            let rem = i.filter();
+            mat_node.remove_stuff(rem);
+            mat_node.write(type_out, _output, "node");
         }
     }
 
@@ -170,7 +183,7 @@ fn main() {
 mod main {
     use packing_lib::helper::u8_u16;
     use packing_lib::reader::get_file_as_byte_vec;
-    use crate::matrix_wrapper::{MatrixWrapper, matrix_node_coverage2};
+    use crate::matrix_wrapper::{MatrixWrapper, matrix_node_coverage2, matrix_node, matrix_dir_node, matrix_edge};
     use gfaR_wrapper::{GraphWrapper, NGfa};
 
     #[test]
@@ -192,9 +205,13 @@ mod main {
         let mut gwrapper: GraphWrapper = GraphWrapper::new();
         gwrapper.fromNGfa(&graph, "_");
         eprintln!("LONG {}", gwrapper.genomes.len());
-        gwrapper.fromNGfa(&graph, " ");
+        //gwrapper.fromNGfa(&graph, " ");
         eprintln!("LONG {}", gwrapper.genomes.len());
         eprintln!("LONG {}", graph.paths.len());
+        let mat_node = matrix_edge(&gwrapper, &graph);
+        let o = mat_node.matrix.filter();
+        mat_node.matrix.reduce_comb();
+
     }
 
 }

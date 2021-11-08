@@ -3,6 +3,7 @@ use std::fmt::{Debug};
 use std::fs::File;
 use std::io::{Write, BufWriter};
 use crate::helper::transpose;
+use std::collections::HashSet;
 
 
 /// Core structure
@@ -78,31 +79,60 @@ impl Matrix {
         }
     }
 
-    pub fn filter(&self){
+    pub fn filter(&self) -> Vec<usize>{
         eprintln!("Filtering");
         let k: Vec<Vec<u32>>= transpose(&self.matrix_core);
         let mut k2 = Vec::new();
-        for x in k.iter(){
+        let mut count = 0;
+        let mut kk: Vec<usize> = Vec::new();
+
+        for (i, x) in k.iter().enumerate(){
             let mut sum = 0;
-            for y in x.iter(){
-                if y != &0{
+            for y in x.iter() {
+                if y != &0 {
                     sum += 1;
                 }
-                if sum as usize != x.len(){
-                    k2.push(x.clone());
-                }
+            }
+            if sum as usize != x.len(){
+                k2.push(x.clone());
+            } else {
+                println!("{} {}", sum, x.len());
+                kk.push(i);
+                count += 1;
             }
 
-        }
-        let k3 = transpose(&k);
 
-        eprintln!("Length: {} {}", self.matrix_core[0].len(), k3[0].len());
+        }
+        let k3 = transpose(&k2);
+
+        eprintln!("Before {}  After {}", self.matrix_core[0].len(), k3[0].len());
+        return kk;
+    }
+
+    pub fn reduce_comb(&self){
+        let mut hs: HashSet<_> = HashSet::new();
+        let k: Vec<Vec<u32>>= transpose(&self.matrix_core);
+        for x in k.iter() {
+            hs.insert(x);
+        }
+        println!("Reduce {}", hs.len());
+        println!("Reduce {:?}", hs);
     }
 
 
 
+}
 
-
+pub fn reduce_comb<T>(v: Vec<T>)
+    where
+        T: Debug + std::hash::Hash + std::cmp::Eq
+{
+    let mut hs: HashSet<_> = HashSet::new();
+    for x in v.iter() {
+        hs.insert(x);
+    }
+    println!("Reduce {}", hs.len());
+    println!("Reduce {:?}", hs);
 }
 
 
