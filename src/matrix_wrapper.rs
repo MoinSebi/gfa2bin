@@ -84,6 +84,68 @@ impl MatrixWrapper2
 
     }
 
+    pub fn filter(&self) -> Vec<usize>{
+        eprintln!("Filtering");
+        println!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
+        let k:Vec<Vec<&bool>>= trans2(&self.matrix_bin);
+        let mut k2 = Vec::new();
+        let mut count = 0;
+
+        let mut to_remove: Vec<usize> = Vec::new();
+
+        for (i, x) in k.iter().enumerate(){
+            let mut sum = 0;
+            for y in x.iter() {
+                if *y == &true {
+                    sum += 1;
+                }
+            }
+            if (sum as usize != x.len()) | (sum == 0) {
+                k2.push(x.clone());
+            } else {
+                println!("{} {}", sum, x.len());
+                to_remove.push(i);
+                count += 1;
+            }
+
+
+        }
+        eprintln!("Boring SNPs {}", to_remove.len());
+        let k3 = trans2(&k2);
+
+        eprintln!("Before {}  After {}", k[0].len(), k3[0].len());
+        return to_remove;
+    }
+
+
+    pub fn reduce_comb1(&self){
+        let mut hm: HashMap<_,_> = HashMap::new();
+        let mut h1: Vec<usize> = Vec::new();
+        let mut h2: Vec<usize> = Vec::new();
+
+
+        let k: Vec<Vec<&bool>>= trans2(&self.matrix_bin);
+
+        let mut count = 0;
+        for (index, x) in k.iter().enumerate() {
+            println!("{:?}", x);
+            if ! hm.contains_key(x) {
+                hm.insert(x, count);
+                h1.push(index);
+                h2.push(count);
+                count += 1;
+            } else {
+
+                h1.push(index);
+                h2.push(hm.get(x).unwrap().clone());
+            }
+        }
+        println!("Reduce10 {}", count);
+        println!("Reduce10 {:?}", hm);
+    }
+
+
+
 }
 
 
@@ -114,7 +176,39 @@ pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa) -> (MatrixWrapper2, 
     return (mw, h2);
 }
 
+/// Writing bim file
+/// Information: https://www.cog-genomics.org/plink/1.9/formats#bim
+pub fn write_bim<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
+where
+T: Debug + std::hash::Hash + std::cmp::Eq + Ord
+{
+    let f = File::create([out_prefix, t,  "bim"].join(".")).expect("Unable to create file");
+    let mut f = BufWriter::new(f);
+    let mut helper_vec = Vec::new();
 
+    for (k,v) in ll.iter(){
+        helper_vec.push((v,k));
+    }
+    helper_vec.sort_by_key(|k| k.1);
+
+
+
+    for (k,_v) in helper_vec.iter(){
+        write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, k, "A", "T").expect("Not able to write ");
+    }
+
+
+
+
+
+
+    let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
+    let mut f = BufWriter::new(f);
+    for (v,k) in helper_vec.iter(){
+        write!(f, "{}\t{:?}\n", v, k).expect("Not able to write");
+
+    }
+}
 
 
 /// Core data structure, which includes ever

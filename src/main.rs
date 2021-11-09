@@ -220,10 +220,11 @@ mod main {
         eprintln!("LONG {}", gwrapper.genomes.len());
         eprintln!("LONG {}", graph.paths.len());
         let mat_node = matrix_edge(&gwrapper, &graph);
-        let (test, k) = matrix_node10(&gwrapper, &graph);
+        let (mut test, k) = matrix_node10(&gwrapper, &graph);
+        eprintln!("LOL {}", test.matrix.matrix_core.len());
         test.get_name();
-        let o = mat_node.matrix.filter();
-        mat_node.matrix.reduce_comb();
+        test.make_binary(1);
+        test.reduce_comb1();
 
     }
 
