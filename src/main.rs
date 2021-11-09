@@ -9,6 +9,7 @@ use packing_lib::helper::u8_u16;
 use packing_lib::reader::get_file_as_byte_vec;
 use std::process;
 use crate::matrix::Matrix;
+use crate::helper::write_genomes;
 
 
 fn main() {
@@ -32,6 +33,8 @@ fn main() {
             .long("delimter")
             .about("Delimter between genome and chromosome number")
             .takes_value(true))
+        .arg(Arg::new("names")
+            .about("Only this"))
 
         .arg(Arg::new("type")
             .short('t')
@@ -47,6 +50,8 @@ fn main() {
             .takes_value(true))
 
         // Output
+        .arg(Arg::new("genomes")
+            .about("Output just the genomes"))
         .arg(Arg::new("output")
             .short('o')
             .long("output")
@@ -72,6 +77,8 @@ fn main() {
 
 
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
+
+
 
 
     // This is to decide which output
@@ -112,6 +119,8 @@ fn main() {
             gw = matrix_node_coverage2(ii);
         } else {
             gw = matrix_node_coverage(ii);
+            gw.matrix.filter();
+
         }
         gw.matrix.filter();
 
@@ -127,6 +136,8 @@ fn main() {
         // Make graph, wrapper
         let mut gwrapper: GraphWrapper = GraphWrapper::new();
         gwrapper.fromNGfa(&graph, del);
+
+        write_genomes(&gwrapper);
 
         eprintln!("{} genomes and {} paths", gwrapper.genomes.len(), graph.paths.len());
 
@@ -183,7 +194,7 @@ fn main() {
 mod main {
     use packing_lib::helper::u8_u16;
     use packing_lib::reader::get_file_as_byte_vec;
-    use crate::matrix_wrapper::{MatrixWrapper, matrix_node_coverage2, matrix_node, matrix_dir_node, matrix_edge};
+    use crate::matrix_wrapper::{MatrixWrapper, matrix_node_coverage2, matrix_node, matrix_dir_node, matrix_edge, matrix_node_coverage, matrix_node10};
     use gfaR_wrapper::{GraphWrapper, NGfa};
 
     #[test]
@@ -209,9 +220,19 @@ mod main {
         eprintln!("LONG {}", gwrapper.genomes.len());
         eprintln!("LONG {}", graph.paths.len());
         let mat_node = matrix_edge(&gwrapper, &graph);
+        let (test, k) = matrix_node10(&gwrapper, &graph);
+        test.get_name();
         let o = mat_node.matrix.filter();
         mat_node.matrix.reduce_comb();
 
+    }
+
+    fn exploration2() {
+        let j = u8_u16(&mut & get_file_as_byte_vec("/home/svorbrugg_local/Rust/data/test1.txt")[7..9]);
+        eprintln!("Number {}", j);
+        let mut gw: MatrixWrapper<u32> = matrix_node_coverage("/home/svorbrugg_local/Rust/data/test1.txt");
+
+        gw.matrix.filter();
     }
 
 }

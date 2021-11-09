@@ -1,3 +1,7 @@
+use gfaR_wrapper::GraphWrapper;
+use std::fs::File;
+use std::io::{Write, BufWriter};
+
 pub fn binary2dec_bed(vecc: &[&bool]) -> u8{
     let mut result: u8 = 0;
     let mut count = 0;
@@ -52,5 +56,13 @@ pub fn trans2<T>(v: &Vec<Vec<T>>) -> Vec<Vec<&T>>
         o.push(o2);
     }
     return o;
+}
+
+pub fn write_genomes(graph: &GraphWrapper){
+    let f = File::create("dsjadkjaldkjakldsaljsdla").expect("Unable to create file");
+    let mut f = BufWriter::new(f);
+    for (k,v) in graph.genomes.iter(){
+        write!(f, "{}\n", k).expect("Not able to write");
+    }
 }
 

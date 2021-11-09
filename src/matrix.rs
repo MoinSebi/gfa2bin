@@ -2,8 +2,9 @@
 use std::fmt::{Debug};
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use crate::helper::transpose;
+use crate::helper::{transpose, trans2};
 use std::collections::HashSet;
+use crate::matrix_wrapper::MatrixWrapper;
 
 
 /// Core structure
@@ -81,7 +82,8 @@ impl Matrix {
 
     pub fn filter(&self) -> Vec<usize>{
         eprintln!("Filtering");
-        let k: Vec<Vec<u32>>= transpose(&self.matrix_core);
+        println!("{} {}", self.matrix_core.len(), self.matrix_core[0].len());
+        let k: Vec<Vec<&u32>>= trans2(&self.matrix_core);
         let mut k2 = Vec::new();
         let mut count = 0;
         let mut kk: Vec<usize> = Vec::new();
@@ -89,7 +91,7 @@ impl Matrix {
         for (i, x) in k.iter().enumerate(){
             let mut sum = 0;
             for y in x.iter() {
-                if y != &0 {
+                if y != &&0 {
                     sum += 1;
                 }
             }
@@ -103,6 +105,7 @@ impl Matrix {
 
 
         }
+        eprintln!("{}", kk.len());
         let k3 = transpose(&k2);
 
         eprintln!("Before {}  After {}", self.matrix_core[0].len(), k3[0].len());
@@ -122,6 +125,19 @@ impl Matrix {
 
 
 }
+
+pub fn test1<T>(v: &MatrixWrapper<T>)
+where
+T: Debug
+{
+
+    let g = 1;
+    for x in 1..10{
+        println!("{}", x);
+    }
+}
+
+
 
 pub fn reduce_comb<T>(v: Vec<T>)
     where

@@ -11,6 +11,113 @@ use bimap::{BiHashMap, BiMap};
 
 
 /// Core data structure, which includes ever
+pub struct MatrixWrapper2{
+    pub matrix: Matrix,
+    pub column_name: HashMap<u32, String>,
+    pub matrix_bin: Vec<Vec<bool>>
+
+}
+
+impl MatrixWrapper2
+
+{
+    pub fn new() -> Self {
+        let matrx = Matrix::new();
+        let col: HashMap<u32, String> = HashMap::new();
+        let matrx2: Vec<Vec<bool>> = Vec::new();
+        Self {
+            matrix: matrx,
+            column_name: col,
+            matrix_bin: matrx2,
+        }
+    }
+
+    pub fn get_name(&self) {
+        for x in self.column_name.iter(){
+            println!("{}", x.1);
+        }
+    }
+
+    pub fn remove_genomes(& mut self, names: Vec<String>){
+        let mut to_remove = Vec::new();
+        let mut to_remove_string = Vec::new();
+        for x in self.column_name.iter(){
+            if names.contains(&x.1){
+                to_remove.push(x.0.clone());
+                to_remove_string.push(x.0.clone());
+            }
+        }
+        for x in to_remove_string.iter(){
+            self.column_name.remove(&x);
+        }
+
+        for (index, x) in to_remove.iter().enumerate(){
+            self.matrix.matrix_core.remove((x.clone() as usize) + index);
+        }
+    }
+
+    pub fn make_binary(& mut self, thresh: u32){
+        self.matrix_bin = self.matrix.copy(thresh);
+    }
+
+    pub fn write_bed(&self, out_prefix: &str, t: &str){
+        //hexdump -C test.bin
+        // xxd -b file
+        // xxd file
+        // SNP: 00000001 , 0
+        // IND: 00000000, 1
+
+        let mut buff: Vec<u8> = vec![108, 27, 1];
+        let h2 = trans2( &self.matrix_bin);
+        for x in h2.iter(){
+            let j: Vec<&[&bool]> = x.chunks(4).collect();
+            for x in j{
+                buff.push(binary2dec_bed(x));
+            }
+            //println!("Number of bytes {}", buff.len());
+            //println!("x {}", x.len());
+        }
+
+
+        let mut file = File::create([out_prefix, t, "bed"].join(".")).expect("Not able to write ");
+        file.write_all(&buff).expect("Not able to write ")
+
+    }
+
+}
+
+
+pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa) -> (MatrixWrapper2, BiMap<u32, usize>) {
+    let mut mw: MatrixWrapper2= MatrixWrapper2::new();
+    let mut h2 = BiMap::new();
+    let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
+
+    h.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+    for (i, x) in h.iter().enumerate() {
+        let node: u32 = x.clone();
+        h2.insert(node, i);
+    }
+
+    for (index, (name, paths)) in gwrapper.genomes.iter().enumerate(){
+        eprintln!("{}", name);
+        mw.column_name.insert( index as u32, name.clone());
+        let mut nody: Vec<u32> = vec![0; h2.len()] ;
+        for x in paths.iter(){
+            for y in x.nodes.iter(){
+                nody[*h2.get_by_left(&y).unwrap()] += 1;
+
+            }
+        }
+        mw.matrix.matrix_core.push(nody);
+    }
+    return (mw, h2);
+}
+
+
+
+
+/// Core data structure, which includes ever
 pub struct MatrixWrapper<T: Debug>{
     pub matrix: Matrix,
     pub column_name: HashMap<u32, String>,
