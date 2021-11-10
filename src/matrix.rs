@@ -83,7 +83,7 @@ impl Matrix {
     pub fn filter(&self) -> Vec<usize>{
         eprintln!("Filtering");
         println!("{} {}", self.matrix_core.len(), self.matrix_core[0].len());
-        let k: Vec<Vec<&u32>>= trans2(&self.matrix_core);
+        let k: Vec<Vec<u32>>= trans2(&self.matrix_core);
         let mut k2 = Vec::new();
         let mut count = 0;
         let mut kk: Vec<usize> = Vec::new();
@@ -91,7 +91,7 @@ impl Matrix {
         for (i, x) in k.iter().enumerate(){
             let mut sum = 0;
             for y in x.iter() {
-                if y != &&0 {
+                if y != &0 {
                     sum += 1;
                 }
             }

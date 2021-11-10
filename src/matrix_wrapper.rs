@@ -70,7 +70,7 @@ impl MatrixWrapper2
         let mut buff: Vec<u8> = vec![108, 27, 1];
         let h2 = trans2( &self.matrix_bin);
         for x in h2.iter(){
-            let j: Vec<&[&bool]> = x.chunks(4).collect();
+            let j: Vec<&[bool]> = x.chunks(4).collect();
             for x in j{
                 buff.push(binary2dec_bed(x));
             }
@@ -87,7 +87,7 @@ impl MatrixWrapper2
     pub fn filter(&self) -> Vec<usize>{
         eprintln!("Filtering");
         println!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
-        let k:Vec<Vec<&bool>>= trans2(&self.matrix_bin);
+        let k:Vec<Vec<bool>>= trans2(&self.matrix_bin);
         let mut k2 = Vec::new();
         let mut count = 0;
 
@@ -96,7 +96,7 @@ impl MatrixWrapper2
         for (i, x) in k.iter().enumerate(){
             let mut sum = 0;
             for y in x.iter() {
-                if *y == &true {
+                if *y == true {
                     sum += 1;
                 }
             }
@@ -118,30 +118,39 @@ impl MatrixWrapper2
     }
 
 
-    pub fn reduce_comb1(&self){
-        let mut hm: HashMap<_,_> = HashMap::new();
+    pub fn reduce_comb1(&self) -> (Vec<usize>, Vec<usize>){
+        let mut hm: BiMap<_,_> = BiMap::new();
         let mut h1: Vec<usize> = Vec::new();
         let mut h2: Vec<usize> = Vec::new();
 
 
-        let k: Vec<Vec<&bool>>= trans2(&self.matrix_bin);
+        let k: Vec<Vec<bool>>= trans2(&self.matrix_bin);
 
         let mut count = 0;
         for (index, x) in k.iter().enumerate() {
             println!("{:?}", x);
-            if ! hm.contains_key(x) {
-                hm.insert(x, count);
+            if ! hm.contains_left(x) {
+                hm.insert(x.clone(), count);
                 h1.push(index);
                 h2.push(count);
                 count += 1;
             } else {
 
                 h1.push(index);
-                h2.push(hm.get(x).unwrap().clone());
+                h2.push(hm.get_by_left(x).unwrap().clone());
             }
         }
+        let mut h : Vec<Vec<bool>> = Vec::new();
+        for x in 0..hm.iter().len(){
+            h.push(hm.get_by_right(&x).unwrap().clone());
+        }
+
+
+
         println!("Reduce10 {}", count);
         println!("Reduce10 {:?}", hm);
+        println!("Reduce101231 {:?}", h);
+        (h1,h2)
     }
 
 
@@ -149,9 +158,7 @@ impl MatrixWrapper2
 }
 
 
-pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa) -> (MatrixWrapper2, BiMap<u32, usize>) {
-    let mut mw: MatrixWrapper2= MatrixWrapper2::new();
-    let mut h2 = BiMap::new();
+pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
     let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
 
     h.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -173,8 +180,123 @@ pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa) -> (MatrixWrapper2, 
         }
         mw.matrix.matrix_core.push(nody);
     }
-    return (mw, h2);
 }
+
+
+
+pub fn matrix_node11(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<u16, usize>) {
+    let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
+
+    h.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+    for (i, x) in h.iter().enumerate() {
+        let node: u16 = (*x as u16).clone();
+        h2.insert(node, i);
+    }
+
+    for (index, (name, paths)) in gwrapper.genomes.iter().enumerate(){
+        eprintln!("{}", name);
+        mw.column_name.insert( index as u32, name.clone());
+        let mut nody: Vec<u32> = vec![0; h2.len()] ;
+        for x in paths.iter(){
+            for y in x.nodes.iter(){
+                nody[*h2.get_by_left(&(*y as u16) ).unwrap()] += 1;
+
+            }
+        }
+        mw.matrix.matrix_core.push(nody);
+    }
+
+}
+
+/// Make matrix for directed nodes // check this
+pub fn matrix_dir_node2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<(u32, bool), usize>){
+    let mut j: BiMap<(u32, bool), usize> = BiMap::new();
+
+    // Check all dir nodes
+    let mut v: HashSet<(u32, bool)> = HashSet::new();
+    for x in graph.paths.iter(){
+        for x2 in 0..x.nodes.len(){
+            v.insert((x.nodes[x2], x.dir[x2]));
+        }
+    }
+
+    // Sort dirNod by node 1
+    let mut k: Vec<_> = v.into_iter().collect();
+    k.sort_by_key(|k| k.0);
+    let mut count = 0;
+    for x in k.iter(){
+        j.insert(x.clone(), count);
+        count += 1;
+    }
+
+
+    //eprintln!("{:?}", bim);
+
+
+
+
+
+
+
+    for (index, (name, vec1)) in gwrapper.genomes.iter().enumerate(){
+        mw.column_name.insert(index as u32, name.clone());
+        //println!("{}", name);
+        let mut dir_nodes : Vec<u32> = vec![0; j.len()] ;
+        for x in vec1.iter(){
+            for x2 in 0..x.nodes.len(){
+                let node: u32 = x.nodes[x2].clone();
+
+                dir_nodes[*j.get_by_left(&(node, x.dir[x2].clone())).unwrap()] += 1;
+
+            }
+        }
+        mw.matrix.matrix_core.push(dir_nodes);
+    }
+}
+
+
+/// Make matrix for edges
+pub fn matrix_edge2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<(u32, bool, u32, bool), usize>){
+
+
+
+    let mut v: HashSet<(u32, bool, u32, bool)> = HashSet::new();
+    for (i, x) in graph.edges.iter().enumerate(){
+        let j: u32 = x.to;
+        let j2: u32 = x.from;
+        v.insert((j2, x.from_dir, j, x.to_dir));
+    }
+
+    let mut k: Vec<_> = v.into_iter().collect();
+    k.sort_by_key(|k| k.0);
+    let mut count = 0;
+    for x in k.iter(){
+        h2.insert(x.clone(), count);
+        count += 1;
+    }
+
+
+
+
+
+
+    for (index, (name, vec1)) in gwrapper.genomes.iter().enumerate(){
+        mw.column_name.insert( index as u32, name.clone());
+        let mut dir_nodes : Vec<u32> = vec![0; h2.len()] ;
+        for x in vec1.iter(){
+            for x2 in 0..x.nodes.len()-1{
+                let node: u32 = x.nodes[x2];
+                let node2: u32 = x.nodes[x2+1];
+                dir_nodes[*h2.get_by_left(&(node, x.dir[x2], node2, x.dir[x2+1])).unwrap()] += 1;
+
+            }
+        }
+        mw.matrix.matrix_core.push(dir_nodes);
+    }
+}
+
+
 
 /// Writing bim file
 /// Information: https://www.cog-genomics.org/plink/1.9/formats#bim
@@ -210,6 +332,31 @@ T: Debug + std::hash::Hash + std::cmp::Eq + Ord
     }
 }
 
+
+
+/// Writing file wrapper
+pub fn write_matrix(se: & mut MatrixWrapper2, what: &str, out_prefix: &str, t: &str){
+    if (what == "bed") | (what == "all"){
+        if se.matrix_bin.is_empty(){
+            se.matrix_bin = se.matrix.copy(1);
+        };
+        se.write_bed(out_prefix, t);
+        //se.write_bim(out_prefix, t);
+        //se.write_helper2(out_prefix);
+    }
+    if (what == "bimbam") | (what == "all"){
+        //se.matrix.write_bimbam(out_prefix, t);
+    }
+}
+
+
+pub fn write_helper2(se: & mut MatrixWrapper2, out_prefix: &str){
+    let f = File::create([out_prefix,  "bimbim"].join(".")).expect("Unable to create file");
+    let mut f = BufWriter::new(f);
+    for x in 0..se.column_name.len(){
+        write!(f, "{}\n", se.column_name.get(&(x as u32)).unwrap()).expect("Can not write file");
+    }
+}
 
 /// Core data structure, which includes ever
 pub struct MatrixWrapper<T: Debug>{
@@ -278,7 +425,7 @@ impl <T>MatrixWrapper<T>
         let h2 = trans2( &self.matrix_bin);
         println!("{} {}", h2.len(), h2[0].len());
         for x in h2.iter(){
-            let j: Vec<&[&bool]> = x.chunks(4).collect();
+            let j: Vec<&[bool]> = x.chunks(4).collect();
             for x in j{
                 buff.push(binary2dec_bed(x));
             }
@@ -324,31 +471,6 @@ impl <T>MatrixWrapper<T>
 
 
 }
-
-//-------------------------------------------
-// Modification
-
-pub fn mod_row(mu: & mut MatrixWrapper<u32>, v: Vec<usize>){
-    for x in v.iter(){
-        mu.row2.remove_by_right(&1);
-    }
-
-}
-
-pub fn mod_row2(mu: & mut MatrixWrapper<(u32, bool)>, v: Vec<usize>){
-    for x in v.iter(){
-        mu.row2.remove_by_right(&1);
-    }
-
-}
-
-pub fn mod_row3(mu: & mut MatrixWrapper<(u32, bool, u32, bool)>, v: Vec<usize>){
-    for x in v.iter(){
-        mu.row2.remove_by_right(&1);
-    }
-
-}
-
 
 
 //--------------------------------------------
@@ -519,4 +641,48 @@ pub fn matrix_node_coverage2(filename: &str) -> MatrixWrapper<u32>{
         mw.row_name.insert(x as u32, x);
     }
     mw
+}
+
+
+/// new matrix
+/// Make matrix from bit vector
+pub fn matrix_node_coverage23(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
+    let g: Vec<u8> = get_file_as_byte_vec(filename);
+    let k: Vec<ReaderBit> = wrapper_bool(&g);
+
+    for (i,x) in k.iter().enumerate(){
+        //println!("{}", x.name);
+        mw.column_name.insert(i as u32,x.name.clone());
+        let mut k : Vec<bool> = Vec::new();
+        for y in x.cc.iter(){
+
+            k.push(*y);
+        }
+        //println!("{}", k.len());
+        mw.matrix_bin.push(k);
+    }
+    for x in 0..mw.matrix_bin[0].len(){
+        h2.insert(x as u32, x);
+    }
+}
+
+
+
+pub fn matrix_node_coverage24(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
+    let g: Vec<u8> = get_file_as_byte_vec(filename);
+    let k: Vec<ReaderU16> = wrapper_u16(&g);
+
+    for (i,x) in k.iter().enumerate(){
+        //println!("{}", x.name);
+        mw.column_name.insert(i as u32,x.name.clone());
+        let mut k : Vec<u32> = Vec::new();
+        for y in x.cc.iter(){
+
+            k.push(*y as u32);
+        }
+        mw.matrix.matrix_core.push(k);
+    }
+    for x in 0..mw.matrix.matrix_core[0].len(){
+        h2.insert(x as u32, x);
+    }
 }

@@ -4,12 +4,13 @@ mod matrix_wrapper;
 mod helper;
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
-use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2};
+use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2, matrix_node10, MatrixWrapper2, write_matrix};
 use packing_lib::helper::u8_u16;
 use packing_lib::reader::get_file_as_byte_vec;
 use std::process;
 use crate::matrix::Matrix;
 use crate::helper::write_genomes;
+use bimap::BiMap;
 
 
 fn main() {
@@ -79,6 +80,11 @@ fn main() {
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
 
 
+    // Check if input
+    if !(matches.is_present("gfa") | matches.is_present("pack")){
+        eprintln!("No input");
+        process::exit(0x0100);
+    }
 
 
     // This is to decide which output
@@ -104,6 +110,52 @@ fn main() {
     } else {
         del = " ";
     }
+
+
+    let mut matrix = MatrixWrapper2::new();
+    let mut index_normal: BiMap<u32, usize> = BiMap::new();
+    let mut index_edge: BiMap<(u32, bool), usize> = BiMap::new();
+    let mut index_dir: BiMap<(u32, bool, u32, bool), usize> = BiMap::new();
+    if matches.is_present("gfa"){
+        let _input = matches.value_of("gfa").unwrap();
+        let _output: &str = matches.value_of("output").unwrap();
+        // Read the graph
+        let mut graph = NGfa::new();
+        graph.from_graph(_input);
+
+        // Make graph, wrapper
+        let mut gwrapper: GraphWrapper = GraphWrapper::new();
+        gwrapper.fromNGfa(&graph, del);
+        matrix_node10(&gwrapper, &graph, & mut matrix, & mut index_normal);
+    }
+
+
+    matrix.filter();
+
+
+    //Output
+    if matches.is_present("type"){
+        let values: &str = matches.value_of("type").unwrap();
+        if values.contains('n'){
+            write_matrix(& mut matrix, type_out,  _output, "node");
+        }
+        if values.contains('e'){
+            write_matrix(& mut matrix, type_out,  _output, "edge");
+
+        }
+        if values.contains('d'){
+            write_matrix(& mut matrix, type_out,  _output, "dir");
+        }
+    } else {
+        write_matrix(& mut matrix, type_out,  _output, "dir");
+    }
+
+    // THEN FILTER ROWS (BIMAP)
+
+
+
+
+
 
 
 
@@ -194,8 +246,9 @@ fn main() {
 mod main {
     use packing_lib::helper::u8_u16;
     use packing_lib::reader::get_file_as_byte_vec;
-    use crate::matrix_wrapper::{MatrixWrapper, matrix_node_coverage2, matrix_node, matrix_dir_node, matrix_edge, matrix_node_coverage, matrix_node10};
+    use crate::matrix_wrapper::{MatrixWrapper, matrix_node_coverage2, matrix_node, matrix_dir_node, matrix_edge, matrix_node_coverage, matrix_node10, MatrixWrapper2};
     use gfaR_wrapper::{GraphWrapper, NGfa};
+    use bimap::BiMap;
 
     #[test]
     fn exploration() {
@@ -220,7 +273,9 @@ mod main {
         eprintln!("LONG {}", gwrapper.genomes.len());
         eprintln!("LONG {}", graph.paths.len());
         let mat_node = matrix_edge(&gwrapper, &graph);
-        let (mut test, k) = matrix_node10(&gwrapper, &graph);
+        let mut test = MatrixWrapper2::new();
+        let mut k   = BiMap::new();
+        matrix_node10(&gwrapper, &graph, & mut test, & mut k);
         eprintln!("LOL {}", test.matrix.matrix_core.len());
         test.get_name();
         test.make_binary(1);

@@ -2,14 +2,14 @@ use gfaR_wrapper::GraphWrapper;
 use std::fs::File;
 use std::io::{Write, BufWriter};
 
-pub fn binary2dec_bed(vecc: &[&bool]) -> u8{
+pub fn binary2dec_bed(vecc: &[bool]) -> u8{
     let mut result: u8 = 0;
     let mut count = 0;
     for x in vecc.iter(){
         let t: u8 = 2;
-        result += (t.pow(count as u32)) * (**x as u8);
+        result += (t.pow(count as u32)) * (*x as u8);
         count += 1;
-        result += (t.pow(count as u32)) * (**x as u8);
+        result += (t.pow(count as u32)) * (*x as u8);
         count += 1;
     }
     result
@@ -45,13 +45,15 @@ pub fn transpose<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
 
 
 
-pub fn trans2<T>(v: &Vec<Vec<T>>) -> Vec<Vec<&T>>
+pub fn trans2<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
+where
+T: Clone
 {
-    let mut o: Vec<Vec<&T>> = Vec::new();
+    let mut o: Vec<Vec<T>> = Vec::new();
     for x in 0..v[0].len(){
-        let mut o2: Vec<&T> = Vec::new();
+        let mut o2: Vec<T> = Vec::new();
         for y in 0..v.len(){
-            o2.push(&v[y][x]);
+            o2.push(v[y][x].clone());
         }
         o.push(o2);
     }
