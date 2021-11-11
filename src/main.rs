@@ -2,15 +2,18 @@ mod matrix;
 mod counting;
 mod matrix_wrapper;
 mod helper;
+mod writer;
+
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
-use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2, matrix_node10, MatrixWrapper2, write_matrix};
+use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2, matrix_node10, MatrixWrapper2, write_matrix, matrix_edge2, matrix_dir_node2, matrix_pack_bit, matrix_pack_u16};
 use packing_lib::helper::u8_u16;
 use packing_lib::reader::get_file_as_byte_vec;
 use std::process;
 use crate::matrix::Matrix;
 use crate::helper::write_genomes;
 use bimap::BiMap;
+use crate::writer::write_reduce;
 
 
 fn main() {
@@ -34,7 +37,7 @@ fn main() {
             .long("delimter")
             .about("Delimter between genome and chromosome number")
             .takes_value(true))
-        .arg(Arg::new("names")
+        .arg(Arg::new("removeNames")
             .about("Only this"))
 
         .arg(Arg::new("type")
@@ -114,8 +117,8 @@ fn main() {
 
     let mut matrix = MatrixWrapper2::new();
     let mut index_normal: BiMap<u32, usize> = BiMap::new();
-    let mut index_edge: BiMap<(u32, bool), usize> = BiMap::new();
-    let mut index_dir: BiMap<(u32, bool, u32, bool), usize> = BiMap::new();
+    let mut index_dir: BiMap<(u32, bool), usize> = BiMap::new();
+    let mut index_edge: BiMap<(u32, bool, u32, bool), usize> = BiMap::new();
     if matches.is_present("gfa"){
         let _input = matches.value_of("gfa").unwrap();
         let _output: &str = matches.value_of("output").unwrap();
@@ -126,11 +129,51 @@ fn main() {
         // Make graph, wrapper
         let mut gwrapper: GraphWrapper = GraphWrapper::new();
         gwrapper.fromNGfa(&graph, del);
-        matrix_node10(&gwrapper, &graph, & mut matrix, & mut index_normal);
+        if matches.is_present("type"){
+            let values: &str = matches.value_of("type").unwrap();
+            if values.contains('n'){
+                matrix_node10(&gwrapper, &graph, & mut matrix, & mut index_normal);
+            }
+            if values.contains('e'){
+                matrix_edge2(&gwrapper, &graph, & mut matrix, & mut index_edge);
+
+            }
+            if values.contains('d'){
+                matrix_dir_node2(&gwrapper, &graph, & mut matrix, & mut index_dir);
+            }
+        } else {
+            matrix_node10(&gwrapper, &graph, & mut matrix, & mut index_normal);
+        }
+    } else {
+        if matches.is_present("pack") {
+            let file_pack = matches.value_of("pack").unwrap();
+            let j = u8_u16(&mut & get_file_as_byte_vec(file_pack)[7..9]);
+            if j == 0{
+                matrix_pack_u16(file_pack, & mut matrix, & mut index_normal);
+            } else {
+                matrix_pack_bit(file_pack, & mut matrix, & mut index_normal);
+            }
+        }
+    }
+
+    if matches.is_present("names"){
+        matrix.write_names();
+    }
+
+    if matches.is_present("removeNames"){
+        matrix.remove_genomes(matches.value_of("removeNames").unwrap())
     }
 
 
+    matrix.make_binary(1);
     matrix.filter();
+
+    if matches.is_present("reduce"){
+        let k = matrix.reduce_comb1();
+        write_reduce(&k.0, &k.1);
+    }
+
+
 
 
     //Output
@@ -147,11 +190,14 @@ fn main() {
             write_matrix(& mut matrix, type_out,  _output, "dir");
         }
     } else {
-        write_matrix(& mut matrix, type_out,  _output, "dir");
+        write_matrix(& mut matrix, type_out,  _output, "gfa2bin");
     }
 
-    // THEN FILTER ROWS (BIMAP)
 
+    // THEN FILTER ROWS (BIMAP)
+    if index_normal.is_empty(){
+
+    }
 
 
 
@@ -249,46 +295,35 @@ mod main {
     use crate::matrix_wrapper::{MatrixWrapper, matrix_node_coverage2, matrix_node, matrix_dir_node, matrix_edge, matrix_node_coverage, matrix_node10, MatrixWrapper2};
     use gfaR_wrapper::{GraphWrapper, NGfa};
     use bimap::BiMap;
+    use crate::writer::write_reduce;
 
     #[test]
-    fn exploration() {
-        let j = u8_u16(&mut & get_file_as_byte_vec("/home/svorbrugg_local/Rust/gfa2bin/pack.test.bin")[7..9]);
-        eprintln!("Number {}", j);
-        let mut gw: MatrixWrapper<u32> = matrix_node_coverage2("/home/svorbrugg_local/Rust/gfa2bin/pack.test.bin");
-
-        gw.matrix.filter();
-    }
-
-    #[test]
-    fn normal_run() {
-        let input = "/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa";
+    fn names() {
+        let mut index_normal: BiMap<u32, usize> = BiMap::new();
+        let mut matrix = MatrixWrapper2::new();
         let mut graph = NGfa::new();
-        graph.from_graph(input);
 
-        // Make graph, wrapper
+        graph.from_graph("/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa");
         let mut gwrapper: GraphWrapper = GraphWrapper::new();
-        gwrapper.fromNGfa(&graph, "_");
-        eprintln!("LONG {}", gwrapper.genomes.len());
-        //gwrapper.fromNGfa(&graph, " ");
-        eprintln!("LONG {}", gwrapper.genomes.len());
-        eprintln!("LONG {}", graph.paths.len());
-        let mat_node = matrix_edge(&gwrapper, &graph);
-        let mut test = MatrixWrapper2::new();
-        let mut k   = BiMap::new();
-        matrix_node10(&gwrapper, &graph, & mut test, & mut k);
-        eprintln!("LOL {}", test.matrix.matrix_core.len());
-        test.get_name();
-        test.make_binary(1);
-        test.reduce_comb1();
+        gwrapper.fromNGfa(&graph, " ");
+        if index_normal.is_empty(){
+            println!("HOLDDSADAS");
+        }
+        matrix_node10(&gwrapper, &graph, & mut matrix, & mut index_normal);
+        if index_normal.is_empty(){
+            println!("dajksdjakda");
+        } else {
+            println!("daksljdklasjdas");
+        }
+        matrix.write_names();
+        matrix.remove_genomes("holyshit12");
+
+        matrix.make_binary(1);
+        let k = matrix.reduce_comb1();
+        println!("HOLY {}", matrix.matrix_bin.len());
+        write_reduce(&k.0, &k.1);
 
     }
 
-    fn exploration2() {
-        let j = u8_u16(&mut & get_file_as_byte_vec("/home/svorbrugg_local/Rust/data/test1.txt")[7..9]);
-        eprintln!("Number {}", j);
-        let mut gw: MatrixWrapper<u32> = matrix_node_coverage("/home/svorbrugg_local/Rust/data/test1.txt");
-
-        gw.matrix.filter();
-    }
 
 }

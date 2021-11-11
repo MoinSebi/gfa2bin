@@ -1,13 +1,14 @@
 use crate::matrix::Matrix;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
-use std::io::{Write, BufWriter};
+use std::io::{Write, BufWriter, BufReader, BufRead};
 use std::fs::File;
 use gfaR_wrapper::{GraphWrapper, NGfa};
 use crate::helper::{binary2dec_bed, transpose, trans2};
 use packing_lib::reader::{ReaderU16, wrapper_bool, ReaderBit, wrapper_u16, get_file_as_byte_vec};
 use std::hash::Hash;
 use bimap::{BiHashMap, BiMap};
+use std::any::Any;
 
 
 /// Core data structure, which includes ever
@@ -18,9 +19,9 @@ pub struct MatrixWrapper2{
 
 }
 
-impl MatrixWrapper2
+impl MatrixWrapper2{
 
-{
+    /// Dummy initialization
     pub fn new() -> Self {
         let matrx = Matrix::new();
         let col: HashMap<u32, String> = HashMap::new();
@@ -32,28 +33,47 @@ impl MatrixWrapper2
         }
     }
 
-    pub fn get_name(&self) {
-        for x in self.column_name.iter(){
-            println!("{}", x.1);
+    pub fn remove_genomes(& mut self, filename: &str){
+        let file = File::open(filename).expect("ERROR: CAN NOT READ FILE\n");
+        let reader = BufReader::new(file);
+        let mut file_genomes: HashSet<String> = HashSet::new();
+        for line in reader.lines() {
+            let l = line.unwrap();
+            file_genomes.insert(l);
         }
-    }
+        let names = file_genomes.clone();
 
-    pub fn remove_genomes(& mut self, names: Vec<String>){
+
+        let names_r:HashSet<String> = self.column_name.values().cloned().collect();
+        let kk: HashSet<_> = names_r.difference(&names).collect();
+
+
         let mut to_remove = Vec::new();
-        let mut to_remove_string = Vec::new();
+        let mut rr = Vec::new();
         for x in self.column_name.iter(){
-            if names.contains(&x.1){
+            if names.contains(x.1){
                 to_remove.push(x.0.clone());
-                to_remove_string.push(x.0.clone());
             }
         }
-        for x in to_remove_string.iter(){
+
+        for x in self.column_name.iter(){
+            if kk.contains(x.1){
+                rr.push(x.0.clone());
+            }
+        }
+
+        println!("{:?}", to_remove);
+        println!("this is k {:?}", rr);
+        for x in rr.iter(){
             self.column_name.remove(&x);
         }
 
-        for (index, x) in to_remove.iter().enumerate(){
-            self.matrix.matrix_core.remove((x.clone() as usize) + index);
+        rr.sort();
+        println!("{:?}", rr);
+        for (index, x) in rr.iter().enumerate(){
+            self.matrix.matrix_core.remove((x.clone() as usize) - index);
         }
+        println!("{:?}", rr);
     }
 
     pub fn make_binary(& mut self, thresh: u32){
@@ -118,17 +138,22 @@ impl MatrixWrapper2
     }
 
 
-    pub fn reduce_comb1(&self) -> (Vec<usize>, Vec<usize>){
+    /// Reduce binary shit
+    pub fn reduce_comb1(& mut self) -> (Vec<usize>, Vec<usize>){
+        // Meta
+        // h1,h2 -> meta
+        // hm -> BiMap (vec -> usize)
         let mut hm: BiMap<_,_> = BiMap::new();
         let mut h1: Vec<usize> = Vec::new();
         let mut h2: Vec<usize> = Vec::new();
 
 
+        // Make SNPs Vector
+        println!("len1 {:?}", self.matrix_bin.len());
         let k: Vec<Vec<bool>>= trans2(&self.matrix_bin);
 
         let mut count = 0;
         for (index, x) in k.iter().enumerate() {
-            println!("{:?}", x);
             if ! hm.contains_left(x) {
                 hm.insert(x.clone(), count);
                 h1.push(index);
@@ -146,11 +171,22 @@ impl MatrixWrapper2
         }
 
 
-
         println!("Reduce10 {}", count);
         println!("Reduce10 {:?}", hm);
         println!("Reduce101231 {:?}", h);
+
+        self.matrix_bin = h;
         (h1,h2)
+    }
+
+
+    /// Write the names - helper function
+    pub fn write_names(&self) {
+        let f = File::create("holyshit1").expect("Unable to create file");
+        let mut f = BufWriter::new(f);
+        for x in self.column_name.iter(){
+            write!(f, "{}\n", x.1);
+        }
     }
 
 
@@ -646,7 +682,7 @@ pub fn matrix_node_coverage2(filename: &str) -> MatrixWrapper<u32>{
 
 /// new matrix
 /// Make matrix from bit vector
-pub fn matrix_node_coverage23(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
+pub fn matrix_pack_bit(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
     let g: Vec<u8> = get_file_as_byte_vec(filename);
     let k: Vec<ReaderBit> = wrapper_bool(&g);
 
@@ -668,7 +704,7 @@ pub fn matrix_node_coverage23(filename: &str, mw: & mut MatrixWrapper2, h2: & mu
 
 
 
-pub fn matrix_node_coverage24(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
+pub fn matrix_pack_u16(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
     let g: Vec<u8> = get_file_as_byte_vec(filename);
     let k: Vec<ReaderU16> = wrapper_u16(&g);
 
@@ -685,4 +721,15 @@ pub fn matrix_node_coverage24(filename: &str, mw: & mut MatrixWrapper2, h2: & mu
     for x in 0..mw.matrix.matrix_core[0].len(){
         h2.insert(x as u32, x);
     }
+}
+
+pub fn remove_bimap<T>(bm: & mut BiMap<T, usize>, v: Vec<T>)
+where
+T:  Debug + std::hash::Hash + std::cmp::Eq
+{
+
+    for x in v.iter(){
+        bm.remove_by_left(x);
+    }
+
 }
