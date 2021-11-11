@@ -2,8 +2,6 @@
 use std::fmt::{Debug};
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use crate::helper::{transpose, trans2};
-use std::collections::HashSet;
 
 
 /// Core structure
@@ -44,7 +42,7 @@ impl Matrix {
         new_matrix
     }
 
-
+    #[allow(dead_code)]
     /// MinMaxScaler
     pub fn min_max(&self) -> Vec<Vec<f32>>{
         let mut new_matrix:  Vec<Vec<f32>> = Vec::new();
@@ -65,7 +63,7 @@ impl Matrix {
         new_matrix
     }
 
-
+    #[allow(dead_code)]
     /// Write bimbam file
     pub fn write_bimbam(&self, out_prefix: &str, t: &str){
         println!("Writing bimbam file");
@@ -79,47 +77,6 @@ impl Matrix {
         }
     }
 
-    pub fn filter(&self) -> Vec<usize>{
-        eprintln!("Filtering");
-        println!("{} {}", self.matrix_core.len(), self.matrix_core[0].len());
-        let k: Vec<Vec<u32>>= trans2(&self.matrix_core);
-        let mut k2 = Vec::new();
-        let mut count = 0;
-        let mut kk: Vec<usize> = Vec::new();
-
-        for (i, x) in k.iter().enumerate(){
-            let mut sum = 0;
-            for y in x.iter() {
-                if y != &0 {
-                    sum += 1;
-                }
-            }
-            if sum as usize != x.len(){
-                k2.push(x.clone());
-            } else {
-                println!("{} {}", sum, x.len());
-                kk.push(i);
-                count += 1;
-            }
-
-
-        }
-        eprintln!("{}", kk.len());
-        let k3 = transpose(&k2);
-
-        eprintln!("Before {}  After {}", self.matrix_core[0].len(), k3[0].len());
-        return kk;
-    }
-
-    pub fn reduce_comb(&self){
-        let mut hs: HashSet<_> = HashSet::new();
-        let k: Vec<Vec<u32>>= transpose(&self.matrix_core);
-        for x in k.iter() {
-            hs.insert(x);
-        }
-        println!("Reduce {}", hs.len());
-        println!("Reduce {:?}", hs);
-    }
 
 
 

@@ -1,4 +1,3 @@
-use gfaR_wrapper::GraphWrapper;
 use std::fs::File;
 use std::io::{Write, BufWriter};
 use packing_lib::helper::u8_u16;
@@ -62,13 +61,6 @@ T: Clone
     return o;
 }
 
-pub fn write_genomes(graph: &GraphWrapper){
-    let f = File::create("dsjadkjaldkjakldsaljsdla").expect("Unable to create file");
-    let mut f = BufWriter::new(f);
-    for (k,v) in graph.genomes.iter(){
-        write!(f, "{}\n", k).expect("Not able to write");
-    }
-}
 
 pub fn get_thresh(filename: &str) -> u16{
     let size = u8_u16(&mut & get_file_as_byte_vec(filename)[7..9]);

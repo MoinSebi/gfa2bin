@@ -6,7 +6,7 @@ use std::fs::File;
 use gfaR_wrapper::{GraphWrapper, NGfa};
 use crate::helper::{binary2dec_bed, trans2};
 use packing_lib::reader::{ReaderU16, wrapper_bool, ReaderBit, wrapper_u16, get_file_as_byte_vec};
-use bimap::{BiHashMap, BiMap};
+use bimap::{BiMap};
 
 
 /// Core data structure, which includes ever
@@ -107,7 +107,6 @@ impl MatrixWrapper2{
         println!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
         let k:Vec<Vec<bool>>= trans2(&self.matrix_bin);
         let mut k2 = Vec::new();
-        let mut count = 0;
 
         let mut to_remove: Vec<u32> = Vec::new();
 
@@ -123,7 +122,6 @@ impl MatrixWrapper2{
             } else {
                 println!("{} {}", sum, x.len());
                 to_remove.push(i as u32);
-                count += 1;
             }
 
 
@@ -218,31 +216,6 @@ pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrap
 
 
 
-pub fn matrix_node11(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<u16, usize>) {
-    let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
-
-    h.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-    for (i, x) in h.iter().enumerate() {
-        let node: u16 = (*x as u16).clone();
-        h2.insert(node, i);
-    }
-
-    for (index, (name, paths)) in gwrapper.genomes.iter().enumerate(){
-        eprintln!("{}", name);
-        mw.column_name.insert( index as u32, name.clone());
-        let mut nody: Vec<u32> = vec![0; h2.len()] ;
-        for x in paths.iter(){
-            for y in x.nodes.iter(){
-                nody[*h2.get_by_left(&(*y as u16) ).unwrap()] += 1;
-
-            }
-        }
-        mw.matrix.matrix_core.push(nody);
-    }
-
-}
-
 /// Make matrix for directed nodes // check this
 pub fn matrix_dir_node2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, j: & mut BiMap<(u32, bool), usize>){
 
@@ -296,7 +269,7 @@ pub fn matrix_edge2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapp
 
 
     let mut v: HashSet<(u32, bool, u32, bool)> = HashSet::new();
-    for (i, x) in graph.edges.iter().enumerate(){
+    for x in graph.edges.iter(){
         let j: u32 = x.to;
         let j2: u32 = x.from;
         v.insert((j2, x.from_dir, j, x.to_dir));
@@ -331,7 +304,7 @@ pub fn matrix_edge2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapp
 }
 
 
-
+#[allow(dead_code)]
 /// Writing bim file
 /// Information: https://www.cog-genomics.org/plink/1.9/formats#bim
 pub fn write_bim<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
