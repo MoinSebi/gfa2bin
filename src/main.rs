@@ -6,12 +6,12 @@ mod writer;
 
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
-use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2, matrix_node10, MatrixWrapper2, write_matrix, matrix_edge2, matrix_dir_node2, matrix_pack_bit, matrix_pack_u16, remove_bimap};
 use std::process;
 use crate::matrix::Matrix;
 use crate::helper::{write_genomes, get_thresh};
 use bimap::BiMap;
 use crate::writer::{write_reduce, write_bimap};
+use crate::matrix_wrapper::{MatrixWrapper2, matrix_edge2, matrix_node10, matrix_dir_node2, matrix_pack_u16, matrix_pack_bit, write_matrix, remove_bimap};
 
 
 fn main() {
@@ -209,99 +209,14 @@ fn main() {
 
 
 
-
-
-
-
-
-    // Comment: Because different wrapper are used, we need to check everything by itself
-    let mut i: & mut Matrix;
-    // Read from a pack file
-    if matches.is_present("pack") {
-        let ii = matches.value_of("pack").unwrap();
-        let j =0;
-        let mut gw: MatrixWrapper<u32>;
-        if j == 0{
-            gw = matrix_node_coverage2(ii);
-        } else {
-            gw = matrix_node_coverage(ii);
-            gw.matrix.filter();
-
-        }
-        gw.matrix.filter();
-
-        gw.write(type_out, _output , "node");
-
-    } else if matches.is_present("gfa") {
-        let _input = matches.value_of("gfa").unwrap();
-        let _output: &str = matches.value_of("output").unwrap();
-        // Read the graph
-        let mut graph = NGfa::new();
-        graph.from_graph(_input);
-
-        // Make graph, wrapper
-        let mut gwrapper: GraphWrapper = GraphWrapper::new();
-        gwrapper.fromNGfa(&graph, del);
-
-        write_genomes(&gwrapper);
-
-        eprintln!("{} genomes and {} paths", gwrapper.genomes.len(), graph.paths.len());
-
-        // Make matrix
-        //let h = test1(&gwrapper, &graph);
-        let mut mat_node: MatrixWrapper<u32>;
-        let mut mat_dir: MatrixWrapper<(u32, bool)>;
-        let mut mat_edge: MatrixWrapper<(u32, bool, u32, bool)>;
-
-        if matches.is_present("type"){
-            let values: &str = matches.value_of("type").unwrap();
-            if values.contains('n'){
-                mat_node = matrix_node(&gwrapper, &graph);
-                i = & mut mat_node.matrix;
-                let rem = i.filter();
-                mat_node.remove_stuff(rem);
-                mat_node.write(type_out, _output, "node");
-            }
-            if values.contains('e'){
-                mat_edge = matrix_edge(&gwrapper, &graph);
-                i = & mut mat_edge.matrix;
-                let rem = i.filter();
-                mat_edge.remove_stuff(rem);
-                mat_edge.write(type_out, _output, "edge");
-
-            }
-            if values.contains('d'){
-                mat_dir = matrix_dir_node(&gwrapper, &graph);
-                i = & mut mat_dir.matrix;
-                let rem = i.filter();
-                mat_dir.remove_stuff(rem);
-                mat_dir.write(type_out,  _output, "dir");
-            }
-        } else {
-            mat_node = matrix_node(&gwrapper, &graph);
-            i = & mut mat_node.matrix;
-            let rem = i.filter();
-            mat_node.remove_stuff(rem);
-            mat_node.write(type_out, _output, "node");
-        }
-    }
-
-
-    else {
-        eprintln!("No input!");
-        process::exit(0x0100);
-    }
-
-
-
 }
 
 #[cfg(test)]
 mod main {
-    use crate::matrix_wrapper::{matrix_node_coverage2, matrix_node, matrix_dir_node, matrix_edge, matrix_node_coverage, matrix_node10, MatrixWrapper2};
     use gfaR_wrapper::{GraphWrapper, NGfa};
     use bimap::BiMap;
     use crate::writer::write_reduce;
+    use crate::matrix_wrapper::{MatrixWrapper2, matrix_node10};
 
     #[test]
     fn names() {
