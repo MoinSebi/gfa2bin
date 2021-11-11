@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::{Write, BufWriter};
 use crate::helper::{transpose, trans2};
 use std::collections::HashSet;
-use crate::matrix_wrapper::MatrixWrapper;
 
 
 /// Core structure
@@ -126,30 +125,9 @@ impl Matrix {
 
 }
 
-pub fn test1<T>(v: &MatrixWrapper<T>)
-where
-T: Debug
-{
-
-    let g = 1;
-    for x in 1..10{
-        println!("{}", x);
-    }
-}
 
 
 
-pub fn reduce_comb<T>(v: Vec<T>)
-    where
-        T: Debug + std::hash::Hash + std::cmp::Eq
-{
-    let mut hs: HashSet<_> = HashSet::new();
-    for x in v.iter() {
-        hs.insert(x);
-    }
-    println!("Reduce {}", hs.len());
-    println!("Reduce {:?}", hs);
-}
 
 
 

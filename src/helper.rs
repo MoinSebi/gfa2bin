@@ -1,6 +1,8 @@
 use gfaR_wrapper::GraphWrapper;
 use std::fs::File;
 use std::io::{Write, BufWriter};
+use packing_lib::helper::u8_u16;
+use packing_lib::reader::get_file_as_byte_vec;
 
 pub fn binary2dec_bed(vecc: &[bool]) -> u8{
     let mut result: u8 = 0;
@@ -66,5 +68,10 @@ pub fn write_genomes(graph: &GraphWrapper){
     for (k,v) in graph.genomes.iter(){
         write!(f, "{}\n", k).expect("Not able to write");
     }
+}
+
+pub fn get_thresh(filename: &str) -> u16{
+    let size = u8_u16(&mut & get_file_as_byte_vec(filename)[7..9]);
+    size
 }
 

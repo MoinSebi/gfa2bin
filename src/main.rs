@@ -6,14 +6,12 @@ mod writer;
 
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
-use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2, matrix_node10, MatrixWrapper2, write_matrix, matrix_edge2, matrix_dir_node2, matrix_pack_bit, matrix_pack_u16};
-use packing_lib::helper::u8_u16;
-use packing_lib::reader::get_file_as_byte_vec;
+use crate::matrix_wrapper::{matrix_node, matrix_edge, matrix_dir_node, MatrixWrapper, matrix_node_coverage, matrix_node_coverage2, matrix_node10, MatrixWrapper2, write_matrix, matrix_edge2, matrix_dir_node2, matrix_pack_bit, matrix_pack_u16, remove_bimap};
 use std::process;
 use crate::matrix::Matrix;
-use crate::helper::write_genomes;
+use crate::helper::{write_genomes, get_thresh};
 use bimap::BiMap;
-use crate::writer::write_reduce;
+use crate::writer::{write_reduce, write_bimap};
 
 
 fn main() {
@@ -147,7 +145,7 @@ fn main() {
     } else {
         if matches.is_present("pack") {
             let file_pack = matches.value_of("pack").unwrap();
-            let j = u8_u16(&mut & get_file_as_byte_vec(file_pack)[7..9]);
+            let j = get_thresh(&file_pack);
             if j == 0{
                 matrix_pack_u16(file_pack, & mut matrix, & mut index_normal);
             } else {
@@ -166,7 +164,10 @@ fn main() {
 
 
     matrix.make_binary(1);
-    matrix.filter();
+    let mut remove_this: Vec<u32> = Vec::new();
+    if matches.is_present("filter"){
+        remove_this = matrix.filter();
+    }
 
     if matches.is_present("reduce"){
         let k = matrix.reduce_comb1();
@@ -195,8 +196,15 @@ fn main() {
 
 
     // THEN FILTER ROWS (BIMAP)
-    if index_normal.is_empty(){
-
+    if !index_normal.is_empty(){
+        remove_bimap(& mut index_normal, remove_this);
+        write_bimap(& index_normal);
+    } else if !index_dir.is_empty() {
+        remove_bimap(& mut index_dir, remove_this);
+        write_bimap(& index_normal);
+    } else if !index_edge.is_empty() {
+        remove_bimap(& mut index_edge, remove_this);
+        write_bimap(& index_normal);
     }
 
 
@@ -211,7 +219,7 @@ fn main() {
     // Read from a pack file
     if matches.is_present("pack") {
         let ii = matches.value_of("pack").unwrap();
-        let j = u8_u16(&mut & get_file_as_byte_vec(ii)[7..9]);
+        let j =0;
         let mut gw: MatrixWrapper<u32>;
         if j == 0{
             gw = matrix_node_coverage2(ii);
@@ -290,9 +298,7 @@ fn main() {
 
 #[cfg(test)]
 mod main {
-    use packing_lib::helper::u8_u16;
-    use packing_lib::reader::get_file_as_byte_vec;
-    use crate::matrix_wrapper::{MatrixWrapper, matrix_node_coverage2, matrix_node, matrix_dir_node, matrix_edge, matrix_node_coverage, matrix_node10, MatrixWrapper2};
+    use crate::matrix_wrapper::{matrix_node_coverage2, matrix_node, matrix_dir_node, matrix_edge, matrix_node_coverage, matrix_node10, MatrixWrapper2};
     use gfaR_wrapper::{GraphWrapper, NGfa};
     use bimap::BiMap;
     use crate::writer::write_reduce;

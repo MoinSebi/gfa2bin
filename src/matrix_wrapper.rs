@@ -4,11 +4,9 @@ use std::fmt::Debug;
 use std::io::{Write, BufWriter, BufReader, BufRead};
 use std::fs::File;
 use gfaR_wrapper::{GraphWrapper, NGfa};
-use crate::helper::{binary2dec_bed, transpose, trans2};
+use crate::helper::{binary2dec_bed, trans2};
 use packing_lib::reader::{ReaderU16, wrapper_bool, ReaderBit, wrapper_u16, get_file_as_byte_vec};
-use std::hash::Hash;
 use bimap::{BiHashMap, BiMap};
-use std::any::Any;
 
 
 /// Core data structure, which includes ever
@@ -104,14 +102,14 @@ impl MatrixWrapper2{
 
     }
 
-    pub fn filter(&self) -> Vec<usize>{
+    pub fn filter(&self) -> Vec<u32>{
         eprintln!("Filtering");
         println!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
         let k:Vec<Vec<bool>>= trans2(&self.matrix_bin);
         let mut k2 = Vec::new();
         let mut count = 0;
 
-        let mut to_remove: Vec<usize> = Vec::new();
+        let mut to_remove: Vec<u32> = Vec::new();
 
         for (i, x) in k.iter().enumerate(){
             let mut sum = 0;
@@ -124,7 +122,7 @@ impl MatrixWrapper2{
                 k2.push(x.clone());
             } else {
                 println!("{} {}", sum, x.len());
-                to_remove.push(i);
+                to_remove.push(i as u32);
                 count += 1;
             }
 
@@ -185,7 +183,7 @@ impl MatrixWrapper2{
         let f = File::create("holyshit1").expect("Unable to create file");
         let mut f = BufWriter::new(f);
         for x in self.column_name.iter(){
-            write!(f, "{}\n", x.1);
+            write!(f, "{}\n", x.1).expect("Can not write file");
         }
     }
 
@@ -246,8 +244,8 @@ pub fn matrix_node11(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrap
 }
 
 /// Make matrix for directed nodes // check this
-pub fn matrix_dir_node2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<(u32, bool), usize>){
-    let mut j: BiMap<(u32, bool), usize> = BiMap::new();
+pub fn matrix_dir_node2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, j: & mut BiMap<(u32, bool), usize>){
+
 
     // Check all dir nodes
     let mut v: HashSet<(u32, bool)> = HashSet::new();
@@ -378,7 +376,7 @@ pub fn write_matrix(se: & mut MatrixWrapper2, what: &str, out_prefix: &str, t: &
         };
         se.write_bed(out_prefix, t);
         //se.write_bim(out_prefix, t);
-        //se.write_helper2(out_prefix);
+        write_helper2(se, out_prefix);
     }
     if (what == "bimbam") | (what == "all"){
         //se.matrix.write_bimbam(out_prefix, t);
@@ -723,13 +721,13 @@ pub fn matrix_pack_u16(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap
     }
 }
 
-pub fn remove_bimap<T>(bm: & mut BiMap<T, usize>, v: Vec<T>)
+pub fn remove_bimap<T>(bm: & mut BiMap<T, usize>, v: Vec<u32>)
 where
 T:  Debug + std::hash::Hash + std::cmp::Eq
 {
 
     for x in v.iter(){
-        bm.remove_by_left(x);
+        bm.remove_by_right(&(*x as usize));
     }
 
 }
