@@ -168,7 +168,9 @@ fn main() {
     }
 
 
-    matrix.make_binary(1);
+    if matrix.matrix_bin.is_empty(){
+        matrix.make_binary(1);
+    }
     let mut remove_this: Vec<u32> = Vec::new();
     if matches.is_present("filter"){
         remove_this = matrix.filter();
