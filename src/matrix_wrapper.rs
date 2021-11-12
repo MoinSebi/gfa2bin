@@ -86,6 +86,7 @@ impl MatrixWrapper2{
         // IND: 00000000, 1
 
         let mut buff: Vec<u8> = vec![108, 27, 1];
+        // Make SNP Vector
         let h2 = trans2( &self.matrix_bin);
         for x in h2.iter(){
             let j: Vec<&[bool]> = x.chunks(4).collect();
@@ -145,10 +146,11 @@ impl MatrixWrapper2{
 
 
         // Make SNPs Vector
-        println!("len1 {:?}", self.matrix_bin.len());
         let k: Vec<Vec<bool>>= trans2(&self.matrix_bin);
+        eprintln!("Starting size {}", k.len());
 
         let mut count = 0;
+        // Iterate over SNPs
         for (index, x) in k.iter().enumerate() {
             if ! hm.contains_left(x) {
                 hm.insert(x.clone(), count);
@@ -161,17 +163,17 @@ impl MatrixWrapper2{
                 h2.push(hm.get_by_left(x).unwrap().clone());
             }
         }
+
+        // Make a Vector (from 1 - len(x))
         let mut h : Vec<Vec<bool>> = Vec::new();
         for x in 0..hm.iter().len(){
             h.push(hm.get_by_right(&x).unwrap().clone());
         }
 
-
-        println!("Reduce10 {}", count);
-        println!("Reduce10 {:?}", hm);
-        println!("Reduce101231 {:?}", h);
-
-        self.matrix_bin = h;
+        // Make Acc vector
+        println!("Reduced size {:?}", h.len());
+        let h_convert = trans2(&h);
+        self.matrix_bin = h_convert;
         (h1,h2)
     }
 

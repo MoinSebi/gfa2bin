@@ -169,6 +169,7 @@ fn main() {
 
 
     if matrix.matrix_bin.is_empty(){
+        eprintln!("Make binary");
         matrix.make_binary(1);
     }
     let mut remove_this: Vec<u32> = Vec::new();
@@ -201,7 +202,7 @@ fn main() {
         write_matrix(& mut matrix, type_out,  _output, "gfa2bin");
     }
 
-
+    eprintln!("Remove and writing");
     // THEN FILTER ROWS (BIMAP)
     if !index_normal.is_empty(){
         remove_bimap(& mut index_normal, remove_this);
