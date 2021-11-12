@@ -49,6 +49,12 @@ fn main() {
             .long("Copy number threshold")
             .about("Normalize to this number")
             .takes_value(true))
+        .arg(Arg::new("reduce")
+            .long("reduce")
+            .about("Reduce to minimum"))
+        .arg(Arg::new("filter")
+            .long("filter")
+            .about("Filter this"))
 
         // Output
         .arg(Arg::new("genomes")
