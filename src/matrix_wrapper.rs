@@ -136,7 +136,7 @@ impl MatrixWrapper2{
 
 
     /// Reduce binary shit
-    pub fn reduce_comb1(& mut self) -> (Vec<usize>, Vec<usize>){
+    pub fn reduce_combinations(& mut self) -> (Vec<usize>, Vec<usize>){
         // Meta
         // h1,h2 -> meta
         // hm -> BiMap (vec -> usize)
@@ -179,8 +179,8 @@ impl MatrixWrapper2{
 
 
     /// Write the names - helper function
-    pub fn write_names(&self) {
-        let f = File::create("holyshit1").expect("Unable to create file");
+    pub fn write_names(&self, out_prefix: &str) {
+        let f = File::create([out_prefix,  "bim_names"].join(".")).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         for x in self.column_name.iter(){
             write!(f, "{}\n", x.1).expect("Can not write file");

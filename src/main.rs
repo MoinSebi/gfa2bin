@@ -160,7 +160,7 @@ fn main() {
     }
 
     if matches.is_present("names"){
-        matrix.write_names();
+        matrix.write_names(_output);
     }
 
     if matches.is_present("removeNames"){
@@ -178,8 +178,8 @@ fn main() {
     }
 
     if matches.is_present("reduce"){
-        let k = matrix.reduce_comb1();
-        write_reduce(&k.0, &k.1);
+        let k = matrix.reduce_combinations();
+        write_reduce(&k.0, &k.1, _output);
     }
 
 
@@ -247,13 +247,13 @@ mod main {
         } else {
             println!("daksljdklasjdas");
         }
-        matrix.write_names();
+        matrix.write_names("test_data/test");
         matrix.remove_genomes("holyshit12");
 
         matrix.make_binary(1);
-        let k = matrix.reduce_comb1();
+        let k = matrix.reduce_combinations();
         println!("HOLY {}", matrix.matrix_bin.len());
-        write_reduce(&k.0, &k.1);
+        write_reduce(&k.0, &k.1, "test_data/test");
 
     }
 

@@ -4,8 +4,8 @@ use bimap::BiMap;
 use std::fmt::Debug;
 
 /// Write the names - helper function
-pub fn write_reduce(h1: &Vec<usize>, h2:  &Vec<usize>) {
-    let f = File::create("reduce").expect("Unable to create file");
+pub fn write_reduce(h1: &Vec<usize>, h2:  &Vec<usize>, out_prefix: &str) {
+    let f = File::create([out_prefix,  "reduce"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     for x in 0..h1.len(){
         write!(f, "{}\t{}\n", h1[x], h2[x]).expect("Can not write file");
