@@ -313,33 +313,32 @@ pub fn write_bim<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 where
 T: Debug + std::hash::Hash + std::cmp::Eq + Ord
 {
+
+
     let f = File::create([out_prefix, t,  "bim"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
-    let mut helper_vec = Vec::new();
-
-    for (k,v) in ll.iter(){
-        helper_vec.push((v,k));
-    }
-    helper_vec.sort_by_key(|k| k.1);
-
-
-
-    for (k,_v) in helper_vec.iter(){
-        write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, k, "A", "T").expect("Not able to write ");
+    for x in 0..ll.len(){
+        write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, x, "A", "T").expect("Not able to write ");
     }
 
+}
 
-
-
+pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
+    where
+        T: Debug + std::hash::Hash + std::cmp::Eq + Ord
+{
 
 
     let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
-    for (v,k) in helper_vec.iter(){
-        write!(f, "{}\t{:?}\n", v, k).expect("Not able to write");
-
+    for x in 0..ll.len(){
+        write!(f, "{}\t{:?}\n", x, ll.get_by_right(&x).unwrap()).expect("Not able to write ");
     }
+
 }
+
+
+
 
 
 
@@ -350,8 +349,8 @@ pub fn write_matrix(se: & mut MatrixWrapper2, what: &str, out_prefix: &str, t: &
             se.matrix_bin = se.matrix.copy(1);
         };
         se.write_bed(out_prefix, t);
-        //se.write_bim(out_prefix, t);
-        write_helper2(se, out_prefix);
+
+        write_genome_order(se, out_prefix);
     }
     if (what == "bimbam") | (what == "all"){
         //se.matrix.write_bimbam(out_prefix, t);
@@ -359,8 +358,10 @@ pub fn write_matrix(se: & mut MatrixWrapper2, what: &str, out_prefix: &str, t: &
 }
 
 
-pub fn write_helper2(se: & mut MatrixWrapper2, out_prefix: &str){
-    let f = File::create([out_prefix,  "bimbim"].join(".")).expect("Unable to create file");
+
+/// Write names
+pub fn write_genome_order(se: & mut MatrixWrapper2, out_prefix: &str){
+    let f = File::create([out_prefix,  "bim_names"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     for x in 0..se.column_name.len(){
         write!(f, "{}\n", se.column_name.get(&(x as u32)).unwrap()).expect("Can not write file");

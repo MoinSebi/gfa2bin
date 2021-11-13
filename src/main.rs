@@ -10,7 +10,7 @@ use std::process;
 use crate::helper::{get_thresh};
 use bimap::BiMap;
 use crate::writer::{write_reduce, write_bimap};
-use crate::matrix_wrapper::{MatrixWrapper2, matrix_edge2, matrix_node10, matrix_dir_node2, matrix_pack_u16, matrix_pack_bit, write_matrix, remove_bimap};
+use crate::matrix_wrapper::{MatrixWrapper2, matrix_edge2, matrix_node10, matrix_dir_node2, matrix_pack_u16, matrix_pack_bit, write_matrix, remove_bimap, write_bim, write_bimhelper};
 
 
 fn main() {
@@ -206,13 +206,16 @@ fn main() {
     // THEN FILTER ROWS (BIMAP)
     if !index_normal.is_empty(){
         remove_bimap(& mut index_normal, remove_this);
-        write_bimap(& index_normal);
+        write_bim(& index_normal,_output, "test");
+        write_bimhelper(& index_normal, _output, "test");
     } else if !index_dir.is_empty() {
         remove_bimap(& mut index_dir, remove_this);
-        write_bimap(& index_normal);
+        write_bim(& index_dir,_output, "test");
+        write_bimhelper(& index_dir, _output, "test");
     } else if !index_edge.is_empty() {
         remove_bimap(& mut index_edge, remove_this);
-        write_bimap(& index_normal);
+        write_bim(& index_edge,_output, "test");
+        write_bimhelper(& index_edge, _output, "test");
     }
 
 
