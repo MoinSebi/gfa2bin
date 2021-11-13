@@ -50,6 +50,7 @@ pub fn trans2<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
 where
 T: Clone
 {
+    eprintln!("Transposing");
     let mut o: Vec<Vec<T>> = Vec::new();
     for x in 0..v[0].len(){
         let mut o2: Vec<T> = Vec::new();
