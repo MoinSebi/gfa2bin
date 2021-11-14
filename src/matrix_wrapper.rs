@@ -118,7 +118,6 @@ impl MatrixWrapper2{
     /// TODO
     /// Remove transpose and 
     pub fn filter(&self) -> Vec<u32>{
-        eprintln!("Filtering");
         println!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
         let k:Vec<Vec<bool>>= trans2(&self.matrix_bin);
         let mut k2 = Vec::new();
@@ -422,6 +421,7 @@ pub fn matrix_pack_bit(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap
         //println!("{}", k.len());
         mw.matrix_bin.push(x.cc.clone());
     }
+    eprintln!("Make BIMAP");
     for x in 0..mw.matrix_bin[0].len(){
         h2.insert(x as u32, x);
     }
@@ -440,6 +440,7 @@ pub fn matrix_pack_u16(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap
         let u: Vec<u32> = x.cc.clone().iter().map(|f| f.clone() as u32).collect();
         mw.matrix.matrix_core.push(u);
     }
+    eprintln!("Make BIMAP");
     for x in 0..mw.matrix.matrix_core[0].len(){
         h2.insert(x as u32, x);
     }

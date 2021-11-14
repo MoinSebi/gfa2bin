@@ -152,8 +152,10 @@ fn main() {
             let file_pack = matches.value_of("pack").unwrap();
             let j = get_thresh(&file_pack);
             if j == 0{
+                eprintln!("Reading u16 pack");
                 matrix_pack_u16(file_pack, & mut matrix, & mut index_normal);
             } else {
+                eprintln!("Reading bit pack");
                 matrix_pack_bit(file_pack, & mut matrix, & mut index_normal);
             }
         }
@@ -174,10 +176,12 @@ fn main() {
     }
     let mut remove_this: Vec<u32> = Vec::new();
     if matches.is_present("filter"){
+        eprintln!("Filtering");
         remove_this = matrix.filter();
     }
 
     if matches.is_present("reduce"){
+        eprintln!("Reducing combinations");
         let k = matrix.reduce_combinations_test();
         write_reduce(&k.0, &k.1, _output, "gfa2bin");
     }
