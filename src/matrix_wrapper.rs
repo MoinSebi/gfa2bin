@@ -436,12 +436,9 @@ pub fn matrix_pack_u16(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap
     for (i,x) in k.iter().enumerate(){
         //println!("{}", x.name);
         mw.column_name.insert(i as u32,x.name.clone());
-        let mut k : Vec<u32> = Vec::new();
-        for y in x.cc.iter(){
-
-            k.push(*y as u32);
-        }
-        mw.matrix.matrix_core.push(k);
+        // First map function use!
+        let u: Vec<u32> = x.cc.clone().iter().map(|f| f.clone() as u32).collect();
+        mw.matrix.matrix_core.push(u);
     }
     for x in 0..mw.matrix.matrix_core[0].len(){
         h2.insert(x as u32, x);
