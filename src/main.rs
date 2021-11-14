@@ -178,7 +178,7 @@ fn main() {
     }
 
     if matches.is_present("reduce"){
-        let k = matrix.reduce_combinations();
+        let k = matrix.reduce_combinations_test();
         write_reduce(&k.0, &k.1, _output, "gfa2bin");
     }
 
@@ -251,9 +251,14 @@ mod main {
         matrix.remove_genomes("holyshit12");
 
         matrix.make_binary(1);
-        let k = matrix.reduce_combinations();
+        let k = matrix.reduce_combinations_test();
+        let k2 = matrix.reduce_combinations();
+
+        println!("LL {} {}", k.1.len(), k2.1.len());
+        println!("LL {} {}", k.1[3671], k2.1[3671]);
+        println!("LL {} {}", k.0[3671], k2.0[3671]);
         println!("HOLY {}", matrix.matrix_bin.len());
-        write_reduce(&k.0, &k.1, "test_data/test", "gfa2bin");
+        write_reduce(&k2.0, &k2.1, "test_data/test", "gfa2bin");
 
     }
 

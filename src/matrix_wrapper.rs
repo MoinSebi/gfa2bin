@@ -31,6 +31,12 @@ impl MatrixWrapper2{
         }
     }
 
+
+    //--------------------------------------------------------------------------------
+    // Modification
+
+    /// Removing genomes
+    /// File name includes genome names which should be kept
     pub fn remove_genomes(& mut self, filename: &str){
         let file = File::open(filename).expect("ERROR: CAN NOT READ FILE\n");
         let reader = BufReader::new(file);
@@ -74,10 +80,15 @@ impl MatrixWrapper2{
         println!("{:?}", rr);
     }
 
+    /// Make a binary matrix (matrix_bin) with a threshold
+    /// This is needed for bed output
     pub fn make_binary(& mut self, thresh: u32){
         self.matrix_bin = self.matrix.copy(thresh);
     }
 
+
+    /// Write BED output
+    /// https://zzz.bwh.harvard.edu/plink/binary.shtml
     pub fn write_bed(&self, out_prefix: &str, t: &str){
         //hexdump -C test.bin
         // xxd -b file
@@ -103,6 +114,9 @@ impl MatrixWrapper2{
 
     }
 
+    /// Filter binary matrix
+    /// TODO
+    /// Remove transpose and 
     pub fn filter(&self) -> Vec<u32>{
         eprintln!("Filtering");
         println!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
@@ -132,6 +146,32 @@ impl MatrixWrapper2{
 
         eprintln!("Before {}  After {}", k[0].len(), k3[0].len());
         return to_remove;
+    }
+    pub fn reduce_combinations_test(& mut self) -> (Vec<usize>, Vec<usize>){
+        let mut hm: BiMap<_,_> = BiMap::new();
+        let mut h1: Vec<usize> = Vec::new();
+        let mut h2: Vec<usize> = Vec::new();
+
+        let mut count = 0;
+        for x in 0..self.matrix_bin[0].len(){
+            let mut u = Vec::new();
+            for y in 0..self.matrix_bin.len(){
+                u.push(self.matrix_bin[y][x]);
+            }
+            if ! hm.contains_left(&u) {
+                hm.insert(u, count);
+                h1.push(x);
+                h2.push(count);
+                count += 1;
+            } else {
+
+                h1.push(x);
+                h2.push(hm.get_by_left(&u).unwrap().clone());
+            }
+
+        }
+
+        (h1, h2)
     }
 
 
@@ -379,13 +419,8 @@ pub fn matrix_pack_bit(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap
     for (i,x) in k.iter().enumerate(){
         //println!("{}", x.name);
         mw.column_name.insert(i as u32,x.name.clone());
-        let mut k : Vec<bool> = Vec::new();
-        for y in x.cc.iter(){
-
-            k.push(*y);
-        }
         //println!("{}", k.len());
-        mw.matrix_bin.push(k);
+        mw.matrix_bin.push(x.cc.clone());
     }
     for x in 0..mw.matrix_bin[0].len(){
         h2.insert(x as u32, x);
