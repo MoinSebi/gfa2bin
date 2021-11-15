@@ -256,12 +256,13 @@ mod main {
 
         matrix.make_binary(1);
         let k = matrix.reduce_combinations_test();
+        println!("LL {} ", k.1.len());
         let k2 = matrix.reduce_combinations();
-
-        println!("LL {} {}", k.1.len(), k2.1.len());
-        println!("LL {} {}", k.1[3671], k2.1[3671]);
-        println!("LL {} {}", k.0[3671], k2.0[3671]);
-        println!("HOLY {}", matrix.matrix_bin.len());
+        // println!("LL dasd a{} ", matrix.matrix_bin.len());
+        // println!("LL {} {}", k.1.len(), k2.1.len());
+        // println!("LL {} {}", k.1[3671], k2.1[3671]);
+        // println!("LL {} {}", k.0[3671], k2.0[3671]);
+        // println!("HOLY {}", matrix.matrix_bin.len());
         write_reduce(&k2.0, &k2.1, "test_data/test", "gfa2bin");
 
     }

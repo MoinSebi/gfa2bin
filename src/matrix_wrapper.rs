@@ -150,7 +150,7 @@ impl MatrixWrapper2{
         let mut hm: BiMap<_,_> = BiMap::new();
         let mut h1: Vec<usize> = Vec::new();
         let mut h2: Vec<usize> = Vec::new();
-        eprintln!("Starting size {}", self.matrix_bin[0].len());
+        eprintln!("Starting size2 {}", self.matrix_bin[0].len());
 
         let mut count = 0;
         for x in 0..self.matrix_bin[0].len(){
@@ -174,7 +174,9 @@ impl MatrixWrapper2{
         for x in 0..hm.iter().len(){
             h.push(hm.get_by_right(&x).unwrap().clone());
         }
+        eprintln!("Starting size2 {}", self.matrix_bin[0].len());
         self.matrix_bin = trans2(&h);
+        println!("djsakdhsja {}", self.matrix_bin.len());
 
         (h1, h2)
     }
@@ -191,7 +193,9 @@ impl MatrixWrapper2{
 
 
         // Make SNPs Vector
+        println!("reduce it djsakdhsja {}", self.matrix_bin.len());
         let k: Vec<Vec<bool>>= trans2(&self.matrix_bin);
+        println!("reduce it djsakdhsja2 {}", self.matrix_bin.len());
         eprintln!("Starting size {}", k.len());
 
         let mut count = 0;
@@ -265,6 +269,7 @@ pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrap
 
 /// Make matrix for directed nodes // check this
 pub fn matrix_dir_node2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, j: & mut BiMap<(u32, bool), usize>){
+
 
 
     // Check all dir nodes
