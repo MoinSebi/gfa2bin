@@ -150,6 +150,7 @@ impl MatrixWrapper2{
         let mut hm: BiMap<_,_> = BiMap::new();
         let mut h1: Vec<usize> = Vec::new();
         let mut h2: Vec<usize> = Vec::new();
+        eprintln!("Starting size {}", self.matrix_bin[0].len());
 
         let mut count = 0;
         for x in 0..self.matrix_bin[0].len(){
@@ -169,6 +170,11 @@ impl MatrixWrapper2{
             }
 
         }
+        let mut h : Vec<Vec<bool>> = Vec::new();
+        for x in 0..hm.iter().len(){
+            h.push(hm.get_by_right(&x).unwrap().clone());
+        }
+        self.matrix_bin = trans2(&h);
 
         (h1, h2)
     }
