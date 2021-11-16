@@ -35,6 +35,7 @@ fn main() {
             .about("Delimter between genome and chromosome number")
             .takes_value(true))
         .arg(Arg::new("removeNames")
+            .long("rgenomes")
             .about("Only this"))
 
         .arg(Arg::new("type")
@@ -58,6 +59,7 @@ fn main() {
 
         // Output
         .arg(Arg::new("genomes")
+            .long("genomes")
             .about("Output just the genomes"))
         .arg(Arg::new("output")
             .short('o')
