@@ -108,7 +108,7 @@ impl MatrixWrapper2{
             //println!("x {}", x.len());
         }
 
-
+        println!("{}", [out_prefix, t, "bed"].join("."));
         let mut file = File::create([out_prefix, t, "bed"].join(".")).expect("Not able to write ");
         file.write_all(&buff).expect("Not able to write ")
 
@@ -176,9 +176,25 @@ impl MatrixWrapper2{
         }
         eprintln!("Starting size2 {}", self.matrix_bin[0].len());
         self.matrix_bin = trans2(&h);
+
+
         println!("djsakdhsja {}", self.matrix_bin.len());
 
         (h1, h2)
+    }
+
+    #[allow(dead_code)]
+    /// Writing bim file
+    /// Information: https://www.cog-genomics.org/plink/1.9/formats#bim
+    pub fn write_bim(&self, out_prefix: &str, t: &str) {
+
+
+        let f = File::create([out_prefix, t,  "bim"].join(".")).expect("Unable to create file");
+        let mut f = BufWriter::new(f);
+        for x in 0..self.matrix_bin[0].len(){
+            write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, x, "A", "T").expect("Not able to write ");
+        }
+
     }
 
 
@@ -399,6 +415,7 @@ pub fn write_matrix(se: & mut MatrixWrapper2, what: &str, out_prefix: &str, t: &
             se.matrix_bin = se.matrix.copy(1);
         };
         se.write_bed(out_prefix, t);
+        se.write_bim(out_prefix, "gfa2bin");
 
         write_genome_order(se, out_prefix);
     }

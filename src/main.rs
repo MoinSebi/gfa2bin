@@ -212,15 +212,15 @@ fn main() {
     // THEN FILTER ROWS (BIMAP)
     if !index_normal.is_empty(){
         remove_bimap(& mut index_normal, remove_this);
-        write_bim(& index_normal,_output, "gfa2bin");
+        //write_bim(& index_normal,_output, "gfa2bin");
         write_bimhelper(& index_normal, _output, "test");
     } else if !index_dir.is_empty() {
         remove_bimap(& mut index_dir, remove_this);
-        write_bim(& index_dir,_output, "gfa2bin");
+        //write_bim(& index_dir,_output, "gfa2bin");
         write_bimhelper(& index_dir, _output, "test");
     } else if !index_edge.is_empty() {
         remove_bimap(& mut index_edge, remove_this);
-        write_bim(& index_edge,_output, "gfa2bin");
+        //write_bim(& index_edge,_output, "gfa2bin");
         write_bimhelper(& index_edge, _output, "test");
     }
 
