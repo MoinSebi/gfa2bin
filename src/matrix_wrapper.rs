@@ -178,7 +178,7 @@ impl MatrixWrapper2{
         self.matrix_bin = trans2(&h);
 
 
-        println!("djsakdhsja {}", self.matrix_bin.len());
+        println!("djsakdhsja {}", self.matrix_bin[0].len());
 
         (h1, h2)
     }

@@ -57,6 +57,13 @@ fn main() {
             .long("filter")
             .about("Filter this"))
 
+        .subcommand(App::new("covert")
+            .about("controls testing features")
+            .version("1.3")
+            .author("Someone E. <someone_else@other.com>")
+            .arg(Arg::new("debug")
+                .short('d')
+                .about("print debug information verbosely")))
         // Output
         .arg(Arg::new("genomes")
             .long("genomes")
