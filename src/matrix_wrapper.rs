@@ -95,6 +95,20 @@ impl MatrixWrapper2{
 
     }
 
+    /// Split matrix matrix into multiple ones
+/// For smaller data and faster read of GEMMA
+    pub fn split_matrix(&self, number: usize) -> Vec<&[Vec<u32>]>{
+        let size = self.matrix.matrix_core.len()/number;
+        let mut h = Vec::new();
+        let mut tnumb = 0;
+        for x in 0..number{
+            h.push(&self.matrix.matrix_core[tnumb..tnumb+size]);
+        }
+        let j = self.matrix.matrix_core.chunks(10);
+        h
+
+    }
+
     /// Make a binary matrix (matrix_bin) with a threshold
     /// This is needed for bed output
     pub fn make_binary(& mut self, thresh: u32){
