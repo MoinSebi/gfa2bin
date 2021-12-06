@@ -80,6 +80,21 @@ impl MatrixWrapper2{
         println!("{:?}", rr);
     }
 
+
+    /// Split bin matrix into multiple ones
+    /// For smaller data and faster read of GEMMA
+    pub fn split_bin(&self, number: usize) -> Vec<&[Vec<bool>]>{
+        let size = self.matrix_bin.len()/number;
+        let mut h = Vec::new();
+        let mut tnumb = 0;
+        for x in 0..number{
+            h.push(&self.matrix_bin[tnumb..tnumb+size]);
+        }
+        let j = self.matrix_bin.chunks(10);
+        h
+
+    }
+
     /// Make a binary matrix (matrix_bin) with a threshold
     /// This is needed for bed output
     pub fn make_binary(& mut self, thresh: u32){
