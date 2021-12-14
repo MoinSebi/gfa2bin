@@ -7,6 +7,8 @@ use gfaR_wrapper::{GraphWrapper, NGfa};
 use crate::helper::{binary2dec_bed, trans2};
 use packing_lib::reader::{ReaderU16, wrapper_bool, ReaderBit, wrapper_u16, get_file_as_byte_vec};
 use bimap::{BiMap};
+use std::slice::Chunks;
+use std::mem;
 
 
 /// Core data structure, which includes ever
@@ -83,15 +85,16 @@ impl MatrixWrapper2{
 
     /// Split bin matrix into multiple ones
     /// For smaller data and faster read of GEMMA
-    pub fn split_bin(&self, number: usize) -> Vec<&[Vec<bool>]>{
+    pub fn split_bin(&self, number: usize) -> Chunks<Vec<bool>>{
         let size = self.matrix_bin.len()/number;
         let mut h = Vec::new();
         let mut tnumb = 0;
         for x in 0..number{
             h.push(&self.matrix_bin[tnumb..tnumb+size]);
         }
+
         let j = self.matrix_bin.chunks(10);
-        h
+        j
 
     }
 
@@ -175,6 +178,8 @@ impl MatrixWrapper2{
         eprintln!("Before {}  After {}", k[0].len(), k3[0].len());
         return to_remove;
     }
+
+
     pub fn reduce_combinations_test(& mut self) -> (Vec<usize>, Vec<usize>){
         let mut hm: BiMap<_,_> = BiMap::new();
         let mut h1: Vec<usize> = Vec::new();
@@ -286,6 +291,11 @@ impl MatrixWrapper2{
 }
 
 
+//--------------------------------------------------------------------------------------------------
+// Matrix generation
+
+
+/// Matrix constructor from nodes
 pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
     let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
 
@@ -312,7 +322,7 @@ pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrap
 
 
 
-/// Make matrix for directed nodes // check this
+/// Matrix constructor from nodes
 pub fn matrix_dir_node2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, j: & mut BiMap<(u32, bool), usize>){
 
 
@@ -360,7 +370,7 @@ pub fn matrix_dir_node2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixW
 }
 
 
-/// Make matrix for edges
+/// Matrix constructor from edges
 pub fn matrix_edge2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<(u32, bool, u32, bool), usize>){
 
 
@@ -401,6 +411,64 @@ pub fn matrix_edge2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapp
 }
 
 
+/// Matrix constructor from mappings (u16)
+pub fn matrix_pack_bit(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
+    let g: Vec<u8> = get_file_as_byte_vec(filename);
+    let k: Vec<ReaderBit> = wrapper_bool(&g);
+
+    for (i,x) in k.iter().enumerate(){
+        //println!("{}", x.name);
+        mw.column_name.insert(i as u32,x.name.clone());
+        //println!("{}", k.len());
+        mw.matrix_bin.push(x.cc.clone());
+    }
+    eprintln!("Make BIMAP");
+    eprintln!("size {}", mw.matrix_bin[0].len());
+    for x in 0..mw.matrix_bin[0].len(){
+        h2.insert(x as u32, x);
+    }
+}
+
+pub fn makeBIMAP(maxlen: usize){
+    let mut j1: hashbrown::HashMap<u32, usize> = hashbrown::HashMap::new();
+    let mut j2: hashbrown::HashMap<usize, u32> = hashbrown::HashMap::new();
+    for x in 0..maxlen{
+        j1.insert(x as u32, x.clone());
+        j2.insert(x, x as u32);
+    }
+
+}
+
+
+/// Matrix constructor from mappings (u16)
+pub fn matrix_pack_u16(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
+    let g: Vec<u8> = get_file_as_byte_vec(filename);
+    let k: Vec<ReaderU16> = wrapper_u16(&g);
+
+    for (i,x) in k.iter().enumerate(){
+        //println!("{}", x.name);
+        mw.column_name.insert(i as u32,x.name.clone());
+        // First map function use!
+        let u: Vec<u32> = x.cc.clone().iter().map(|f| f.clone() as u32).collect();
+        mw.matrix.matrix_core.push(u);
+    }
+    eprintln!("Make BIMAP");
+    for x in 0..mw.matrix.matrix_core[0].len(){
+        h2.insert(x as u32, x);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------------
+// This is for writing (may move later)
 #[allow(dead_code)]
 /// Writing bim file
 /// Information: https://www.cog-genomics.org/plink/1.9/formats#bim
@@ -418,6 +486,8 @@ T: Debug + std::hash::Hash + std::cmp::Eq + Ord
 
 }
 
+/// Writing bim helper
+/// Index -> Feature
 pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
     where
         T: Debug + std::hash::Hash + std::cmp::Eq + Ord
@@ -436,8 +506,8 @@ pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 
 
 
-
 /// Writing file wrapper
+/// BED + BIM + GENOME ORDER
 pub fn write_matrix(se: & mut MatrixWrapper2, what: &str, out_prefix: &str, t: &str){
     if (what == "bed") | (what == "all"){
         if se.matrix_bin.is_empty(){
@@ -455,7 +525,7 @@ pub fn write_matrix(se: & mut MatrixWrapper2, what: &str, out_prefix: &str, t: &
 
 
 
-/// Write names
+/// Write the order of genomes
 pub fn write_genome_order(se: & mut MatrixWrapper2, out_prefix: &str){
     let f = File::create([out_prefix,  "bim_names"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
@@ -466,43 +536,11 @@ pub fn write_genome_order(se: & mut MatrixWrapper2, out_prefix: &str){
 
 
 
-/// new matrix
-/// Make matrix from bit vector
-pub fn matrix_pack_bit(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
-    let g: Vec<u8> = get_file_as_byte_vec(filename);
-    let k: Vec<ReaderBit> = wrapper_bool(&g);
 
-    for (i,x) in k.iter().enumerate(){
-        //println!("{}", x.name);
-        mw.column_name.insert(i as u32,x.name.clone());
-        //println!("{}", k.len());
-        mw.matrix_bin.push(x.cc.clone());
-    }
-    eprintln!("Make BIMAP");
-    for x in 0..mw.matrix_bin[0].len(){
-        h2.insert(x as u32, x);
-    }
-}
+//------------------------------------------------------------------------------------------------------------------------
+// Modification
 
-
-
-pub fn matrix_pack_u16(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
-    let g: Vec<u8> = get_file_as_byte_vec(filename);
-    let k: Vec<ReaderU16> = wrapper_u16(&g);
-
-    for (i,x) in k.iter().enumerate(){
-        //println!("{}", x.name);
-        mw.column_name.insert(i as u32,x.name.clone());
-        // First map function use!
-        let u: Vec<u32> = x.cc.clone().iter().map(|f| f.clone() as u32).collect();
-        mw.matrix.matrix_core.push(u);
-    }
-    eprintln!("Make BIMAP");
-    for x in 0..mw.matrix.matrix_core[0].len(){
-        h2.insert(x as u32, x);
-    }
-}
-
+/// Remove entries from bimap
 pub fn remove_bimap<T>(bm: & mut BiMap<T, usize>, v: Vec<u32>)
 where
 T:  Debug + std::hash::Hash + std::cmp::Eq

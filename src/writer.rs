@@ -2,7 +2,8 @@ use std::fs::File;
 use std::io::{Write, BufWriter};
 use bimap::BiMap;
 use std::fmt::Debug;
-use crate::helper::{trans2, binary2dec_bed};
+use crate::helper::{trans2, binary2dec_bed, trans3};
+use std::slice::Chunks;
 
 /// Write the names - helper function
 pub fn write_reduce(h1: &Vec<usize>, h2:  &Vec<usize>, out_prefix: &str, t: &str) {
@@ -42,7 +43,7 @@ pub fn write_bimap2<T>(bm: &BiMap<T, usize>, till: usize, number: usize)
 
 /// For multiple bed files
 /// Splitting
-pub fn write_bed(data: &Vec<Vec<bool>>, out_prefix: &str, t: &str){
+pub fn write_bed(data: &[Vec<bool>], out_prefix: &str, t: &str){
     //hexdump -C test.bin
     // xxd -b file
     // xxd file
@@ -51,7 +52,7 @@ pub fn write_bed(data: &Vec<Vec<bool>>, out_prefix: &str, t: &str){
 
     let mut buff: Vec<u8> = vec![108, 27, 1];
     // Make SNP Vector
-    let h2 = trans2( &data);
+    let h2 = trans3( &data);
     for x in h2.iter(){
         let j: Vec<&[bool]> = x.chunks(4).collect();
         for x in j{
