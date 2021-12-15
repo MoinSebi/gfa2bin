@@ -3,6 +3,7 @@ mod counting;
 mod matrix_wrapper;
 mod helper;
 mod writer;
+mod find;
 
 use clap::{App, Arg};
 use gfaR_wrapper::{NGfa, GraphWrapper};
@@ -95,8 +96,8 @@ fn main() {
             .about("Find significant hits")
             .arg(Arg::new("GWAS Output")
                 .short('g')
-                .long("gemma")
-                .about("gemma")
+                .long("GEMMA")
+                .about("GEMMA ouptu file")
                 .takes_value(true))
             .arg(Arg::new("Helper")
                 .about("helper file")
