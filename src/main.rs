@@ -10,7 +10,7 @@ use gfaR_wrapper::{NGfa, GraphWrapper};
 use std::process;
 use crate::helper::{get_thresh};
 use bimap::BiMap;
-use crate::writer::{write_reduce, write_bimap, write_bed};
+use crate::writer::{write_reduce, write_bimap, write_bed_split};
 use crate::matrix_wrapper::{MatrixWrapper2, matrix_edge2, matrix_node10, matrix_dir_node2, matrix_pack_u16, matrix_pack_bit, write_matrix, remove_bimap, write_bim, write_bimhelper};
 use std::env::args;
 
@@ -219,7 +219,7 @@ fn main() {
             eprintln!("Splitting matrix");
             let o = matrix.split_bin(10);
             for (index, x) in o.enumerate() {
-                write_bed(x, "testsplit", &*index.to_string())
+                write_bed_split(x, "testsplit", &*index.to_string())
             }
         }
 

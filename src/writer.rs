@@ -14,6 +14,8 @@ pub fn write_reduce(h1: &Vec<usize>, h2:  &Vec<usize>, out_prefix: &str, t: &str
     }
 }
 
+/// Write BIMAP (index)
+/// This function may be redundant in the future
 pub fn write_bimap<T>(bm: &BiMap<T, usize>)
     where
         T:  Debug + std::hash::Hash + std::cmp::Eq
@@ -25,7 +27,7 @@ pub fn write_bimap<T>(bm: &BiMap<T, usize>)
     }
 }
 
-// Split function
+/// Write BIMAP (but you can split)
 pub fn write_bimap2<T>(bm: &BiMap<T, usize>, till: usize, number: usize)
     where
         T:  Debug + std::hash::Hash + std::cmp::Eq
@@ -43,7 +45,7 @@ pub fn write_bimap2<T>(bm: &BiMap<T, usize>, till: usize, number: usize)
 
 /// For multiple bed files
 /// Splitting
-pub fn write_bed(data: &[Vec<bool>], out_prefix: &str, t: &str){
+pub fn write_bed_split(data: &[Vec<bool>], out_prefix: &str, t: &str){
     //hexdump -C test.bin
     // xxd -b file
     // xxd file
@@ -65,5 +67,38 @@ pub fn write_bed(data: &[Vec<bool>], out_prefix: &str, t: &str){
     println!("{}", [out_prefix, t, "bed"].join("."));
     let mut file = File::create([out_prefix, t, "bed"].join(".")).expect("Not able to write ");
     file.write_all(&buff).expect("Not able to write ")
+
+}
+
+/// For multiple bed files
+/// Splitting
+pub fn write_bed_split2(data: &[Vec<bool>], out_prefix: &str, t: &str){
+    //hexdump -C test.bin
+    // xxd -b file
+    // xxd file
+    // SNP: 00000001 , 0
+    // IND: 00000000, 1
+
+    let mut buff: Vec<u8> = vec![108, 27, 1];
+    // Make SNP Vector
+    let h2 = trans3( &data);
+    let mut o: Vec<Vec<bool>> = Vec::new();
+    for x in 0..data[0].len(){
+        let mut o2: Vec<bool> = Vec::new();
+        for y in 0..v.len(){
+            o2.push(v[y][x].clone());
+        }
+        let j: Vec<&[bool]> = o2.chunks(4).collect();
+        for x2 in j{
+            buff.push(binary2dec_bed(x2));
+        }
+
+    }
+
+
+    println!("{}", [out_prefix, t, "bed"].join("."));
+    let mut file = File::create([out_prefix, t, "bed"].join(".")).expect("Not able to write ");
+    file.write_all(&buff).expect("Not able to write ")
+
 
 }
