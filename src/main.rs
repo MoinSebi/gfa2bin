@@ -304,5 +304,17 @@ mod main {
 
     }
 
+    fn read_gfa(){
+        let mut graph = NGfa::new();
+        graph.from_graph("/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa");
+        let mut index_normal: BiMap<u32, usize> = BiMap::new();
+        let mut gwrapper: GraphWrapper = GraphWrapper::new();
+        let mut matrix = MatrixWrapper2::new();
+
+        gwrapper.fromNGfa(&graph, "_");
+        matrix_node10(&gwrapper, &graph, &mut matrix, &mut index_normal);
+
+    }
+
 
 }
