@@ -148,7 +148,8 @@ impl MatrixWrapper2{
 
     /// Filter binary matrix
     /// TODO
-    /// Remove transpose and 
+    /// Remove transpose and
+    /// A lot of transposing -> slow
     pub fn filter(&self) -> Vec<u32>{
         println!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
         let k:Vec<Vec<bool>>= trans2(&self.matrix_bin);
@@ -488,6 +489,7 @@ T: Debug + std::hash::Hash + std::cmp::Eq + Ord
 
 /// Writing bim helper
 /// Index -> Feature
+/// Index because wrongly removed
 pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
     where
         T: Debug + std::hash::Hash + std::cmp::Eq + Ord
@@ -496,7 +498,7 @@ pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 
     let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
-    for x in 0..ll.len(){
+    for x in 0..ll.right_values(){
         write!(f, "{}\t{:?}\n", x, ll.get_by_right(&x).unwrap()).expect("Not able to write ");
     }
 
