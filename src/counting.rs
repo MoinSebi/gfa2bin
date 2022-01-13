@@ -2,6 +2,7 @@ use std::collections::{HashMap};
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::borrow::Borrow;
 
 
 #[allow(dead_code)]
@@ -18,16 +19,23 @@ pub fn counting_test(input: &[&str], worker_count: usize) -> HashMap<char, usize
     let r = Arc::new(Mutex::new(&v));
     let chunks = input.chunks((input.len() / worker_count).max(1));
     let mut handles: Vec<_> = Vec::new();
+    let mut dict:HashMap<char, u32> = HashMap::new();
+    dict.insert('a', 10 );
+
+    let r2 = Arc::new(dict);
 
     for chunk in chunks {
         let string = chunk.join("");
         let result = Arc::clone(&result);
         let r = Arc::clone(&r);
+        let result3 = Arc::clone(&r2);
         let handle = thread::spawn(move || {
             let mut map: HashMap<char, usize> = HashMap::new();
             // create a HashMap for this chunk
             for c in string.chars().filter(|c| c.is_alphabetic()) {
                 *map.entry(c.to_ascii_lowercase()).or_default() += 1;
+                let k = result.lock().unwrap();
+
             }
             // add the HashMap of this chunk to the HashMap that is wrapped by the Mutex
             let mut result = result.lock().unwrap();

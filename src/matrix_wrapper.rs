@@ -146,6 +146,13 @@ impl MatrixWrapper2{
 
     }
 
+    pub fn wrapper_write_bed_split(&self, out_prefix: &str, t: &str){
+        let chunks = self.matrix_bin.chunks(10);
+        for chunk in chunks{
+            
+        }
+    }
+
     /// Filter binary matrix
     /// TODO
     /// Remove transpose and
@@ -498,7 +505,7 @@ pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 
     let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
-    for x in 0..ll.right_values(){
+    for x in 0..ll.right_values().len(){
         write!(f, "{}\t{:?}\n", x, ll.get_by_right(&x).unwrap()).expect("Not able to write ");
     }
 
