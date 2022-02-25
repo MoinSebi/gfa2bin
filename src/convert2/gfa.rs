@@ -1,6 +1,11 @@
+use std::sync::{Arc, Mutex};
+use std::thread;
+use bifurcation::helper::{chunk_inplace, get_all_pairs};
 use bimap::BiMap;
-use gfaR_wrapper::{GraphWrapper, NGfa};
+use bitvec::ptr::Mut;
+use gfaR_wrapper::{GraphWrapper, NGfa, NPath};
 use hashbrown::HashSet;
+use log::debug;
 use crate::MatrixWrapper;
 
 
@@ -33,7 +38,7 @@ impl MatrixWrapper{
 /// Matrix constructor from nodes
 /// # Arguments
 /// * 'gwrapper' - Graph wrapper data structure
-pub fn matrix_node(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, h2: & mut BiMap<u32, usize>) {
+pub fn matrix_node_wrapper(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, h2: & mut BiMap<u32, usize>) {
     let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
 
     h.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -55,6 +60,73 @@ pub fn matrix_node(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrappe
         }
         mw.matrix.matrix_core.push(nody);
     }
+}
+
+
+pub fn matrix_node_wrapper2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, h2: & mut BiMap<u32, usize>, threads: &usize) {
+    let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
+
+    h.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+    for (i, x) in h.iter().enumerate() {
+        let node: u32 = x.clone();
+        h2.insert(node, i);
+    }
+
+    let chunks = chunk_inplace(graph.paths.clone(), threads.clone());
+
+
+    let result = Arc::new(Mutex::new(mw.clone()));
+    let wrapper = Arc::new(gwrapper);
+    let mut handles = Vec::new();
+    let result2 = Arc::new(Mutex::new(vec![]));
+    let k = Arc::new(h2.clone());
+
+
+    for chunk in chunks{
+        let r = result.clone();
+        let r2 = result2.clone();
+        let wra = wrapper.clone();
+        let rro = k.clone();
+        let handle = thread::spawn(move || {
+            for pair in chunk.iter(){
+                debug!("Pair: {} ", pair.name);
+
+                let mut h = matrix_node(pair, &rro);
+                let mut rr = r2.lock().unwrap();
+                rr.push((pair.name.clone(), h));
+
+            }
+        });
+        handles.push(handle);
+
+    }
+
+    for handle in handles {
+        handle.join().unwrap()
+
+    }
+
+    let o = result2.lock().unwrap();
+
+    for (i, x) in o.iter().enumerate(){
+        mw.matrix.matrix_core.push(x.1.clone());
+        mw.column_name.insert(i as u32, x.0.clone());
+    }
+
+
+
+
+}
+
+pub fn matrix_node(path: &NPath, h2: &Arc<BiMap<u32, usize>>) -> Vec<u32>{
+    let mut nody: Vec<u32> = vec![0; h2.len()];
+    for x in path.nodes.iter(){
+        nody[*h2.get_by_left(&x).unwrap()] += 1;
+
+
+    }
+    nody
 }
 
 

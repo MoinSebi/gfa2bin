@@ -15,7 +15,7 @@ use env_logger::{Builder, Target};
 use log::{info, LevelFilter, warn};
 use std::io::Write;
 use crate::convert2::core::{MatrixWrapper, remove_bimap};
-use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_node};
+use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_node, matrix_node_wrapper};
 use crate::convert2::pack::{matrix_pack_bit, matrix_pack_u16};
 use crate::convert2::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
 
@@ -207,7 +207,7 @@ fn main() {
             if matches.is_present("type") {
                 let values: &str = matches.value_of("type").unwrap();
                 if values.contains('n') {
-                    matrix_node(&gwrapper, &graph, &mut matrix, &mut index_normal);
+                    matrix_node_wrapper(&gwrapper, &graph, &mut matrix, &mut index_normal);
                 }
                 if values.contains('e') {
                     matrix_edge(&gwrapper, &graph, &mut matrix, &mut index_edge);
@@ -216,7 +216,7 @@ fn main() {
                     matrix_dir_node(&gwrapper, &graph, &mut matrix, &mut index_dir);
                 }
             } else {
-                matrix_node(&gwrapper, &graph, &mut matrix, &mut index_normal);
+                matrix_node_wrapper(&gwrapper, &graph, &mut matrix, &mut index_normal);
             }
         } else {
             if matches.is_present("pack") {

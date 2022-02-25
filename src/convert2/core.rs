@@ -14,7 +14,7 @@ use std::mem;
 
 
 
-
+#[derive(Debug, Clone, Eq, PartialEq)]
 /// Core data structure, which includes ever
 pub struct MatrixWrapper {
     pub matrix: Matrix,

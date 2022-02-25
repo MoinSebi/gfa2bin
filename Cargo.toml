@@ -14,6 +14,9 @@ bimap = "=0.6.1"
 hashbrown = "0.11"
 bitvec = "1"
 
+bifurcation = {git = "https://github.com/MoinSebi/bifurcation"}
+
+
 
 log = "0.4.0"
 env_logger = "0.8.4"

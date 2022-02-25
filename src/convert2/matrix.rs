@@ -6,7 +6,7 @@ use std::io::{Write, BufWriter};
 
 /// Core structure
 /// 2D Matrix with
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Matrix {
     pub shape: (u32, u32),
     pub matrix_core: Vec<Vec<u32>>,
