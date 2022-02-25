@@ -12,24 +12,24 @@ use std::mem;
 
 
 /// Core data structure, which includes ever
-pub struct MatrixWrapper2{
+pub struct MatrixWrapper {
     pub matrix: Matrix,
     pub column_name: HashMap<u32, String>,
     pub matrix_bin: Vec<Vec<bool>>
 
 }
 
-impl MatrixWrapper2{
+impl MatrixWrapper {
 
     /// Dummy initialization
     pub fn new() -> Self {
         let matrx = Matrix::new();
         let col: HashMap<u32, String> = HashMap::new();
-        let matrx2: Vec<Vec<bool>> = Vec::new();
+        let mtrx: Vec<Vec<bool>> = Vec::new();
         Self {
             matrix: matrx,
             column_name: col,
-            matrix_bin: matrx2,
+            matrix_bin: mtrx,
         }
     }
 
@@ -304,7 +304,9 @@ impl MatrixWrapper2{
 
 
 /// Matrix constructor from nodes
-pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
+/// # Arguments
+/// * 'gwrapper' - Graph wrapper data structure
+pub fn matrix_node(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, h2: & mut BiMap<u32, usize>) {
     let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
 
     h.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -331,7 +333,7 @@ pub fn matrix_node10(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrap
 
 
 /// Matrix constructor from nodes
-pub fn matrix_dir_node2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, j: & mut BiMap<(u32, bool), usize>){
+pub fn matrix_dir_node(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, j: & mut BiMap<(u32, bool), usize>){
 
 
 
@@ -379,7 +381,7 @@ pub fn matrix_dir_node2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixW
 
 
 /// Matrix constructor from edges
-pub fn matrix_edge2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper2, h2: & mut BiMap<(u32, bool, u32, bool), usize>){
+pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, h2: & mut BiMap<(u32, bool, u32, bool), usize>){
 
 
 
@@ -420,7 +422,7 @@ pub fn matrix_edge2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapp
 
 
 /// Matrix constructor from mappings (u16)
-pub fn matrix_pack_bit(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
+pub fn matrix_pack_bit(filename: &str, mw: & mut MatrixWrapper, h2: & mut BiMap<u32, usize>) {
     let g: Vec<u8> = get_file_as_byte_vec(filename);
     let k: Vec<ReaderBit> = wrapper_bool(&g);
 
@@ -449,7 +451,7 @@ pub fn makeBIMAP(maxlen: usize){
 
 
 /// Matrix constructor from mappings (u16)
-pub fn matrix_pack_u16(filename: &str, mw: & mut MatrixWrapper2, h2: & mut BiMap<u32, usize>) {
+pub fn matrix_pack_u16(filename: &str, mw: & mut MatrixWrapper, h2: & mut BiMap<u32, usize>) {
     let g: Vec<u8> = get_file_as_byte_vec(filename);
     let k: Vec<ReaderU16> = wrapper_u16(&g);
 
@@ -517,7 +519,7 @@ pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 
 /// Writing file wrapper
 /// BED + BIM + GENOME ORDER
-pub fn write_matrix(se: & mut MatrixWrapper2, what: &str, out_prefix: &str, t: &str){
+pub fn write_matrix(se: & mut MatrixWrapper, what: &str, out_prefix: &str, t: &str){
     if (what == "bed") | (what == "all"){
         if se.matrix_bin.is_empty(){
             se.matrix_bin = se.matrix.copy(1);
@@ -535,7 +537,7 @@ pub fn write_matrix(se: & mut MatrixWrapper2, what: &str, out_prefix: &str, t: &
 
 
 /// Write the order of genomes
-pub fn write_genome_order(se: & mut MatrixWrapper2, out_prefix: &str){
+pub fn write_genome_order(se: & mut MatrixWrapper, out_prefix: &str){
     let f = File::create([out_prefix,  "bim_names"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     for x in 0..se.column_name.len(){

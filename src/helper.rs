@@ -3,6 +3,7 @@ use std::io::{Write, BufWriter};
 use packing_lib::helper::u8_u16;
 use packing_lib::reader::get_file_as_byte_vec;
 
+
 pub fn binary2dec_bed(vecc: &[bool]) -> u8{
     let mut result: u8 = 0;
     let mut count = 0;

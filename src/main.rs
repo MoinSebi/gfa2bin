@@ -11,7 +11,7 @@ use std::process;
 use crate::helper::{get_thresh};
 use bimap::BiMap;
 use crate::writer::{write_reduce, write_bimap, write_bed_split};
-use crate::matrix_wrapper::{MatrixWrapper2, matrix_edge2, matrix_node10, matrix_dir_node2, matrix_pack_u16, matrix_pack_bit, write_matrix, remove_bimap, write_bim, write_bimhelper};
+use crate::matrix_wrapper::{MatrixWrapper, matrix_edge, matrix_node, matrix_dir_node, matrix_pack_u16, matrix_pack_bit, write_matrix, remove_bimap, write_bim, write_bimhelper};
 use std::env::args;
 use chrono::Local;
 use env_logger::{Builder, Target};
@@ -44,10 +44,10 @@ fn main() {
                 .long("pack")
                 .about("if the input is coverage")
                 .takes_value(true))
-            .arg(Arg::new("delimter")
+            .arg(Arg::new("delimiter")
                 .short('d')
-                .long("delimter")
-                .about("Delimter between genome and chromosome number")
+                .long("delimiter")
+                .about("Delimiter between genome and chromosome number")
                 .takes_value(true))
             .arg(Arg::new("removeNames")
                 .long("rgenomes")
@@ -61,7 +61,7 @@ fn main() {
 
 
         // Computational
-        .arg(Arg::new("threshhold")
+        .arg(Arg::new("threshold")
             .long("Copy number threshold")
             .about("Normalize to this number")
             .takes_value(true))
@@ -109,7 +109,7 @@ fn main() {
             .arg(Arg::new("GWAS Output")
                 .short('g')
                 .long("GEMMA")
-                .about("GEMMA ouptu file")
+                .about("GEMMA ouptut file")
                 .takes_value(true))
             .arg(Arg::new("Helper")
                 .about("helper file")
@@ -156,6 +156,7 @@ fn main() {
             .init();
     }
 
+    /// You want to convert stuff
     if let Some(ref matches) = matches.subcommand_matches("convert") {
         // Check if input
         if !(matches.is_present("gfa") | matches.is_present("pack")) {
@@ -180,17 +181,19 @@ fn main() {
 
         // Check if del is set or not
         let del: &str;
-        if matches.is_present("delimter") {
-            del = matches.value_of("delimter").unwrap();
+        if matches.is_present("delimiter") {
+            del = matches.value_of("delimiter").unwrap();
         } else {
             del = " ";
         }
 
 
-        let mut matrix = MatrixWrapper2::new();
+        let mut matrix = MatrixWrapper::new();
         let mut index_normal: BiMap<u32, usize> = BiMap::new();
         let mut index_dir: BiMap<(u32, bool), usize> = BiMap::new();
         let mut index_edge: BiMap<(u32, bool, u32, bool), usize> = BiMap::new();
+
+        // Check if gfa or coverage
         if matches.is_present("gfa") {
             let _input = matches.value_of("gfa").unwrap();
             let _output: &str = matches.value_of("output").unwrap();
@@ -204,16 +207,16 @@ fn main() {
             if matches.is_present("type") {
                 let values: &str = matches.value_of("type").unwrap();
                 if values.contains('n') {
-                    matrix_node10(&gwrapper, &graph, &mut matrix, &mut index_normal);
+                    matrix_node(&gwrapper, &graph, &mut matrix, &mut index_normal);
                 }
                 if values.contains('e') {
-                    matrix_edge2(&gwrapper, &graph, &mut matrix, &mut index_edge);
+                    matrix_edge(&gwrapper, &graph, &mut matrix, &mut index_edge);
                 }
                 if values.contains('d') {
-                    matrix_dir_node2(&gwrapper, &graph, &mut matrix, &mut index_dir);
+                    matrix_dir_node(&gwrapper, &graph, &mut matrix, &mut index_dir);
                 }
             } else {
-                matrix_node10(&gwrapper, &graph, &mut matrix, &mut index_normal);
+                matrix_node(&gwrapper, &graph, &mut matrix, &mut index_normal);
             }
         } else {
             if matches.is_present("pack") {
@@ -244,19 +247,19 @@ fn main() {
         }
         let mut remove_this: Vec<u32> = Vec::new();
         if matches.is_present("filter") {
-            eprintln!("Filtering");
+            info!("Filtering");
             remove_this = matrix.filter();
         }
 
         if matches.is_present("reduce") {
-            eprintln!("Reducing combinations");
+            info!("Reducing combinations");
             let k = matrix.reduce_combinations_test();
             write_reduce(&k.0, &k.1, _output, "gfa2bin");
         }
 
 
         if matches.is_present("split") {
-            eprintln!("Splitting matrix");
+            info!("Splitting matrix");
             let o = matrix.split_bin(10);
             for (index, x) in o.enumerate() {
                 write_bed_split(x, "testsplit", &*index.to_string())
@@ -267,22 +270,22 @@ fn main() {
         if matches.is_present("type") {
             let values: &str = matches.value_of("type").unwrap();
             if values.contains('n') {
-                eprintln!("Node type");
+                info!("Node type");
                 write_matrix(&mut matrix, type_out, _output, "node");
             }
             if values.contains('e') {
-                eprintln!("Edge type");
+                info!("Edge type");
                 write_matrix(&mut matrix, type_out, _output, "edge");
             }
             if values.contains('d') {
-                eprintln!("Directed ");
+                info!("Directed ");
                 write_matrix(&mut matrix, type_out, _output, "dir");
             }
         } else {
             write_matrix(&mut matrix, type_out, _output, "gfa2bin");
         }
 
-        eprintln!("Remove and writing");
+        info!("Remove and writing");
         // THEN FILTER ROWS (BIMAP)
         if !index_normal.is_empty() {
             remove_bimap(&mut index_normal, remove_this);
@@ -308,12 +311,12 @@ mod main {
     use gfaR_wrapper::{GraphWrapper, NGfa};
     use bimap::BiMap;
     use crate::writer::write_reduce;
-    use crate::matrix_wrapper::{MatrixWrapper2, matrix_node10};
+    use crate::matrix_wrapper::{MatrixWrapper, matrix_node};
 
     #[test]
     fn names() {
         let mut index_normal: BiMap<u32, usize> = BiMap::new();
-        let mut matrix = MatrixWrapper2::new();
+        let mut matrix = MatrixWrapper::new();
         let mut graph = NGfa::new();
 
         graph.from_graph("/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa");
@@ -322,7 +325,7 @@ mod main {
         if index_normal.is_empty(){
             println!("HOLDDSADAS");
         }
-        matrix_node10(&gwrapper, &graph, & mut matrix, & mut index_normal);
+        matrix_node(&gwrapper, &graph, & mut matrix, & mut index_normal);
         if index_normal.is_empty(){
             println!("dajksdjakda");
         } else {
@@ -349,10 +352,10 @@ mod main {
         graph.from_graph("/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa");
         let mut index_normal: BiMap<u32, usize> = BiMap::new();
         let mut gwrapper: GraphWrapper = GraphWrapper::new();
-        let mut matrix = MatrixWrapper2::new();
+        let mut matrix = MatrixWrapper::new();
 
         gwrapper.fromNGfa(&graph, "_");
-        matrix_node10(&gwrapper, &graph, &mut matrix, &mut index_normal);
+        matrix_node(&gwrapper, &graph, &mut matrix, &mut index_normal);
 
     }
 
