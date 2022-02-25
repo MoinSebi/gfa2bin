@@ -13,6 +13,11 @@ use bimap::BiMap;
 use crate::writer::{write_reduce, write_bimap, write_bed_split};
 use crate::matrix_wrapper::{MatrixWrapper2, matrix_edge2, matrix_node10, matrix_dir_node2, matrix_pack_u16, matrix_pack_bit, write_matrix, remove_bimap, write_bim, write_bimhelper};
 use std::env::args;
+use chrono::Local;
+use env_logger::{Builder, Target};
+use log::{info, LevelFilter, warn};
+use std::io::Write;
+
 
 
 fn main() {
@@ -20,6 +25,10 @@ fn main() {
         .version("0.1.0")
         .author("Sebastian V")
         .about("gfa2bin")
+        .arg(Arg::new("verbose")
+            .short('v')
+            .long("verbose")
+            .about("verbose "))
         // Input
         .subcommand(App::new("convert")
             .about("Convert GFA or PACK format to binary data matrix")
@@ -118,6 +127,34 @@ fn main() {
 
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
 
+    // Checking verbose
+    if matches.is_present("verbose"){
+        Builder::new()
+            .format(|buf, record| {
+                writeln!(buf,
+                         "{} [{}] - {}",
+                         Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                         record.level(),
+                         record.args()
+                )
+            })
+            .filter(None, LevelFilter::Trace)
+            .target(Target::Stderr)
+            .init();
+    } else {
+        Builder::new()
+            .format(|buf, record| {
+                writeln!(buf,
+                         "{} [{}] - {}",
+                         Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                         record.level(),
+                         record.args()
+                )
+            })
+            .filter(None, LevelFilter::Info)
+            .target(Target::Stderr)
+            .init();
+    }
 
     if let Some(ref matches) = matches.subcommand_matches("convert") {
         // Check if input

@@ -12,3 +12,8 @@ gfaR_wrapper = {git = "https://github.com/MoinSebi/gfaR_wrapper"}
 packing = {git = "https://github.com/MoinSebi/packing"}
 bimap = "0.6.1"
 hashbrown = "0.11"
+
+
+log = "0.4.0"
+env_logger = "0.8.4"
+chrono = "0.4"
