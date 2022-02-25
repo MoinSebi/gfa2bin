@@ -1,23 +1,23 @@
-mod matrix;
 mod counting;
-mod matrix_wrapper;
 mod helper;
-mod writer;
+mod convert2;
 mod find;
 
+
 use clap::{App, Arg};
-use gfaR_wrapper::{NGfa, GraphWrapper};
+use gfaR_wrapper::{GraphWrapper, NGfa};
 use std::process;
-use crate::helper::{get_thresh};
+use crate::helper::get_thresh;
 use bimap::BiMap;
-use crate::writer::{write_reduce, write_bimap, write_bed_split};
-use crate::matrix_wrapper::{MatrixWrapper, matrix_edge, matrix_node, matrix_dir_node, matrix_pack_u16, matrix_pack_bit, write_matrix, remove_bimap, write_bim, write_bimhelper};
 use std::env::args;
 use chrono::Local;
 use env_logger::{Builder, Target};
 use log::{info, LevelFilter, warn};
 use std::io::Write;
-
+use crate::convert2::core::{MatrixWrapper, remove_bimap};
+use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_node};
+use crate::convert2::pack::{matrix_pack_bit, matrix_pack_u16};
+use crate::convert2::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
 
 
 fn main() {
@@ -306,58 +306,4 @@ fn main() {
 
 }
 
-#[cfg(test)]
-mod main {
-    use gfaR_wrapper::{GraphWrapper, NGfa};
-    use bimap::BiMap;
-    use crate::writer::write_reduce;
-    use crate::matrix_wrapper::{MatrixWrapper, matrix_node};
 
-    #[test]
-    fn names() {
-        let mut index_normal: BiMap<u32, usize> = BiMap::new();
-        let mut matrix = MatrixWrapper::new();
-        let mut graph = NGfa::new();
-
-        graph.from_graph("/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa");
-        let mut gwrapper: GraphWrapper = GraphWrapper::new();
-        gwrapper.fromNGfa(&graph, " ");
-        if index_normal.is_empty(){
-            println!("HOLDDSADAS");
-        }
-        matrix_node(&gwrapper, &graph, & mut matrix, & mut index_normal);
-        if index_normal.is_empty(){
-            println!("dajksdjakda");
-        } else {
-            println!("daksljdklasjdas");
-        }
-        matrix.write_names("test_data/test");
-        matrix.remove_genomes("holyshit12");
-
-        matrix.make_binary(1);
-        let k = matrix.reduce_combinations_test();
-        println!("LL {} ", k.1.len());
-        let k2 = matrix.reduce_combinations();
-        // println!("LL dasd a{} ", matrix.matrix_bin.len());
-        // println!("LL {} {}", k.1.len(), k2.1.len());
-        // println!("LL {} {}", k.1[3671], k2.1[3671]);
-        // println!("LL {} {}", k.0[3671], k2.0[3671]);
-        // println!("HOLY {}", matrix.matrix_bin.len());
-        write_reduce(&k2.0, &k2.1, "test_data/test", "gfa2bin");
-
-    }
-
-    fn read_gfa(){
-        let mut graph = NGfa::new();
-        graph.from_graph("/home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa");
-        let mut index_normal: BiMap<u32, usize> = BiMap::new();
-        let mut gwrapper: GraphWrapper = GraphWrapper::new();
-        let mut matrix = MatrixWrapper::new();
-
-        gwrapper.fromNGfa(&graph, "_");
-        matrix_node(&gwrapper, &graph, &mut matrix, &mut index_normal);
-
-    }
-
-
-}
