@@ -1,4 +1,6 @@
 use bimap::BiMap;
+use bitvec::prelude::BitVec;
+use log::info;
 use packing_lib::reader::{get_file_as_byte_vec, ReaderBit, ReaderU16, wrapper_bool, wrapper_u16};
 use crate::MatrixWrapper;
 
@@ -11,10 +13,14 @@ pub fn matrix_pack_bit(filename: &str, mw: & mut MatrixWrapper, h2: & mut BiMap<
         //println!("{}", x.name);
         mw.column_name.insert(i as u32,x.name.clone());
         //println!("{}", k.len());
-        mw.matrix_bin.push(x.cc.clone());
+        let k: BitVec = x.cc.iter().cloned().collect();
+        for y in x.cc.iter(){
+
+        }
+        mw.matrix_bin.push(k);
     }
-    eprintln!("Make BIMAP");
-    eprintln!("size {}", mw.matrix_bin[0].len());
+    info!("Make BIMAP");
+    info!("size {}", mw.matrix_bin[0].len());
     for x in 0..mw.matrix_bin[0].len(){
         h2.insert(x as u32, x);
     }
@@ -43,7 +49,7 @@ pub fn matrix_pack_u16(filename: &str, mw: & mut MatrixWrapper, h2: & mut BiMap<
         let u: Vec<u32> = x.cc.clone().iter().map(|f| f.clone() as u32).collect();
         mw.matrix.matrix_core.push(u);
     }
-    eprintln!("Make BIMAP");
+    info!("Make BIMAP");
     for x in 0..mw.matrix.matrix_core[0].len(){
         h2.insert(x as u32, x);
     }

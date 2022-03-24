@@ -21,7 +21,7 @@ impl MatrixWrapper{
         }
 
         for (index, (name, paths)) in gwrapper.genomes.iter().enumerate(){
-            eprintln!("{}", name);
+            info!("{}", name);
             mm.column_name.insert( index as u32, name.clone());
             let mut nody: Vec<u32> = vec![0; h2.len()] ;
             for x in paths.iter(){
@@ -49,7 +49,7 @@ pub fn matrix_node_wrapper(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut Matr
     }
 
     for (index, (name, paths)) in gwrapper.genomes.iter().enumerate(){
-        eprintln!("{}", name);
+        info!("{}", name);
         mw.column_name.insert( index as u32, name.clone());
         let mut nody: Vec<u32> = vec![0; h2.len()] ;
         for x in paths.iter(){

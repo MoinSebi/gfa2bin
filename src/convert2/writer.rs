@@ -118,7 +118,7 @@ pub fn write_bimap2<T>(bm: &BiMap<T, usize>, till: usize, number: usize)
 
 /// For multiple bed files
 /// Splitting
-pub fn write_bed_split(data: &[Vec<bool>], out_prefix: &str, t: &str){
+pub fn write_bed_split(data: &[bitvec::vec::BitVec], out_prefix: &str, t: &str){
     //hexdump -C test.bin
     // xxd -b file
     // xxd file

@@ -15,7 +15,7 @@ use env_logger::{Builder, Target};
 use log::{info, LevelFilter, warn};
 use std::io::Write;
 use crate::convert2::core::{MatrixWrapper, remove_bimap};
-use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_node, matrix_node_wrapper};
+use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_node, matrix_node_wrapper, matrix_node_wrapper2};
 use crate::convert2::pack::{matrix_pack_bit, matrix_pack_u16};
 use crate::convert2::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
 
@@ -207,7 +207,7 @@ fn main() {
             if matches.is_present("type") {
                 let values: &str = matches.value_of("type").unwrap();
                 if values.contains('n') {
-                    matrix_node_wrapper(&gwrapper, &graph, &mut matrix, &mut index_normal);
+                    matrix_node_wrapper2(&gwrapper, &graph, &mut matrix, &mut index_normal, &2);
                 }
                 if values.contains('e') {
                     matrix_edge(&gwrapper, &graph, &mut matrix, &mut index_edge);
@@ -223,10 +223,10 @@ fn main() {
                 let file_pack = matches.value_of("pack").unwrap();
                 let j = get_thresh(&file_pack);
                 if j == 0 {
-                    eprintln!("Reading u16 pack");
+                    info!("Reading u16 pack");
                     matrix_pack_u16(file_pack, &mut matrix, &mut index_normal);
                 } else {
-                    eprintln!("Reading bit pack");
+                    info!("Reading bit pack");
                     matrix_pack_bit(file_pack, &mut matrix, &mut index_normal);
                 }
             }
@@ -242,7 +242,7 @@ fn main() {
 
 
         if matrix.matrix_bin.is_empty() {
-            eprintln!("Make binary");
+            info!("Make binary");
             matrix.make_binary(1);
         }
         let mut remove_this: Vec<u32> = Vec::new();

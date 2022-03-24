@@ -29,10 +29,10 @@ impl Matrix {
     /// Input: Threshold
     /// Basic: number = threshhold
     /// For presence/absence -> number = 1
-    pub fn copy(&self, number: u32) -> Vec<Vec<bool>>{
-        let mut new_matrix: Vec<Vec<bool>> = Vec::new();
+    pub fn copy(&self, number: u32) -> Vec<bitvec::vec::BitVec>{
+        let mut new_matrix: Vec<bitvec::vec::BitVec> = Vec::new();
         for x in self.matrix_core.iter(){
-            let mut new_vec: Vec<bool> = Vec::new();
+            let mut new_vec: bitvec::vec::BitVec = bitvec::vec::BitVec::new();
             for y in x.iter(){
                 new_vec.push(y.clone() >= number);
 
@@ -66,7 +66,7 @@ impl Matrix {
     #[allow(dead_code)]
     /// Write bimbam file
     pub fn write_bimbam(&self, out_prefix: &str, t: &str){
-        println!("Writing bimbam file");
+        info!("Writing bimbam file");
         let f = File::create([out_prefix, t, "bed"].join(".")).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         let min_max_matrix = self.min_max();

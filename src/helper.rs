@@ -1,5 +1,10 @@
 use std::fs::File;
 use std::io::{Write, BufWriter};
+use bitvec::bitvec;
+use bitvec::macros::internal::funty::Fundamental;
+use bitvec::order::Lsb0;
+use bitvec::vec::BitVec;
+use log::info;
 use packing_lib::helper::u8_u16;
 use packing_lib::reader::get_file_as_byte_vec;
 
@@ -45,13 +50,21 @@ pub fn transpose<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
         .collect()
 }
 
+pub fn trans4(v: &Vec<bitvec::vec::BitVec>){
+    let mut h: Vec<bitvec::vec::BitVec> = Vec::new();
+    for x in v.iter(){
+        let mut o10: BitVec<u8, Lsb0> = BitVec::new();
+        for y in x.iter(){
+            o10.push(y.as_bool());
+        }
+    }
 
-
+}
 pub fn trans2<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
 where
 T: Clone
 {
-    eprintln!("Transposing");
+    info!("Transposing");
     let mut o: Vec<Vec<T>> = Vec::new();
     for x in 0..v[0].len(){
         let mut o2: Vec<T> = Vec::new();
@@ -67,7 +80,7 @@ pub fn trans3<T>(v: &[Vec<T>]) -> Vec<Vec<T>>
     where
         T: Clone
 {
-    eprintln!("Transposing");
+    info!("Transposing");
     let mut o: Vec<Vec<T>> = Vec::new();
     for x in 0..v[0].len(){
         let mut o2: Vec<T> = Vec::new();
@@ -78,6 +91,22 @@ pub fn trans3<T>(v: &[Vec<T>]) -> Vec<Vec<T>>
     }
     return o;
 }
+
+
+pub fn trans5(v: &Vec<bitvec::vec::BitVec>) -> Vec<bitvec::vec::BitVec>{
+    info!("Transposing");
+    let mut o: Vec<bitvec::vec::BitVec> = Vec::new();
+
+    for x in 0..v[0].len(){
+        let mut o2: bitvec::vec::BitVec = bitvec::vec::BitVec::new();
+        for y in 0..v.len(){
+            o2.push(v[y][x].clone());
+        }
+        o.push(o2);
+    }
+    return o;
+}
+
 
 
 pub fn get_thresh(filename: &str) -> u16{
