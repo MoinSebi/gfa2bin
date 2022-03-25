@@ -22,7 +22,7 @@ pub fn matrix_node_wrapper2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut Mat
         let node: u32 = x.clone();
         bimap.insert(node, i);
     }
-
+    println!("path {:?}", graph.paths);
 
     // This is for multithreading
     let chunks = chunk_inplace(graph.paths.clone(), threads.clone());
@@ -32,6 +32,7 @@ pub fn matrix_node_wrapper2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut Mat
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));
     let k = Arc::new(bimap.clone());
+    println!("chunks {}", chunks.len());
 
 
     for chunk in chunks{
@@ -40,9 +41,10 @@ pub fn matrix_node_wrapper2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut Mat
         let wra = wrapper.clone();
         let rro = k.clone();
         let handle = thread::spawn(move || {
+
             for pair in chunk.iter(){
                 debug!("Pair: {} ", pair.name);
-
+                println!("djkalsjdla {}", pair.name);
                 let mut h = matrix_node(pair, &rro);
                 let mut rr = r2.lock().unwrap();
                 rr.push((pair.name.clone(), h));
@@ -61,10 +63,14 @@ pub fn matrix_node_wrapper2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut Mat
     let o = result2.lock().unwrap();
 
     mw.matrix.matrix_core = Vec::with_capacity(o.len());
+    println!("{:?}", mw.matrix.matrix_core);
     for (i, x) in o.iter().enumerate(){
+        println!("dasdasd {:?}", x);
         mw.matrix.matrix_core.push(x.1.clone());
         mw.column_name.insert(i as u32, x.0.clone());
     }
+
+    println!("{:?}", mw.matrix.matrix_core);
 
 
 

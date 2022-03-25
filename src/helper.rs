@@ -112,7 +112,7 @@ pub fn trans3<T>(v: &[Vec<T>]) -> Vec<Vec<T>>
 pub fn trans5(v: &Vec<bitvec::vec::BitVec>) -> Vec<bitvec::vec::BitVec>{
     info!("Transposing");
     let mut o: Vec<bitvec::vec::BitVec> = Vec::new();
-
+    println!("HELP {:?}", o);
     for x in 0..v[0].len(){
         let mut o2: bitvec::vec::BitVec = bitvec::vec::BitVec::new();
         for y in 0..v.len(){

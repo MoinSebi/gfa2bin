@@ -22,6 +22,7 @@ use crate::convert2::writer::{write_bed_split, write_bimhelper, write_matrix, wr
 
 
 fn main() {
+    println!("opopopp");
     let matches = App::new("panSV")
         .version("0.1.0")
         .author("Sebastian V")
@@ -129,7 +130,7 @@ fn main() {
 
         .get_matches();
 
-
+    println!("dasödaspöäööä");
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
 
     // Checking verbose
@@ -160,6 +161,7 @@ fn main() {
             .target(Target::Stderr)
             .init();
     }
+    println!("dasödaspöäööä");
 
     /// You want to convert stuff
     if let Some(ref matches) = matches.subcommand_matches("convert") {
@@ -197,19 +199,22 @@ fn main() {
         let mut index_normal: BiMap<u32, usize> = BiMap::new();
         let mut index_dir: BiMap<(u32, bool), usize> = BiMap::new();
         let mut index_edge: BiMap<(u32, bool, u32, bool), usize> = BiMap::new();
-
+        println!("dasödaspöäööä");
         // Check if gfa or coverage
         if matches.is_present("gfa") {
-            let _input: &str = "not relevant";
+            let mut _input: &str = "not relevant";
             if Path::new(matches.value_of("gfa").unwrap()).exists() {
-                let _input = matches.value_of("gfa").unwrap();
+                _input = matches.value_of("gfa").unwrap();
+                println!("dasödaspöäööä");
             } else {
+                println!("dasödaspöäööä");
                 warn!("No file with such name");
                 process::exit(0x0100);
             }
             let _output: &str = matches.value_of("output").unwrap();
             // Read the graph
             let mut graph = NGfa::new();
+            println!("{}", _input);
             graph.from_graph(_input);
 
             // Make graph, wrapper
@@ -227,7 +232,7 @@ fn main() {
                     matrix_dir_node(&gwrapper, &graph, &mut matrix, &mut index_dir, &2);
                 }
             } else {
-                matrix_node_wrapper2(&gwrapper, &graph, &mut matrix, &mut index_normal, &(10 as usize));
+                matrix_node_wrapper2(&gwrapper, &graph, &mut matrix, &mut index_normal, &(2 as usize));
             }
         } else {
             if matches.is_present("pack") {
