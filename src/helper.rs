@@ -3,6 +3,7 @@ use std::io::{Write, BufWriter};
 use bitvec::bitvec;
 use bitvec::macros::internal::funty::Fundamental;
 use bitvec::order::Lsb0;
+use bitvec::slice::BitSlice;
 use bitvec::vec::BitVec;
 use log::info;
 use packing_lib::helper::u8_u16;
@@ -10,6 +11,21 @@ use packing_lib::reader::get_file_as_byte_vec;
 
 
 pub fn binary2dec_bed(vecc: &[bool]) -> u8{
+    let mut result: u8 = 0;
+    let mut count = 0;
+    for x in vecc.iter(){
+        let t: u8 = 2;
+        result += (t.pow(count as u32)) * (*x as u8);
+        count += 1;
+        result += (t.pow(count as u32)) * (*x as u8);
+        count += 1;
+    }
+    result
+}
+
+
+
+pub fn binary2dec_bed2(vecc: &BitSlice) -> u8{
     let mut result: u8 = 0;
     let mut count = 0;
     for x in vecc.iter(){
@@ -106,6 +122,20 @@ pub fn trans5(v: &Vec<bitvec::vec::BitVec>) -> Vec<bitvec::vec::BitVec>{
     }
     return o;
 }
+
+pub fn trans6(v: &[bitvec::vec::BitVec]) -> Vec<bitvec::vec::BitVec>{
+    info!("Transposing");
+    let mut o: Vec<bitvec::vec::BitVec> = Vec::new();
+    for x in 0..v[0].len(){
+        let mut o2: bitvec::vec::BitVec = bitvec::vec::BitVec::new();
+        for y in 0..v.len(){
+            o2.push(v[y][x].clone());
+        }
+        o.push(o2);
+    }
+    return o;
+}
+
 
 
 

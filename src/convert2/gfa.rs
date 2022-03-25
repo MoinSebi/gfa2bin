@@ -5,7 +5,7 @@ use bimap::BiMap;
 use bitvec::ptr::Mut;
 use gfaR_wrapper::{GraphWrapper, NGfa, NPath};
 use hashbrown::HashSet;
-use log::debug;
+use log::{debug, info};
 use crate::MatrixWrapper;
 
 

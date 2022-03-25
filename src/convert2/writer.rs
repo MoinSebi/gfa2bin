@@ -75,7 +75,7 @@ pub fn write_genome_order(se: & mut MatrixWrapper, out_prefix: &str){
 }
 
 
-use crate::helper::{trans2, binary2dec_bed, trans3};
+use crate::helper::{trans2, binary2dec_bed, trans3, trans5, trans6, binary2dec_bed2};
 use std::slice::Chunks;
 
 /// Write the names - helper function
@@ -127,11 +127,11 @@ pub fn write_bed_split(data: &[bitvec::vec::BitVec], out_prefix: &str, t: &str){
 
     let mut buff: Vec<u8> = vec![108, 27, 1];
     // Make SNP Vector
-    let h2 = trans3( &data);
+    let h2 = trans6( &data);
     for x in h2.iter(){
-        let j: Vec<&[bool]> = x.chunks(4).collect();
+        let j = x.chunks(4);
         for x in j{
-            buff.push(binary2dec_bed(x));
+            buff.push(binary2dec_bed2(x));
         }
         //println!("Number of bytes {}", buff.len());
         //println!("x {}", x.len());

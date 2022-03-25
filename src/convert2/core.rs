@@ -6,7 +6,7 @@ use std::fmt::Debug;
 use std::io::{Write, BufWriter, BufReader, BufRead};
 use std::fs::File;
 use gfaR_wrapper::{GraphWrapper, NGfa};
-use crate::helper::{binary2dec_bed, trans2, trans5};
+use crate::helper::{binary2dec_bed, binary2dec_bed2, trans2, trans5};
 use packing_lib::reader::{ReaderU16, wrapper_bool, ReaderBit, wrapper_u16, get_file_as_byte_vec};
 use bimap::{BiMap};
 use std::slice::Chunks;
@@ -143,7 +143,7 @@ impl MatrixWrapper {
         for x in h2.iter(){
             let j  = x.chunks(4);
             for x in j{
-                buff.push(binary2dec_bed(x));
+                buff.push(binary2dec_bed2(x));
             }
             //info!("Number of bytes {}", buff.len());
             //info!("x {}", x.len());
@@ -205,7 +205,7 @@ impl MatrixWrapper {
 
         let mut count = 0;
         for x in 0..self.matrix_bin[0].len(){
-            let mut u = Vec::new();
+            let mut u: bitvec::vec::BitVec = bitvec::vec::BitVec::new();
             for y in 0..self.matrix_bin.len(){
                 u.push(self.matrix_bin[y][x]);
             }
@@ -261,7 +261,7 @@ impl MatrixWrapper {
 
         // Make SNPs Vector
         info!("reduce it djsakdhsja {}", self.matrix_bin.len());
-        let k: Vec<Vec<bool>>= trans2(&self.matrix_bin);
+        let k: Vec<bitvec::vec::BitVec>= trans5(&self.matrix_bin);
         info!("reduce it djsakdhsja2 {}", self.matrix_bin.len());
         info!("Starting size {}", k.len());
 
@@ -281,14 +281,14 @@ impl MatrixWrapper {
         }
 
         // Make a Vector (from 1 - len(x))
-        let mut h : Vec<Vec<bool>> = Vec::new();
+        let mut h : Vec<bitvec::vec::BitVec> = Vec::new();
         for x in 0..hm.iter().len(){
             h.push(hm.get_by_right(&x).unwrap().clone());
         }
 
         // Make Acc vector
         info!("Reduced size {:?}", h.len());
-        let h_convert = trans2(&h);
+        let h_convert = trans5(&h);
         self.matrix_bin = h_convert;
         (h1,h2)
     }
