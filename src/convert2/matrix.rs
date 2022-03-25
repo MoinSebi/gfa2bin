@@ -26,6 +26,7 @@ impl Matrix {
     }
 
     /// Make binary
+    /// @param:
     ///
     /// Input: Threshold
     /// Basic: number = threshhold
@@ -64,8 +65,7 @@ impl Matrix {
         new_matrix
     }
 
-    #[allow(dead_code)]
-    /// Write bimbam file
+
     pub fn write_bimbam(&self, out_prefix: &str, t: &str){
         info!("Writing bimbam file");
         let f = File::create([out_prefix, t, "bed"].join(".")).expect("Unable to create file");

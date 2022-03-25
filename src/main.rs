@@ -15,7 +15,7 @@ use env_logger::{Builder, Target};
 use log::{info, LevelFilter, warn};
 use std::io::Write;
 use crate::convert2::core::{MatrixWrapper, remove_bimap};
-use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_node, matrix_node_wrapper, matrix_node_wrapper2};
+use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_edge2, matrix_node, matrix_node_wrapper2};
 use crate::convert2::pack::{matrix_pack_bit, matrix_pack_u16};
 use crate::convert2::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
 
@@ -102,7 +102,11 @@ fn main() {
                 .arg(Arg::new("number")
                     .short('n')
                     .about("Number of output")
-                    .takes_value(true)))
+                    .takes_value(true))
+                        .arg(Arg::new("threads")
+                            .short('t')
+                            .takes_value(true)
+                            .about("Number of threads if multithreading")))
         .subcommand(App::new("find")
             .version("1.0.1")
             .about("Find significant hits")
@@ -210,13 +214,13 @@ fn main() {
                     matrix_node_wrapper2(&gwrapper, &graph, &mut matrix, &mut index_normal, &2);
                 }
                 if values.contains('e') {
-                    matrix_edge(&gwrapper, &graph, &mut matrix, &mut index_edge);
+                    matrix_edge2(&gwrapper, &graph, &mut matrix, &mut index_edge, &2);
                 }
                 if values.contains('d') {
-                    matrix_dir_node(&gwrapper, &graph, &mut matrix, &mut index_dir);
+                    matrix_dir_node(&gwrapper, &graph, &mut matrix, &mut index_dir, &2);
                 }
             } else {
-                matrix_node_wrapper(&gwrapper, &graph, &mut matrix, &mut index_normal);
+                matrix_node_wrapper2(&gwrapper, &graph, &mut matrix, &mut index_normal, &(10 as usize));
             }
         } else {
             if matches.is_present("pack") {
