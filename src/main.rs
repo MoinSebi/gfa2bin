@@ -14,8 +14,9 @@ use chrono::Local;
 use env_logger::{Builder, Target};
 use log::{info, LevelFilter, warn};
 use std::io::Write;
+use std::path::Path;
 use crate::convert2::core::{MatrixWrapper, remove_bimap};
-use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_edge2, matrix_node, matrix_node_wrapper2};
+use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_node, matrix_node_wrapper2};
 use crate::convert2::pack::{matrix_pack_bit, matrix_pack_u16};
 use crate::convert2::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
 
@@ -104,7 +105,7 @@ fn main() {
                     .about("Number of output")
                     .takes_value(true))
                         .arg(Arg::new("threads")
-                            .short('t')
+                            .long("threads")
                             .takes_value(true)
                             .about("Number of threads if multithreading")))
         .subcommand(App::new("find")
@@ -199,7 +200,13 @@ fn main() {
 
         // Check if gfa or coverage
         if matches.is_present("gfa") {
-            let _input = matches.value_of("gfa").unwrap();
+            let _input: &str = "not relevant";
+            if Path::new(matches.value_of("gfa").unwrap()).exists() {
+                let _input = matches.value_of("gfa").unwrap();
+            } else {
+                warn!("No file with such name");
+                process::exit(0x0100);
+            }
             let _output: &str = matches.value_of("output").unwrap();
             // Read the graph
             let mut graph = NGfa::new();
@@ -214,7 +221,7 @@ fn main() {
                     matrix_node_wrapper2(&gwrapper, &graph, &mut matrix, &mut index_normal, &2);
                 }
                 if values.contains('e') {
-                    matrix_edge2(&gwrapper, &graph, &mut matrix, &mut index_edge, &2);
+                    matrix_edge(&gwrapper, &graph, &mut matrix, &mut index_edge, &2);
                 }
                 if values.contains('d') {
                     matrix_dir_node(&gwrapper, &graph, &mut matrix, &mut index_dir, &2);

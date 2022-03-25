@@ -21,3 +21,8 @@ bifurcation = {git = "https://github.com/MoinSebi/bifurcation"}
 log = "0.4.0"
 env_logger = "0.8.4"
 chrono = "0.4"
+
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "2.1"

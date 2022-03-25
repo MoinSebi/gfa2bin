@@ -151,7 +151,7 @@ pub fn tt (path: &NPath, h2: &Arc<BiMap<(u32, bool), usize>>) -> Vec<u32> {
 }
 
 /// Matrix constructor from edges
-pub fn matrix_edge2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool, u32, bool), usize>, threads: &usize){
+pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool, u32, bool), usize>, threads: &usize){
 
 
 
