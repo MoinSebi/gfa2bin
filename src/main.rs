@@ -22,8 +22,7 @@ use crate::convert2::writer::{write_bed_split, write_bimhelper, write_matrix, wr
 
 
 fn main() {
-    println!("opopopp");
-    let matches = App::new("panSV")
+    let matches = App::new("gfa2bin")
         .version("0.1.0")
         .author("Sebastian V")
         .about("gfa2bin")
@@ -75,40 +74,44 @@ fn main() {
             .about("Filter this"))
 
             // Output
-            .arg(Arg::new("genomes")
-                .long("genomes")
-                .about("Output just the genomes"))
-            .arg(Arg::new("split")
-                .long("split")
-                .about("Split the output bed and bim"))
-            .arg(Arg::new("output")
-                .short('o')
-                .long("output")
-                .about("Output prefix")
-                .takes_value(true)
-                .default_value("gfa2bin.default"))
-            .arg(Arg::new("bed")
-                .long("bed")
-                .about("Output bed + bim file"))
-            .arg(Arg::new("bimbam")
-                .long("bimbam")
-                .about("Output bimbam format"))
-            .arg(Arg::new("traversal")
-                .long("traversal")
-                .about("Additional traversaloutput file")
-                .takes_value(true))
-            .arg(Arg::new("smart")
-                .long("smart")
-                .short('j')
-                .about("Reduce the number of tests"))
-                .arg(Arg::new("number")
-                    .short('n')
-                    .about("Number of output")
-                    .takes_value(true))
-                        .arg(Arg::new("threads")
-                            .long("threads")
-                            .takes_value(true)
-                            .about("Number of threads if multithreading")))
+        .arg(Arg::new("genomes")
+            .long("genomes")
+            .about("Output just the genomes"))
+        .arg(Arg::new("split")
+            .long("split")
+            .about("Split the output bed and bim"))
+        .arg(Arg::new("output")
+            .short('o')
+            .long("output")
+            .about("Output prefix")
+            .takes_value(true)
+            .default_value("gfa2bin.default"))
+        .arg(Arg::new("bed")
+            .long("bed")
+            .about("Output bed + bim file"))
+        .arg(Arg::new("bimbam")
+            .long("bimbam")
+            .about("Output bimbam format"))
+        .arg(Arg::new("traversal")
+            .long("traversal")
+            .about("Additional traversaloutput file")
+            .takes_value(true))
+        .arg(Arg::new("smart")
+            .long("smart")
+            .short('j')
+            .about("Reduce the number of tests"))
+        .arg(Arg::new("number")
+            .short('n')
+            .about("Number of output")
+            .takes_value(true))
+        .arg(Arg::new("threads")
+            .long("threads")
+            .takes_value(true)
+            .about("Number of threads if multithreading")))
+
+
+
+        // Will work on this later
         .subcommand(App::new("find")
             .version("1.0.1")
             .about("Find significant hits")
@@ -130,7 +133,6 @@ fn main() {
 
         .get_matches();
 
-    println!("dasödaspöäööä");
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
 
     // Checking verbose
@@ -161,7 +163,6 @@ fn main() {
             .target(Target::Stderr)
             .init();
     }
-    println!("dasödaspöäööä");
 
     /// You want to convert stuff
     if let Some(ref matches) = matches.subcommand_matches("convert") {
@@ -199,22 +200,18 @@ fn main() {
         let mut index_normal: BiMap<u32, usize> = BiMap::new();
         let mut index_dir: BiMap<(u32, bool), usize> = BiMap::new();
         let mut index_edge: BiMap<(u32, bool, u32, bool), usize> = BiMap::new();
-        println!("dasödaspöäööä");
         // Check if gfa or coverage
         if matches.is_present("gfa") {
             let mut _input: &str = "not relevant";
             if Path::new(matches.value_of("gfa").unwrap()).exists() {
                 _input = matches.value_of("gfa").unwrap();
-                println!("dasödaspöäööä");
             } else {
-                println!("dasödaspöäööä");
                 warn!("No file with such name");
                 process::exit(0x0100);
             }
             let _output: &str = matches.value_of("output").unwrap();
             // Read the graph
             let mut graph = NGfa::new();
-            println!("{}", _input);
             graph.from_graph(_input);
 
             // Make graph, wrapper

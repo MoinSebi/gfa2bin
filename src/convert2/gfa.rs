@@ -131,11 +131,15 @@ pub fn matrix_dir_node(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWr
         handles.push(handle);
     }
 
+    for handle in handles {
+        handle.join().unwrap()
 
+    }
 
     let o = result2.lock().unwrap();
 
     mw.matrix.matrix_core = Vec::with_capacity(o.len());
+    println!("len is {}", o.len());
     for (i, x) in o.iter().enumerate(){
         mw.matrix.matrix_core.push(x.1.clone());
         mw.column_name.insert(i as u32, x.0.clone());
@@ -150,6 +154,7 @@ pub fn tt (path: &NPath, h2: &Arc<BiMap<(u32, bool), usize>>) -> Vec<u32> {
         dir_nodes[*h2.get_by_left(&(node, path.dir[x2].clone())).unwrap()] += 1;
 
     }
+    println!("{:?}", dir_nodes);
     return dir_nodes
 
 
@@ -200,6 +205,10 @@ pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrappe
         handles.push(handle);
     }
 
+    for handle in handles {
+        handle.join().unwrap()
+
+    }
 
     let o = result2.lock().unwrap();
 

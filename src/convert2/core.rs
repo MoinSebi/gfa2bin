@@ -31,7 +31,6 @@ impl MatrixWrapper {
     pub fn new() -> Self {
         let matrx = Matrix::new();
         let col: HashMap<u32, String> = HashMap::new();
-        let mtrx: Vec<Vec<bool>> = Vec::new();
         let mut bv: Vec<bitvec::vec::BitVec> = Vec::new();
         Self {
             matrix: matrx,
