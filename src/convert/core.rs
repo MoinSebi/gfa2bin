@@ -1,6 +1,6 @@
 
 
-use crate::convert2::matrix::Matrix;
+use crate::convert::matrix::Matrix;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::{Write, BufWriter, BufReader, BufRead};

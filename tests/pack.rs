@@ -8,7 +8,7 @@ fn pack_unknown() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-p")
         .arg("/home/svorbrugg_local/Rust/packing/testing/jo1.bin.zst")
         .arg("-o")
-        .arg("test_data/pack1");
+        .arg("data/output/pack1");
     cmd.assert().success();
     //cmd.assert().stderr(predicate::str::contains("No file with such name"));
     //fs::remove_file("example_data/test3.bubble.stats")?;

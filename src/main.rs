@@ -1,6 +1,6 @@
 mod counting;
 mod helper;
-mod convert2;
+mod convert;
 mod find;
 
 
@@ -15,10 +15,10 @@ use env_logger::{Builder, Target};
 use log::{info, LevelFilter, warn};
 use std::io::Write;
 use std::path::Path;
-use crate::convert2::core::{MatrixWrapper, remove_bimap};
-use crate::convert2::gfa::{matrix_dir_node, matrix_edge, matrix_node, matrix_node_wrapper2};
-use crate::convert2::pack::{matrix_pack_bit, matrix_pack_u16};
-use crate::convert2::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
+use crate::convert::core::{MatrixWrapper, remove_bimap};
+use crate::convert::gfa::{matrix_dir_node, matrix_edge, matrix_node, matrix_node_wrapper2};
+use crate::convert::pack::{matrix_pack_bit, matrix_pack_u16};
+use crate::convert::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
 
 
 fn main() {
