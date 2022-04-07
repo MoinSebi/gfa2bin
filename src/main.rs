@@ -174,6 +174,7 @@ fn main() {
 
 
         // This is to decide which output
+        // bed is binary, bimbam is normalized f16 (or something), all is both
         let type_out;
         let _output: &str = matches.value_of("output").unwrap();
 

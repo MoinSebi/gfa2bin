@@ -2,6 +2,8 @@
 use std::fmt::{Debug};
 use std::fs::File;
 use std::io::{Write, BufWriter};
+use bitvec::order::Msb0;
+use bitvec::vec::BitVec;
 use log::info;
 use crate::matrix_edge;
 
@@ -32,10 +34,10 @@ impl Matrix {
     /// Input: Threshold
     /// Basic: number = threshhold
     /// For presence/absence -> number = 1
-    pub fn copy(&self, number: u32) -> Vec<bitvec::vec::BitVec>{
-        let mut new_matrix: Vec<bitvec::vec::BitVec> = Vec::new();
+    pub fn copy(&self, number: u32) -> Vec<BitVec<u8, Msb0>>{
+        let mut new_matrix: Vec<BitVec<u8, Msb0>> = Vec::new();
         for x in self.matrix_core.iter(){
-            let mut new_vec: bitvec::vec::BitVec = bitvec::vec::BitVec::new();
+            let mut new_vec: BitVec<u8, Msb0> = BitVec::new();
             for y in x.iter(){
                 new_vec.push(y.clone() >= number);
 

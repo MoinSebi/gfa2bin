@@ -77,6 +77,8 @@ pub fn write_genome_order(se: & mut MatrixWrapper, out_prefix: &str){
 
 use crate::helper::{trans2, binary2dec_bed, trans3, trans5, trans6, binary2dec_bed2};
 use std::slice::Chunks;
+use bitvec::order::Msb0;
+use bitvec::vec::BitVec;
 
 /// Write the names - helper function
 pub fn write_reduce(h1: &Vec<usize>, h2:  &Vec<usize>, out_prefix: &str, t: &str) {
@@ -118,7 +120,7 @@ pub fn write_bimap2<T>(bm: &BiMap<T, usize>, till: usize, number: usize)
 
 /// For multiple bed files
 /// Splitting
-pub fn write_bed_split(data: &[bitvec::vec::BitVec], out_prefix: &str, t: &str){
+pub fn write_bed_split(data: &[BitVec<u8, Msb0>], out_prefix: &str, t: &str){
     //hexdump -C test.bin
     // xxd -b file
     // xxd file

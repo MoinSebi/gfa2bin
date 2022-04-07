@@ -6,13 +6,13 @@ use std::fmt::Debug;
 use std::io::{Write, BufWriter, BufReader, BufRead};
 use std::fs::File;
 use gfaR_wrapper::{GraphWrapper, NGfa};
-use crate::helper::{binary2dec_bed, binary2dec_bed2, trans2, trans5};
 use packing_lib::reader::{ReaderU16, wrapper_bool, ReaderBit, wrapper_u16, get_file_as_byte_vec};
 use bimap::{BiMap};
 use std::slice::Chunks;
 use std::mem;
 use bitvec::prelude::*;
 use log::info;
+use crate::helper::{binary2dec_bed2, trans5};
 
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -21,7 +21,7 @@ pub struct MatrixWrapper {
     pub matrix: Matrix,
     pub column_name: HashMap<u32, String>,
 
-    pub matrix_bin: Vec<bitvec::vec::BitVec>//Vec<Vec<bool>>
+    pub matrix_bin: Vec<BitVec<u8, Msb0>>//Vec<Vec<bool>>
 
 }
 
@@ -31,7 +31,7 @@ impl MatrixWrapper {
     pub fn new() -> Self {
         let matrx = Matrix::new();
         let col: HashMap<u32, String> = HashMap::new();
-        let mut bv: Vec<bitvec::vec::BitVec> = Vec::new();
+        let mut bv: Vec<BitVec<u8, Msb0>> = Vec::new();
         Self {
             matrix: matrx,
             column_name: col,
@@ -49,7 +49,7 @@ impl MatrixWrapper {
         let file = File::open(filename).expect("ERROR: CAN NOT READ FILE\n");
         let reader = BufReader::new(file);
         let mut file_genomes: HashSet<String> = HashSet::new();
-        let mut bv: Vec<bitvec::vec::BitVec> = Vec::new();
+        let mut bv: Vec<BitVec<u8, Msb0>> = Vec::new();
 
         for line in reader.lines() {
             let l = line.unwrap();
@@ -93,7 +93,7 @@ impl MatrixWrapper {
 
     /// Split bin matrix into multiple ones
     /// For smaller data and faster read of GEMMA
-    pub fn split_bin(&self, number: usize) -> Chunks<bitvec::vec::BitVec>{
+    pub fn split_bin(&self, number: usize) -> Chunks<BitVec<u8, Msb0>>{
         let size = self.matrix_bin.len()/number;
         let mut h = Vec::new();
         let mut tnumb = 0;
@@ -167,7 +167,7 @@ impl MatrixWrapper {
     /// A lot of transposing -> slow
     pub fn filter(&self) -> Vec<u32>{
         info!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
-        let k:Vec<bitvec::vec::BitVec>= trans5(&self.matrix_bin);
+        let k:Vec<BitVec<u8, Msb0>>= trans5(&self.matrix_bin);
         let mut k2 = Vec::new();
 
         let mut to_remove: Vec<u32> = Vec::new();
@@ -204,7 +204,7 @@ impl MatrixWrapper {
 
         let mut count = 0;
         for x in 0..self.matrix_bin[0].len(){
-            let mut u: bitvec::vec::BitVec = bitvec::vec::BitVec::new();
+            let mut u: BitVec<u8, Msb0> = BitVec::new();
             for y in 0..self.matrix_bin.len(){
                 u.push(self.matrix_bin[y][x]);
             }
@@ -220,7 +220,7 @@ impl MatrixWrapper {
             }
 
         }
-        let mut h : Vec<bitvec::vec::BitVec> = Vec::new();
+        let mut h : Vec<BitVec<u8, Msb0>> = Vec::new();
         for x in 0..hm.iter().len(){
             h.push(hm.get_by_right(&x).unwrap().clone());
         }
@@ -260,7 +260,7 @@ impl MatrixWrapper {
 
         // Make SNPs Vector
         info!("reduce it djsakdhsja {}", self.matrix_bin.len());
-        let k: Vec<bitvec::vec::BitVec>= trans5(&self.matrix_bin);
+        let k: Vec<BitVec<u8, Msb0>>= trans5(&self.matrix_bin);
         info!("reduce it djsakdhsja2 {}", self.matrix_bin.len());
         info!("Starting size {}", k.len());
 
@@ -280,7 +280,7 @@ impl MatrixWrapper {
         }
 
         // Make a Vector (from 1 - len(x))
-        let mut h : Vec<bitvec::vec::BitVec> = Vec::new();
+        let mut h : Vec<BitVec<u8, Msb0>> = Vec::new();
         for x in 0..hm.iter().len(){
             h.push(hm.get_by_right(&x).unwrap().clone());
         }

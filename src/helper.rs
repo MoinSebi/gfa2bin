@@ -2,11 +2,11 @@ use std::fs::File;
 use std::io::{Write, BufWriter};
 use bitvec::bitvec;
 use bitvec::macros::internal::funty::Fundamental;
-use bitvec::order::Lsb0;
+use bitvec::order::{Lsb0, Msb0};
+use bitvec::prelude::BitVec;
 use bitvec::slice::BitSlice;
-use bitvec::vec::BitVec;
+use byteorder::{BigEndian, ByteOrder};
 use log::info;
-use packing_lib::helper::u8_u16;
 use packing_lib::reader::get_file_as_byte_vec;
 
 
@@ -25,7 +25,7 @@ pub fn binary2dec_bed(vecc: &[bool]) -> u8{
 
 
 
-pub fn binary2dec_bed2(vecc: &BitSlice) -> u8{
+pub fn binary2dec_bed2(vecc: &BitSlice<u8, Msb0>) -> u8{
     let mut result: u8 = 0;
     let mut count = 0;
     for x in vecc.iter(){
@@ -66,8 +66,8 @@ pub fn transpose<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
         .collect()
 }
 
-pub fn trans4(v: &Vec<bitvec::vec::BitVec>){
-    let mut h: Vec<bitvec::vec::BitVec> = Vec::new();
+pub fn trans4(v: &Vec<BitVec<u8, Msb0>>){
+    let mut h: Vec<BitVec<u8, Msb0>> = Vec::new();
     for x in v.iter(){
         let mut o10: BitVec<u8, Lsb0> = BitVec::new();
         for y in x.iter(){
@@ -109,12 +109,12 @@ pub fn trans3<T>(v: &[Vec<T>]) -> Vec<Vec<T>>
 }
 
 
-pub fn trans5(v: &Vec<bitvec::vec::BitVec>) -> Vec<bitvec::vec::BitVec>{
+pub fn trans5(v: &Vec<BitVec<u8, Msb0>>) -> Vec<BitVec<u8, Msb0>>{
     info!("Transposing");
-    let mut o: Vec<bitvec::vec::BitVec> = Vec::new();
+    let mut o: Vec<BitVec<u8, Msb0>> = Vec::new();
     println!("HELP {:?}", o);
     for x in 0..v[0].len(){
-        let mut o2: bitvec::vec::BitVec = bitvec::vec::BitVec::new();
+        let mut o2: BitVec<u8, Msb0> = BitVec::new();
         for y in 0..v.len(){
             o2.push(v[y][x].clone());
         }
@@ -123,11 +123,11 @@ pub fn trans5(v: &Vec<bitvec::vec::BitVec>) -> Vec<bitvec::vec::BitVec>{
     return o;
 }
 
-pub fn trans6(v: &[bitvec::vec::BitVec]) -> Vec<bitvec::vec::BitVec>{
+pub fn trans6(v: &[BitVec<u8, Msb0>]) -> Vec<BitVec<u8, Msb0>>{
     info!("Transposing");
-    let mut o: Vec<bitvec::vec::BitVec> = Vec::new();
+    let mut o: Vec<BitVec<u8, Msb0>> = Vec::new();
     for x in 0..v[0].len(){
-        let mut o2: bitvec::vec::BitVec = bitvec::vec::BitVec::new();
+        let mut o2: BitVec<u8, Msb0> = BitVec::new();
         for y in 0..v.len(){
             o2.push(v[y][x].clone());
         }
@@ -140,7 +140,7 @@ pub fn trans6(v: &[bitvec::vec::BitVec]) -> Vec<bitvec::vec::BitVec>{
 
 
 pub fn get_thresh(filename: &str) -> u16{
-    let size = u8_u16(&mut & get_file_as_byte_vec(filename)[7..9]);
+    let size = BigEndian::read_u16(&mut & get_file_as_byte_vec(filename)[7..9]);
     size
 }
 

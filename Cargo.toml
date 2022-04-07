@@ -13,7 +13,7 @@ packing = {git = "https://github.com/MoinSebi/packing"}
 bimap = "=0.6.1"
 hashbrown = "0.11"
 bitvec = "1"
-
+byteorder = "1.0.0"
 bifurcation = {git = "https://github.com/MoinSebi/bifurcation"}
 
 
