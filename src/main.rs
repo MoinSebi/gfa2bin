@@ -15,7 +15,7 @@ use log::{info, LevelFilter, warn};
 use std::io::Write;
 use std::path::Path;
 use crate::convert::core::{MatrixWrapper, remove_bimap};
-use crate::convert::gfa::{matrix_dir_node, matrix_edge, matrix_node_wrapper2};
+use crate::convert::gfa::{matrix_dir_node, matrix_edge, matrix_node_wrapper};
 use crate::convert::pack::{matrix_pack_bit, matrix_pack_u16};
 use crate::convert::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
 
@@ -217,10 +217,11 @@ fn main() {
             // Make graph, wrapper
             let mut gwrapper: GraphWrapper = GraphWrapper::new();
             gwrapper.fromNGfa(&graph, del);
+            gwrapper.
             if matches.is_present("type") {
                 let values: &str = matches.value_of("type").unwrap();
                 if values.contains('n') {
-                    matrix_node_wrapper2(&graph, &mut matrix, &mut index_normal, &2);
+                    matrix_node_wrapper(&graph, &mut matrix, &mut index_normal, &2);
                 }
                 if values.contains('e') {
                     matrix_edge(&graph, &mut matrix, &mut index_edge, &2);
@@ -229,7 +230,7 @@ fn main() {
                     matrix_dir_node(&graph, &mut matrix, &mut index_dir, &2);
                 }
             } else {
-                matrix_node_wrapper2(&graph, &mut matrix, &mut index_normal, &(2 as usize));
+                matrix_node_wrapper(&graph, &mut matrix, &mut index_normal, &(2 as usize));
             }
         } else {
             if matches.is_present("pack") {

@@ -6,22 +6,14 @@ use crate::MatrixWrapper;
 /// Matrix constructor from mappings (bits)
 pub fn matrix_pack_bit(filename: &str, matrix_w: & mut MatrixWrapper, h2: & mut BiMap<u32, usize>) {
     let buf: Vec<u8> = get_file_as_byte_vec(filename);
-    info!("kk2 {}", buf.len());
     let data: Vec<ReaderBit> = wrapper_bool(&buf);
-    info!("kk2 {}", data.len());
     for (index, reader_bit) in data.iter().enumerate(){
         //println!("{}", x.name);
         matrix_w.column_name.insert(index as u32, reader_bit.name.clone());
         //println!("{}", k.len());
-        info!("kk {}", reader_bit.data.len());
-        info!("kk {}", reader_bit.name);
-        info!("kk {}", reader_bit.kind);
         let k = reader_bit.data.clone();
-        info!("kk {}", k.len());
         matrix_w.matrix_bin.push(k);
     }
-    info!("Make BIMAP");
-    info!("size {}", matrix_w.matrix_bin[0].len());
     for x in 0..matrix_w.matrix_bin[0].len(){
         h2.insert(x as u32, x);
     }

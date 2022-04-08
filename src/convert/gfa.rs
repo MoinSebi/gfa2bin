@@ -9,7 +9,7 @@ use crate::MatrixWrapper;
 
 
 /// Multithread wrapper to get MatrixWrapper from a graph
-pub fn matrix_node_wrapper2(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<u32, usize>, threads: &usize) {
+pub fn matrix_node_wrapper(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<u32, usize>, threads: &usize) {
     // Get all the nodes
     let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
 
