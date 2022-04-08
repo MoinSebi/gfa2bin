@@ -9,14 +9,13 @@ use gfaR_wrapper::{GraphWrapper, NGfa};
 use std::process;
 use crate::helper::get_thresh;
 use bimap::BiMap;
-use std::env::args;
 use chrono::Local;
 use env_logger::{Builder, Target};
 use log::{info, LevelFilter, warn};
 use std::io::Write;
 use std::path::Path;
 use crate::convert::core::{MatrixWrapper, remove_bimap};
-use crate::convert::gfa::{matrix_dir_node, matrix_edge, matrix_node, matrix_node_wrapper2};
+use crate::convert::gfa::{matrix_dir_node, matrix_edge, matrix_node_wrapper2};
 use crate::convert::pack::{matrix_pack_bit, matrix_pack_u16};
 use crate::convert::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
 
@@ -164,7 +163,7 @@ fn main() {
             .init();
     }
 
-    /// You want to convert stuff
+
     if let Some(ref matches) = matches.subcommand_matches("convert") {
         // Check if input
         if !(matches.is_present("gfa") | matches.is_present("pack")) {
@@ -221,16 +220,16 @@ fn main() {
             if matches.is_present("type") {
                 let values: &str = matches.value_of("type").unwrap();
                 if values.contains('n') {
-                    matrix_node_wrapper2(&gwrapper, &graph, &mut matrix, &mut index_normal, &2);
+                    matrix_node_wrapper2(&graph, &mut matrix, &mut index_normal, &2);
                 }
                 if values.contains('e') {
-                    matrix_edge(&gwrapper, &graph, &mut matrix, &mut index_edge, &2);
+                    matrix_edge(&graph, &mut matrix, &mut index_edge, &2);
                 }
                 if values.contains('d') {
-                    matrix_dir_node(&gwrapper, &graph, &mut matrix, &mut index_dir, &2);
+                    matrix_dir_node(&graph, &mut matrix, &mut index_dir, &2);
                 }
             } else {
-                matrix_node_wrapper2(&gwrapper, &graph, &mut matrix, &mut index_normal, &(2 as usize));
+                matrix_node_wrapper2(&graph, &mut matrix, &mut index_normal, &(2 as usize));
             }
         } else {
             if matches.is_present("pack") {

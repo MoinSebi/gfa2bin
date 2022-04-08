@@ -1,11 +1,12 @@
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 
-fn readTable(filename: &str, col_pval: usize, col_pos: usize) -> (Vec<f64>, Vec<usize>){
+#[allow(dead_code)]
+fn read_table(filename: &str, col_pval: usize, col_pos: usize) -> (Vec<f64>, Vec<usize>){
     let file = File::open(filename).expect("ERROR: CAN NOT READ FILE\n");
     let reader = BufReader::new(file);
     let mut vector_pval:Vec<f64> = Vec::new();
-    let mut vector_pos: Vec<usize> = Vec::new();
+    let vector_pos: Vec<usize> = Vec::new();
     for (i, line) in reader.lines().enumerate(){
         let l = line.unwrap();
         if i != 0{

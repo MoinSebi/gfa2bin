@@ -5,8 +5,6 @@ use std::io::{Write, BufWriter};
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
 use log::info;
-use crate::matrix_edge;
-
 
 /// Core structure
 /// 2D Matrix with
@@ -68,7 +66,7 @@ impl Matrix {
         new_matrix
     }
 
-
+    #[allow(dead_code)]
     pub fn write_bimbam(&self, out_prefix: &str, t: &str){
         info!("Writing bimbam file");
         let f = File::create([out_prefix, t, "bed"].join(".")).expect("Unable to create file");

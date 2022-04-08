@@ -5,11 +5,8 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::{Write, BufWriter, BufReader, BufRead};
 use std::fs::File;
-use gfaR_wrapper::{GraphWrapper, NGfa};
-use packing_lib::reader::{ReaderU16, wrapper_bool, ReaderBit, wrapper_u16, get_file_as_byte_vec};
 use bimap::{BiMap};
 use std::slice::Chunks;
-use std::mem;
 use bitvec::prelude::*;
 use log::info;
 use crate::helper::{binary2dec_bed2, trans5};
@@ -31,7 +28,7 @@ impl MatrixWrapper {
     pub fn new() -> Self {
         let matrx = Matrix::new();
         let col: HashMap<u32, String> = HashMap::new();
-        let mut bv: Vec<BitVec<u8, Msb0>> = Vec::new();
+        let bv: Vec<BitVec<u8, Msb0>> = Vec::new();
         Self {
             matrix: matrx,
             column_name: col,
@@ -49,7 +46,6 @@ impl MatrixWrapper {
         let file = File::open(filename).expect("ERROR: CAN NOT READ FILE\n");
         let reader = BufReader::new(file);
         let mut file_genomes: HashSet<String> = HashSet::new();
-        let mut bv: Vec<BitVec<u8, Msb0>> = Vec::new();
 
         for line in reader.lines() {
             let l = line.unwrap();
@@ -97,8 +93,9 @@ impl MatrixWrapper {
         let size = self.matrix_bin.len()/number;
         let mut h = Vec::new();
         let mut tnumb = 0;
-        for x in 0..number{
+        for _x in 0..number{
             h.push(&self.matrix_bin[tnumb..tnumb+size]);
+            tnumb += tnumb+size;
         }
 
         let j = self.matrix_bin.chunks(10);
@@ -106,16 +103,17 @@ impl MatrixWrapper {
 
     }
 
+    #[allow(dead_code)]
     /// Split matrix matrix into multiple ones
     /// For smaller data and faster read of GEMMA
     pub fn split_matrix(&self, number: usize) -> Vec<&[Vec<u32>]>{
         let size = self.matrix.matrix_core.len()/number;
         let mut h = Vec::new();
         let mut tnumb = 0;
-        for x in 0..number{
+        for _x in 0..number{
             h.push(&self.matrix.matrix_core[tnumb..tnumb+size]);
+            tnumb += tnumb+size;
         }
-        let j = self.matrix.matrix_core.chunks(10);
         h
 
     }
@@ -154,12 +152,6 @@ impl MatrixWrapper {
 
     }
 
-    pub fn wrapper_write_bed_split(&self, out_prefix: &str, t: &str){
-        let chunks = self.matrix_bin.chunks(10);
-        for chunk in chunks{
-
-        }
-    }
 
     /// Filter binary matrix
     /// TODO
@@ -247,7 +239,7 @@ impl MatrixWrapper {
 
     }
 
-
+    #[allow(dead_code)]
     /// Reduce binary shit
     pub fn reduce_combinations(& mut self) -> (Vec<usize>, Vec<usize>){
         // Meta
@@ -327,6 +319,7 @@ pub fn write_bim<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 
 }
 
+#[allow(dead_code)]
 /// Writing bim helper
 /// Index -> Feature
 /// Index because wrongly removed
@@ -338,7 +331,6 @@ pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 
     let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
-    let o: Vec<&usize> = ll.right_values().collect();
     for x in 0..ll.right_values().len(){
         write!(f, "{}\t{:?}\n", x, ll.get_by_right(&x).unwrap()).expect("Not able to write ");
     }

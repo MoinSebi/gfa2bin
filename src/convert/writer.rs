@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 use std::fs::File;
-use std::io::{Write, BufWriter, BufReader, BufRead};
-
+use std::io::{Write, BufWriter};
 use bimap::BiMap;
 use crate::MatrixWrapper;
 
@@ -75,10 +74,10 @@ pub fn write_genome_order(se: & mut MatrixWrapper, out_prefix: &str){
 }
 
 
-use crate::helper::{trans2, binary2dec_bed, trans3, trans5, trans6, binary2dec_bed2};
-use std::slice::Chunks;
+
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
+use crate::helper::{binary2dec_bed2, trans6};
 
 /// Write the names - helper function
 pub fn write_reduce(h1: &Vec<usize>, h2:  &Vec<usize>, out_prefix: &str, t: &str) {
@@ -89,6 +88,7 @@ pub fn write_reduce(h1: &Vec<usize>, h2:  &Vec<usize>, out_prefix: &str, t: &str
     }
 }
 
+#[allow(dead_code)]
 /// Write BIMAP (index)
 /// This function may be redundant in the future
 pub fn write_bimap<T>(bm: &BiMap<T, usize>)
@@ -102,8 +102,9 @@ pub fn write_bimap<T>(bm: &BiMap<T, usize>)
     }
 }
 
+#[allow(dead_code)]
 /// Write BIMAP (but you can split)
-pub fn write_bimap2<T>(bm: &BiMap<T, usize>, till: usize, number: usize)
+pub fn write_bimap2<T>(bm: &BiMap<T, usize>, till: usize)
     where
         T:  Debug + std::hash::Hash + std::cmp::Eq
 {

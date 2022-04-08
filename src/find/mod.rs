@@ -1,1 +1,1 @@
-pub mod readGEMMA;
+pub mod read_gemma;

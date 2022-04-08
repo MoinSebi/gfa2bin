@@ -1,16 +1,15 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
-use bifurcation::helper::{chunk_inplace, get_all_pairs};
+use bifurcation::helper::{chunk_inplace};
 use bimap::BiMap;
-use bitvec::ptr::Mut;
-use gfaR_wrapper::{GraphWrapper, NGfa, NPath};
-use hashbrown::{HashMap, HashSet};
-use log::{debug, info};
+use gfaR_wrapper::{NGfa, NPath};
+use hashbrown::{HashSet};
+use log::{debug};
 use crate::MatrixWrapper;
 
 
 /// Multithread wrapper to get MatrixWrapper from a graph
-pub fn matrix_node_wrapper2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<u32, usize>, threads: &usize) {
+pub fn matrix_node_wrapper2(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<u32, usize>, threads: &usize) {
     // Get all the nodes
     let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
 
@@ -27,8 +26,6 @@ pub fn matrix_node_wrapper2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut Mat
     // This is for multithreading
     let chunks = chunk_inplace(graph.paths.clone(), threads.clone());
 
-    let result = Arc::new(Mutex::new(mw.clone()));
-    let wrapper = Arc::new(gwrapper);
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));
     let k = Arc::new(bimap.clone());
@@ -36,16 +33,14 @@ pub fn matrix_node_wrapper2(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut Mat
 
 
     for chunk in chunks{
-        let r = result.clone();
         let r2 = result2.clone();
-        let wra = wrapper.clone();
         let rro = k.clone();
         let handle = thread::spawn(move || {
 
             for pair in chunk.iter(){
                 debug!("Pair: {} ", pair.name);
                 println!("djkalsjdla {}", pair.name);
-                let mut h = matrix_node(pair, &rro);
+                let h = matrix_node(pair, &rro);
                 let mut rr = r2.lock().unwrap();
                 rr.push((pair.name.clone(), h));
 
@@ -88,7 +83,7 @@ pub fn matrix_node(path: &NPath, h2: &Arc<BiMap<u32, usize>>) -> Vec<u32>{
     count
 }
 /// Matrix constructor from nodes
-pub fn matrix_dir_node(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool), usize>, threads: &usize){
+pub fn matrix_dir_node(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool), usize>, threads: &usize){
 
     let chunks = chunk_inplace(graph.paths.clone(), threads.clone());
 
@@ -110,16 +105,13 @@ pub fn matrix_dir_node(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWr
         count += 1;
     }
 
-    let result = Arc::new(Mutex::new(mw.clone()));
-    let wrapper = Arc::new(gwrapper);
+
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));
     let k = Arc::new(bimap.clone());
 
     for chunk in chunks {
-        let r = result.clone();
         let r2 = result2.clone();
-        let wra = wrapper.clone();
         let rro = k.clone();
         let handle = thread::spawn(move || {
             for x in chunk.iter(){
@@ -162,7 +154,7 @@ pub fn tt (path: &NPath, h2: &Arc<BiMap<(u32, bool), usize>>) -> Vec<u32> {
 }
 
 /// Matrix constructor from edges
-pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool, u32, bool), usize>, threads: &usize){
+pub fn matrix_edge(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool, u32, bool), usize>, threads: &usize){
 
 
 
@@ -182,8 +174,7 @@ pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrappe
     }
 
 
-    let result = Arc::new(Mutex::new(mw.clone()));
-    let wrapper = Arc::new(gwrapper);
+
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));
     let k = Arc::new(bimap.clone());
@@ -191,9 +182,7 @@ pub fn matrix_edge(gwrapper: &GraphWrapper, graph: &NGfa, mw: & mut MatrixWrappe
 
 
     for chunk in chunks {
-        let r = result.clone();
         let r2 = result2.clone();
-        let wra = wrapper.clone();
         let rro = k.clone();
         let handle = thread::spawn(move || {
             for x in chunk.iter(){
