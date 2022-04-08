@@ -217,7 +217,6 @@ fn main() {
             // Make graph, wrapper
             let mut gwrapper: GraphWrapper = GraphWrapper::new();
             gwrapper.fromNGfa(&graph, del);
-            gwrapper.
             if matches.is_present("type") {
                 let values: &str = matches.value_of("type").unwrap();
                 if values.contains('n') {
