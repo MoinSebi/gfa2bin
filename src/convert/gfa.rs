@@ -77,15 +77,15 @@ pub fn matrix_node_wrapper<'a>(gwrapper: &'a GraphWrapper, graph: &NGfa, mw: & m
 
     let o = result2.lock().unwrap();
 
-    mw.matrix.matrix_core = Vec::with_capacity(o.len());
-    println!("{:?}", mw.matrix.matrix_core);
+    mw.matrix_core = Vec::with_capacity(o.len());
+    println!("{:?}", mw.matrix_core);
     for (i, x) in o.iter().enumerate(){
         println!("dasdasd {:?}", x);
-        mw.matrix.matrix_core.push(x.1.clone());
+        mw.matrix_core.push(x.1.clone());
         mw.column_name.insert(i as u32, x.0.clone());
     }
 
-    println!("{:?}", mw.matrix.matrix_core);
+    println!("{:?}", mw.matrix_core);
 
 
 
@@ -148,10 +148,10 @@ pub fn matrix_dir_node(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap
 
     let o = result2.lock().unwrap();
 
-    mw.matrix.matrix_core = Vec::with_capacity(o.len());
+    mw.matrix_core = Vec::with_capacity(o.len());
     println!("len is {}", o.len());
     for (i, x) in o.iter().enumerate(){
-        mw.matrix.matrix_core.push(x.1.clone());
+        mw.matrix_core.push(x.1.clone());
         mw.column_name.insert(i as u32, x.0.clone());
     }
 }
@@ -219,9 +219,9 @@ pub fn matrix_edge(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u3
 
     let o = result2.lock().unwrap();
 
-    mw.matrix.matrix_core = Vec::with_capacity(o.len());
+    mw.matrix_core = Vec::with_capacity(o.len());
     for (i, x) in o.iter().enumerate(){
-        mw.matrix.matrix_core.push(x.1.clone());
+        mw.matrix_core.push(x.1.clone());
         mw.column_name.insert(i as u32, x.0.clone());
     }
 

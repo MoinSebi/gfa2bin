@@ -15,9 +15,9 @@ use crate::helper::{binary2dec_bed2, trans5};
 #[derive(Debug, Clone, Eq, PartialEq)]
 /// Core data structure, which includes ever
 pub struct MatrixWrapper {
-    pub matrix: Matrix,
+    pub shape: (usize, usize),
+    pub matrix_core: Vec<Vec<u32>>,
     pub column_name: HashMap<u32, String>,
-
     pub matrix_bin: Vec<BitVec<u8, Msb0>>//Vec<Vec<bool>>
 
 }
@@ -26,14 +26,30 @@ impl MatrixWrapper {
 
     /// Dummy initialization
     pub fn new() -> Self {
-        let matrx = Matrix::new();
         let col: HashMap<u32, String> = HashMap::new();
         let bv: Vec<BitVec<u8, Msb0>> = Vec::new();
+        let matrix = Vec::new();
         Self {
-            matrix: matrx,
+            shape: (0,0),
+            matrix_core: matrix,
             column_name: col,
             matrix_bin: bv,
         }
+    }
+
+
+    //--------------------------------------------------------------------------------
+    pub fn make_binary2(& mut self, number: u32){
+        let mut new_matrix: Vec<BitVec<u8, Msb0>> = Vec::new();
+        for x in self.matrix_core.iter(){
+            let mut new_vec: BitVec<u8, Msb0> = BitVec::new();
+            for y in x.iter(){
+                new_vec.push(y.clone() >= number);
+
+            }
+            new_matrix.push(new_vec);
+        }
+        self.matrix_bin = new_matrix;
     }
 
 
@@ -81,7 +97,7 @@ impl MatrixWrapper {
         rr.sort();
         info!("{:?}", rr);
         for (index, x) in rr.iter().enumerate(){
-            self.matrix.matrix_core.remove((x.clone() as usize) - index);
+            self.matrix_core.remove((x.clone() as usize) - index);
         }
         info!("{:?}", rr);
     }
@@ -90,15 +106,8 @@ impl MatrixWrapper {
     /// Split bin matrix into multiple ones
     /// For smaller data and faster read of GEMMA
     pub fn split_bin(&self, number: usize) -> Chunks<BitVec<u8, Msb0>>{
-        let size = self.matrix_bin.len()/number;
-        let mut h = Vec::new();
-        let mut tnumb = 0;
-        for _x in 0..number{
-            h.push(&self.matrix_bin[tnumb..tnumb+size]);
-            tnumb += tnumb+size;
-        }
-
-        let j = self.matrix_bin.chunks(10);
+        let size = ((self.matrix_bin.len() as f64)/(number as f64)).ceil() as usize;
+        let j = self.matrix_bin.chunks(size);
         j
 
     }
@@ -107,22 +116,17 @@ impl MatrixWrapper {
     /// Split matrix matrix into multiple ones
     /// For smaller data and faster read of GEMMA
     pub fn split_matrix(&self, number: usize) -> Vec<&[Vec<u32>]>{
-        let size = self.matrix.matrix_core.len()/number;
+        let size = self.matrix_core.len()/number;
         let mut h = Vec::new();
         let mut tnumb = 0;
         for _x in 0..number{
-            h.push(&self.matrix.matrix_core[tnumb..tnumb+size]);
+            h.push(&self.matrix_core[tnumb..tnumb+size]);
             tnumb += tnumb+size;
         }
         h
 
     }
 
-    /// Make a binary matrix (matrix_bin) with a threshold
-    /// This is needed for bed output
-    pub fn make_binary(& mut self, thresh: u32){
-        self.matrix_bin = self.matrix.copy(thresh);
-    }
 
 
     /// Write BED output
@@ -136,7 +140,7 @@ impl MatrixWrapper {
 
         let mut buff: Vec<u8> = vec![108, 27, 1];
         // Make SNP Vector
-        let h2 = trans5( &self.matrix_bin);
+        let h2 = &self.matrix_bin;
         for x in h2.iter(){
             let j  = x.chunks(4);
             for x in j{
@@ -233,7 +237,7 @@ impl MatrixWrapper {
 
         let f = File::create([out_prefix, t,  "bim"].join(".")).expect("Unable to create file");
         let mut f = BufWriter::new(f);
-        for x in 0..self.matrix_bin[0].len(){
+        for x in 0..self.matrix_bin.len(){
             write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, x, "A", "T").expect("Not able to write ");
         }
 
@@ -350,6 +354,17 @@ pub fn remove_bimap<T>(bm: & mut BiMap<T, usize>, v: Vec<u32>)
 
     for x in v.iter(){
         bm.remove_by_right(&(*x as usize));
+    }
+
+}
+
+pub fn write_bim2(start: usize, end: usize, out_prefix: &str, t: &str) {
+
+
+    let f = File::create([out_prefix, t,  "bim"].join(".")).expect("Unable to create file");
+    let mut f = BufWriter::new(f);
+    for x in start..end{
+        write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, x, "A", "T").expect("Not able to write ");
     }
 
 }

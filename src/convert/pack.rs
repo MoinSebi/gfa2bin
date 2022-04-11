@@ -41,10 +41,10 @@ pub fn matrix_pack_u16(filename: &str, matrix_w: & mut MatrixWrapper, h2: & mut 
         matrix_w.column_name.insert(index as u32, readeru16.name.clone());
         // First map function use!
         let u: Vec<u32> = readeru16.data.clone().iter().map(|f| f.clone() as u32).collect();
-        matrix_w.matrix.matrix_core.push(u);
+        matrix_w.matrix_core.push(u);
     }
     info!("Make BIMAP");
-    for x in 0..matrix_w.matrix.matrix_core[0].len(){
+    for x in 0..matrix_w.matrix_core[0].len(){
         h2.insert(x as u32, x);
     }
 }

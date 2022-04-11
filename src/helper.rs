@@ -78,6 +78,8 @@ pub fn trans5(v: &Vec<BitVec<u8, Msb0>>) -> Vec<BitVec<u8, Msb0>>{
     return o;
 }
 
+
+
 pub fn trans6(v: &[BitVec<u8, Msb0>]) -> Vec<BitVec<u8, Msb0>>{
     info!("Transposing");
     let mut o: Vec<BitVec<u8, Msb0>> = Vec::new();

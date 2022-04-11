@@ -49,9 +49,6 @@ pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 /// BED + BIM + GENOME ORDER
 pub fn write_matrix(se: & mut MatrixWrapper, what: &str, out_prefix: &str, t: &str){
     if (what == "bed") | (what == "all"){
-        if se.matrix_bin.is_empty(){
-            se.matrix_bin = se.matrix.copy(1);
-        };
         se.write_bed(out_prefix, t);
         se.write_bim(out_prefix, "gfa2bin");
 
@@ -130,7 +127,7 @@ pub fn write_bed_split(data: &[BitVec<u8, Msb0>], out_prefix: &str, t: &str){
 
     let mut buff: Vec<u8> = vec![108, 27, 1];
     // Make SNP Vector
-    let h2 = trans6( &data);
+    let h2 = data;
     for x in h2.iter(){
         let j = x.chunks(4);
         for x in j{

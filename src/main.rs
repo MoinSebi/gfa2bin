@@ -7,14 +7,14 @@ mod find;
 use clap::{App, Arg};
 use gfaR_wrapper::{GraphWrapper, NGfa};
 use std::process;
-use crate::helper::get_thresh;
+use crate::helper::{get_thresh, trans5, transpose};
 use bimap::BiMap;
 use chrono::Local;
 use env_logger::{Builder, Target};
 use log::{info, LevelFilter, warn};
 use std::io::Write;
 use std::path::Path;
-use crate::convert::core::{MatrixWrapper, remove_bimap};
+use crate::convert::core::{MatrixWrapper, remove_bimap, write_bim2};
 use crate::convert::gfa::{matrix_dir_node, matrix_edge, matrix_node_wrapper};
 use crate::convert::pack::{matrix_pack_bit, matrix_pack_u16};
 use crate::convert::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
@@ -244,11 +244,27 @@ fn main() {
                 }
             }
         }
+        //--------------------------------------------------------------------------------------------------------------------------
+        // Transpose that thing
+
+        if matrix.matrix_bin.is_empty(){
+            matrix.matrix_core = transpose(&matrix.matrix_core);
+            matrix.shape = (matrix.matrix_core.len(), matrix.matrix_core[0].len());
+        } else {
+            matrix.matrix_bin = trans5(&matrix.matrix_bin);
+            matrix.shape = (matrix.matrix_bin.len(), matrix.matrix_bin[0].len());
+            eprintln!("shape {:?}", matrix.shape);
+        }
+
+
+
+
 
         if matches.is_present("names") {
             matrix.write_names(_output);
         }
 
+        // This is not working atm
         if matches.is_present("removeNames") {
             matrix.remove_genomes(matches.value_of("removeNames").unwrap())
         }
@@ -256,7 +272,7 @@ fn main() {
 
         if matrix.matrix_bin.is_empty() {
             info!("Make binary");
-            matrix.make_binary(1);
+            matrix.make_binary2(1);
         }
         let mut remove_this: Vec<u32> = Vec::new();
         if matches.is_present("filter") {
@@ -274,8 +290,18 @@ fn main() {
         if matches.is_present("split") {
             info!("Splitting matrix");
             let o = matrix.split_bin(10);
+            println!("long {}", matrix.matrix_bin.len());
+            println!("long {}", matrix.matrix_core.len());
+            let size = ((matrix.matrix_bin.len() as f64)/(10 as f64)).ceil() as usize;
+            let mut count = 0;
             for (index, x) in o.enumerate() {
-                write_bed_split(x, "testsplit", &*index.to_string())
+                println!("index {}", index);
+                write_bed_split(x, _output, &*index.to_string());
+                if count+size > matrix.matrix_bin.len(){
+                    count = matrix.matrix_bin.len()-size;
+                }
+                write_bim2(count, count+size, _output, &*index.to_string());
+                count += size;
             }
         }
 
