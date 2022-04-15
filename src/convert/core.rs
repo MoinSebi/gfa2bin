@@ -39,7 +39,7 @@ impl MatrixWrapper {
 
 
     //--------------------------------------------------------------------------------
-    pub fn make_binary2(& mut self, number: u32){
+    pub fn make_binary(& mut self, number: u32){
         let mut new_matrix: Vec<BitVec<u8, Msb0>> = Vec::new();
         for x in self.matrix_core.iter(){
             let mut new_vec: BitVec<u8, Msb0> = BitVec::new();
@@ -157,18 +157,16 @@ impl MatrixWrapper {
     }
 
 
-    /// Filter binary matrix
-    /// TODO
-    /// Remove transpose and
-    /// A lot of transposing -> slow
-    pub fn filter(&self) -> Vec<u32>{
+    /// Filter the (all-shared) entries
+    ///
+    /// Returns: Vector of index of entries which are shared by all.
+    pub fn filter_shared(&self) -> Vec<u32>{
         info!("{} {}", self.matrix_bin.len(), self.matrix_bin[0].len());
-        let k:Vec<BitVec<u8, Msb0>>= trans5(&self.matrix_bin);
         let mut k2 = Vec::new();
 
         let mut to_remove: Vec<u32> = Vec::new();
 
-        for (i, x) in k.iter().enumerate(){
+        for (i, x) in self.matrix_bin.iter().enumerate(){
             let mut sum = 0;
             for y in x.iter() {
                 if *y == true {
@@ -185,9 +183,7 @@ impl MatrixWrapper {
 
         }
         info!("Boring SNPs {}", to_remove.len());
-        let k3 = trans5(&k2);
 
-        info!("Before {}  After {}", k[0].len(), k3[0].len());
         return to_remove;
     }
 

@@ -247,14 +247,19 @@ fn main() {
         //--------------------------------------------------------------------------------------------------------------------------
         // Transpose that thing
 
+        let mode ;
         if matrix.matrix_bin.is_empty(){
             matrix.matrix_core = transpose(&matrix.matrix_core);
             matrix.shape = (matrix.matrix_core.len(), matrix.matrix_core[0].len());
+            mode = "u16";
         } else {
             matrix.matrix_bin = trans5(&matrix.matrix_bin);
             matrix.shape = (matrix.matrix_bin.len(), matrix.matrix_bin[0].len());
+            mode = "bin";
             eprintln!("shape {:?}", matrix.shape);
         }
+
+
 
 
 
@@ -270,14 +275,17 @@ fn main() {
         }
 
 
+        // Make dummy binary
         if matrix.matrix_bin.is_empty() {
             info!("Make binary");
-            matrix.make_binary2(1);
+            matrix.make_binary(1);
         }
+
+        // Apply a filter
         let mut remove_this: Vec<u32> = Vec::new();
         if matches.is_present("filter") {
             info!("Filtering");
-            remove_this = matrix.filter();
+            remove_this = matrix.filter_shared();
         }
 
         if matches.is_present("reduce") {

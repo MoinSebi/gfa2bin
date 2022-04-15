@@ -31,7 +31,7 @@ fn pack_unknown2() -> Result<(), Box<dyn std::error::Error>> {
         .arg("data/output/pack2")
         .arg("--split");
     cmd.assert().success();
-    cmd.assert().stderr(predicate::str::contains("No file with such name"));
+    //cmd.assert().stderr(predicate::str::contains("No file with such name"));
     //fs::remove_file("example_data/test3.bubble.stats")?;
     //fs::remove_file("example_data/test3.bubble.txt")?;
     //fs::remove_file("example_data/test3.traversal.bed")?;
