@@ -2,8 +2,6 @@
 use std::fmt::{Debug};
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use bitvec::order::Msb0;
-use bitvec::vec::BitVec;
 use log::info;
 
 /// Core structure
@@ -16,34 +14,9 @@ pub struct Matrix {
 
 
 impl Matrix {
-    /// Constructor
-    pub fn new() -> Self {
-        let shape: (u32, u32) = (0,0);
-        let matrix: Vec<Vec<u32>> = Vec::new();
-        Self {
-            shape: shape,
-            matrix_core: matrix,
-        }
-    }
 
-    /// Make binary
-    /// @param:
-    ///
-    /// Input: Threshold
-    /// Basic: number = threshhold
-    /// For presence/absence -> number = 1
-    pub fn copy(&self, number: u32) -> Vec<BitVec<u8, Msb0>>{
-        let mut new_matrix: Vec<BitVec<u8, Msb0>> = Vec::new();
-        for x in self.matrix_core.iter(){
-            let mut new_vec: BitVec<u8, Msb0> = BitVec::new();
-            for y in x.iter(){
-                new_vec.push(y.clone() >= number);
 
-            }
-            new_matrix.push(new_vec);
-        }
-        new_matrix
-    }
+
 
     #[allow(dead_code)]
     /// MinMaxScaler

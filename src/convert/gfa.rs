@@ -9,7 +9,7 @@ use crate::MatrixWrapper;
 
 
 /// Multithread wrapper to get MatrixWrapper from a graph
-pub fn matrix_node_wrapper<'a>(gwrapper: &'a GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<u32, usize>, threads: &usize) {
+pub fn matrix_node_wrapper<'a>(_gwrapper: &'a GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<u32, usize>, threads: &usize) {
     // Get all the nodes
     let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
 
@@ -24,30 +24,8 @@ pub fn matrix_node_wrapper<'a>(gwrapper: &'a GraphWrapper, graph: &NGfa, mw: & m
     println!("path {:?}", graph.paths);
 
     // This is for multithreading
-    let chunks2 = chunk_inplace(gwrapper.genomes.clone(), threads.clone());
     let chunks = chunk_inplace(graph.paths.clone(), threads.clone());
 
-    // let mut handles = Vec::new();
-    // let result2 = Arc::new(Mutex::new(vec![]));
-    // let k = Arc::new(bimap.clone());
-    // println!("chunks {}", chunks.len());
-    //
-    // for chunk in chunks2{
-    //     let r2 = result2.clone();
-    //     let rro = k.clone();
-    //     let handle = thread::spawn(move || {
-    //
-    //         for pair in chunk.iter(){
-    //             for x in pair.1 {
-    //                 eprintln!("daskjdsakd")
-    //             }
-    //             let mut g = r2.lock().unwrap();
-    //             g.push(1);
-    //
-    //         }
-    //     });
-    //     handles.push(handle);
-    // }
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));
     let k = Arc::new(bimap.clone());
@@ -227,6 +205,7 @@ pub fn matrix_edge(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u3
 
 }
 
+/// Counting
 pub fn tt2(path: &NPath, h2: &Arc<BiMap<(u32, bool, u32, bool), usize>>) -> Vec<u32> {
     let mut dir_nodes : Vec<u32> = vec![0; h2.len()] ;
 

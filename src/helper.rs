@@ -80,18 +80,6 @@ pub fn trans5(v: &Vec<BitVec<u8, Msb0>>) -> Vec<BitVec<u8, Msb0>>{
 
 
 
-pub fn trans6(v: &[BitVec<u8, Msb0>]) -> Vec<BitVec<u8, Msb0>>{
-    info!("Transposing");
-    let mut o: Vec<BitVec<u8, Msb0>> = Vec::new();
-    for x in 0..v[0].len(){
-        let mut o2: BitVec<u8, Msb0> = BitVec::new();
-        for y in 0..v.len(){
-            o2.push(v[y][x].clone());
-        }
-        o.push(o2);
-    }
-    return o;
-}
 
 
 

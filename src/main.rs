@@ -15,6 +15,7 @@ use log::{info, LevelFilter, warn};
 use std::io::Write;
 use std::path::Path;
 use crate::convert::core::{MatrixWrapper, remove_bimap, write_bim2};
+use crate::convert::fam::Fam;
 use crate::convert::gfa::{matrix_dir_node, matrix_edge, matrix_node_wrapper};
 use crate::convert::pack::{matrix_pack_bit, matrix_pack_u16};
 use crate::convert::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
@@ -52,7 +53,10 @@ fn main() {
             .arg(Arg::new("removeNames")
                 .long("rgenomes")
                 .about("Only this"))
-
+            .arg(Arg::new("fam")
+                .short('f')
+                .long("fam")
+                .about("FAM file format"))
             .arg(Arg::new("type")
                 .short('t')
                 .long("type")
@@ -170,6 +174,11 @@ fn main() {
             eprintln!("No input");
             process::exit(0x0100);
         }
+        let _fam;
+        if matches.is_present("fam"){
+            _fam = Fam::from_file(matches.value_of("fam").unwrap())
+
+        }
 
 
         // This is to decide which output
@@ -247,15 +256,12 @@ fn main() {
         //--------------------------------------------------------------------------------------------------------------------------
         // Transpose that thing
 
-        let mode ;
         if matrix.matrix_bin.is_empty(){
             matrix.matrix_core = transpose(&matrix.matrix_core);
             matrix.shape = (matrix.matrix_core.len(), matrix.matrix_core[0].len());
-            mode = "u16";
         } else {
             matrix.matrix_bin = trans5(&matrix.matrix_bin);
             matrix.shape = (matrix.matrix_bin.len(), matrix.matrix_bin[0].len());
-            mode = "bin";
             eprintln!("shape {:?}", matrix.shape);
         }
 

@@ -1,6 +1,5 @@
 
 
-use crate::convert::matrix::Matrix;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::io::{Write, BufWriter, BufReader, BufRead};
@@ -112,6 +111,7 @@ impl MatrixWrapper {
 
     }
 
+    #[allow(dead_code)]
     #[allow(dead_code)]
     /// Split matrix matrix into multiple ones
     /// For smaller data and faster read of GEMMA
@@ -348,9 +348,12 @@ pub fn remove_bimap<T>(bm: & mut BiMap<T, usize>, v: Vec<u32>)
         T:  Debug + std::hash::Hash + std::cmp::Eq
 {
 
+    println!("{}", bm.len());
     for x in v.iter(){
         bm.remove_by_right(&(*x as usize));
     }
+    println!("{}", bm.len());
+
 
 }
 

@@ -32,12 +32,12 @@ pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
         T: Debug + std::hash::Hash + std::cmp::Eq + Ord
 {
 
-
     let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
-    for x in 0..ll.right_values().len(){
+    for x in ll.right_values(){
         write!(f, "{}\t{:?}\n", x, ll.get_by_right(&x).unwrap()).expect("Not able to write ");
     }
+
 
 }
 
@@ -74,7 +74,7 @@ pub fn write_genome_order(se: & mut MatrixWrapper, out_prefix: &str){
 
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
-use crate::helper::{binary2dec_bed2, trans6};
+use crate::helper::{binary2dec_bed2};
 
 /// Write the names - helper function
 pub fn write_reduce(h1: &Vec<usize>, h2:  &Vec<usize>, out_prefix: &str, t: &str) {
