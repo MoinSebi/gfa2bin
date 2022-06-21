@@ -56,7 +56,7 @@ fn main() {
             .arg(Arg::new("fam")
                 .short('f')
                 .long("fam")
-                .about("FAM file format"))
+                .about("For filtering and removing information from the matrix"))
             .arg(Arg::new("type")
                 .short('t')
                 .long("type")
@@ -98,19 +98,22 @@ fn main() {
         .arg(Arg::new("traversal")
             .long("traversal")
             .about("Additional traversaloutput file")
-            .takes_value(true))
+            .takes_value(true)
+            .hidden(true))
         .arg(Arg::new("smart")
             .long("smart")
             .short('j')
             .about("Reduce the number of tests"))
+        .arg(Arg::new("threads")
+            .long("threads")
+            .about("Number of threads if multithreading")
+            .takes_value(true)
+            .default_value("1"))
         .arg(Arg::new("number")
             .short('n')
             .about("Number of output")
             .takes_value(true))
-        .arg(Arg::new("threads")
-            .long("threads")
-            .takes_value(true)
-            .about("Number of threads if multithreading")))
+        )
 
 
 
@@ -168,12 +171,16 @@ fn main() {
     }
 
 
+
+    // Check subcommands
     if let Some(ref matches) = matches.subcommand_matches("convert") {
-        // Check if input
+        let threads: usize = matches.value_of("threads").unwrap().parse().unwrap();
+        // Check if input exists
         if !(matches.is_present("gfa") | matches.is_present("pack")) {
             eprintln!("No input");
             process::exit(0x0100);
         }
+        // Check additional fam file
         let _fam;
         if matches.is_present("fam"){
             _fam = Fam::from_file(matches.value_of("fam").unwrap())
@@ -225,20 +232,23 @@ fn main() {
 
             // Make graph, wrapper
             let mut gwrapper: GraphWrapper = GraphWrapper::new();
-            gwrapper.fromNGfa(&graph, del);
+            gwrapper.from_ngfa(&graph, del);
+            info!("test {:?}", gwrapper.genomes.iter().map(|x| x.0.clone()));
+
+            // Nodes, edges, or directed nodes
             if matches.is_present("type") {
                 let values: &str = matches.value_of("type").unwrap();
                 if values.contains('n') {
-                    matrix_node_wrapper(&gwrapper, &graph, &mut matrix, &mut index_normal, &2);
+                    matrix_node_wrapper(&gwrapper, &graph, &mut matrix, &mut index_normal, &threads);
                 }
                 if values.contains('e') {
-                    matrix_edge(&graph, &mut matrix, &mut index_edge, &2);
+                    matrix_edge(&gwrapper, &graph, &mut matrix, &mut index_edge, &threads);
                 }
                 if values.contains('d') {
-                    matrix_dir_node(&graph, &mut matrix, &mut index_dir, &2);
+                    matrix_dir_node(&gwrapper, &graph, &mut matrix, &mut index_dir, &threads);
                 }
             } else {
-                matrix_node_wrapper(&gwrapper, &graph, &mut matrix, &mut index_normal, &(2 as usize));
+                matrix_node_wrapper(&gwrapper, &graph, &mut matrix, &mut index_normal, &(threads));
             }
         } else {
             if matches.is_present("pack") {

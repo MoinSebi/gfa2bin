@@ -1,43 +1,45 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use bifurcation::helper::{chunk_inplace};
 use bimap::BiMap;
 use gfaR_wrapper::{GraphWrapper, NGfa, NPath};
-use hashbrown::{HashSet};
+use hashbrown::{HashMap, HashSet};
 use log::{debug};
 use crate::MatrixWrapper;
 
 
 /// Multithread wrapper to get MatrixWrapper from a graph
-pub fn matrix_node_wrapper<'a>(_gwrapper: &'a GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<u32, usize>, threads: &usize) {
-    // Get all the nodes
-    let mut h: Vec<u32> = graph.nodes.keys().cloned().collect();
+pub fn matrix_node_wrapper(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<u32, usize>, threads: &usize) {
+    // Create a VECTOR of all node id
+    let mut nodes: Vec<u32> = graph.nodes.keys().cloned().collect();
 
     // Sort the nodes
-    h.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    nodes.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
 
-    for (i, x) in h.iter().enumerate() {
-        let node: u32 = x.clone();
-        bimap.insert(node, i);
+    // Create BiMap of nodeID <> index
+    for (index, id) in nodes.iter().enumerate() {
+        let node: u32 = id.clone();
+        bimap.insert(node, index);
     }
-    println!("path {:?}", graph.paths);
 
-    // This is for multithreading
+    // Chunking graph data for multithreading
     let chunks = chunk_inplace(graph.paths.clone(), threads.clone());
-
+    let chunks2 = chunk_inplace(_gwrapper.genomes.clone(), threads.clone());
+    // Add handles, result data structure, and the BiMap
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));
     let k = Arc::new(bimap.clone());
 
+    // Iterate over each chunk
+    // Copy the result
+    // Copy the BiMap
     for chunk in chunks{
         let r2 = result2.clone();
         let rro = k.clone();
         let handle = thread::spawn(move || {
 
             for pair in chunk.iter(){
-                debug!("Pair: {} ", pair.name);
-                println!("djkalsjdla {}", pair.name);
                 let h = matrix_node(pair, &rro);
                 let mut rr = r2.lock().unwrap();
                 rr.push((pair.name.clone(), h));
@@ -54,22 +56,17 @@ pub fn matrix_node_wrapper<'a>(_gwrapper: &'a GraphWrapper, graph: &NGfa, mw: & 
     }
 
     let o = result2.lock().unwrap();
-
-    mw.matrix_core = Vec::with_capacity(o.len());
-    println!("{:?}", mw.matrix_core);
-    for (i, x) in o.iter().enumerate(){
-        println!("dasdasd {:?}", x);
-        mw.matrix_core.push(x.1.clone());
-        mw.column_name.insert(i as u32, x.0.clone());
-    }
-
-    println!("{:?}", mw.matrix_core);
+    reduce_dataset2(o, _gwrapper, mw);
 
 
 
 
 }
 
+
+/// Helper function for matrix_node_wrapper
+///
+/// Counting number of nodes in a path
 pub fn matrix_node(path: &NPath, h2: &Arc<BiMap<u32, usize>>) -> Vec<u32>{
     let mut count: Vec<u32> = vec![0; h2.len()];
 
@@ -78,8 +75,10 @@ pub fn matrix_node(path: &NPath, h2: &Arc<BiMap<u32, usize>>) -> Vec<u32>{
     }
     count
 }
+
+
 /// Matrix constructor from nodes
-pub fn matrix_dir_node(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool), usize>, threads: &usize){
+pub fn matrix_dir_node(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool), usize>, threads: &usize){
 
     let chunks = chunk_inplace(graph.paths.clone(), threads.clone());
 
@@ -125,13 +124,8 @@ pub fn matrix_dir_node(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap
     }
 
     let o = result2.lock().unwrap();
+    reduce_dataset2(o, _gwrapper, mw);
 
-    mw.matrix_core = Vec::with_capacity(o.len());
-    println!("len is {}", o.len());
-    for (i, x) in o.iter().enumerate(){
-        mw.matrix_core.push(x.1.clone());
-        mw.column_name.insert(i as u32, x.0.clone());
-    }
 }
 
 pub fn tt (path: &NPath, h2: &Arc<BiMap<(u32, bool), usize>>) -> Vec<u32> {
@@ -150,7 +144,7 @@ pub fn tt (path: &NPath, h2: &Arc<BiMap<(u32, bool), usize>>) -> Vec<u32> {
 }
 
 /// Matrix constructor from edges
-pub fn matrix_edge(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool, u32, bool), usize>, threads: &usize){
+pub fn matrix_edge(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u32, bool, u32, bool), usize>, threads: &usize){
 
 
 
@@ -196,12 +190,8 @@ pub fn matrix_edge(graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut BiMap<(u3
     }
 
     let o = result2.lock().unwrap();
+    reduce_dataset2(o, _gwrapper, mw);
 
-    mw.matrix_core = Vec::with_capacity(o.len());
-    for (i, x) in o.iter().enumerate(){
-        mw.matrix_core.push(x.1.clone());
-        mw.column_name.insert(i as u32, x.0.clone());
-    }
 
 }
 
@@ -216,5 +206,33 @@ pub fn tt2(path: &NPath, h2: &Arc<BiMap<(u32, bool, u32, bool), usize>>) -> Vec<
 
     }
     dir_nodes
+}
+
+pub fn reduce_dataset2(o: MutexGuard<Vec<(String, Vec<u32>)>>, h: & GraphWrapper, mw: &mut MatrixWrapper){
+    let mut ggg = HashMap::new();
+    for (pathname, counts) in o.iter(){
+        let genome_name = h.path2genome.get(pathname).unwrap();
+        if ggg.contains_key(genome_name){
+            ggg.entry(genome_name).or_insert(vec![counts.clone()]).push(counts.clone());
+        }
+    }
+
+    let mut g2 = HashMap::new();
+    for (key, value) in ggg.iter_mut(){
+        let mut f = value[0].clone();
+        for x in value.iter().skip(1){
+            f = f.iter().zip(x.iter()).map(|(x, y)| x + y).collect();
+        }
+        g2.insert(key, f);
+    }
+
+    mw.matrix_core = Vec::with_capacity(o.len());
+    println!("len is {}", o.len());
+    for (i, x) in g2.iter().enumerate(){
+        println!("dasdasd {:?}", x);
+        mw.matrix_core.push(x.1.clone());
+        mw.column_name.insert(i as u32, (**x.0).clone());
+    }
+
 }
 

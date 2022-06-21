@@ -3,7 +3,9 @@ use std::fs::File;
 use std::io::{Write, BufWriter};
 use bimap::BiMap;
 use crate::MatrixWrapper;
-
+use bitvec::order::Msb0;
+use bitvec::vec::BitVec;
+use crate::helper::{binary2dec_bed2};
 
 //---------------------------------------------------------------------------------------------------
 // This is for writing (may move later)
@@ -69,13 +71,6 @@ pub fn write_genome_order(se: & mut MatrixWrapper, out_prefix: &str){
         write!(f, "{}\n", se.column_name.get(&(x as u32)).unwrap()).expect("Can not write file");
     }
 }
-
-
-
-use bitvec::order::Msb0;
-use bitvec::vec::BitVec;
-use crate::helper::{binary2dec_bed2};
-
 /// Write the names - helper function
 pub fn write_reduce(h1: &Vec<usize>, h2:  &Vec<usize>, out_prefix: &str, t: &str) {
     let f = File::create([out_prefix,  t, "reduce"].join(".")).expect("Unable to create file");

@@ -14,10 +14,6 @@ pub struct Matrix {
 
 
 impl Matrix {
-
-
-
-
     #[allow(dead_code)]
     /// MinMaxScaler
     pub fn min_max(&self) -> Vec<Vec<f32>>{
