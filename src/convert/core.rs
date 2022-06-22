@@ -8,7 +8,7 @@ use bimap::{BiMap};
 use std::slice::Chunks;
 use bitvec::prelude::*;
 use log::info;
-use crate::helper::{binary2dec_bed2, trans5};
+use crate::helper::{binary2dec_bed2, transpose_bitvec};
 
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -20,6 +20,8 @@ pub struct MatrixWrapper {
     pub matrix_bin: Vec<BitVec<u8, Msb0>>//Vec<Vec<bool>>
 
 }
+
+
 
 impl MatrixWrapper {
 
@@ -99,6 +101,20 @@ impl MatrixWrapper {
             self.matrix_core.remove((x.clone() as usize) - index);
         }
         info!("{:?}", rr);
+    }
+
+    pub fn remove_col(&mut self, number: u32){
+        self.matrix_core.remove(number as usize);
+        println!("{:?}", self.column_name);
+        self.column_name.remove(&number);
+        println!("{:?}", self.column_name);
+        for old_key in number..(self.column_name.len() as u32){
+            if let Some(v) = self.column_name.remove(&(old_key as u32)) {
+                self.column_name.insert((old_key as u32) - 1, v);
+            }
+        }
+        println!("{:?}", self.column_name);
+
     }
 
 
@@ -217,7 +233,7 @@ impl MatrixWrapper {
             h.push(hm.get_by_right(&x).unwrap().clone());
         }
         info!("Starting size2 {}", self.matrix_bin[0].len());
-        self.matrix_bin = trans5(&h);
+        self.matrix_bin = transpose_bitvec(&h);
 
 
         info!("djsakdhsja {}", self.matrix_bin[0].len());
@@ -252,7 +268,7 @@ impl MatrixWrapper {
 
         // Make SNPs Vector
         info!("reduce it djsakdhsja {}", self.matrix_bin.len());
-        let k: Vec<BitVec<u8, Msb0>>= trans5(&self.matrix_bin);
+        let k: Vec<BitVec<u8, Msb0>>= transpose_bitvec(&self.matrix_bin);
         info!("reduce it djsakdhsja2 {}", self.matrix_bin.len());
         info!("Starting size {}", k.len());
 
@@ -279,7 +295,7 @@ impl MatrixWrapper {
 
         // Make Acc vector
         info!("Reduced size {:?}", h.len());
-        let h_convert = trans5(&h);
+        let h_convert = transpose_bitvec(&h);
         self.matrix_bin = h_convert;
         (h1,h2)
     }

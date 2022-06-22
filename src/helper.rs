@@ -51,11 +51,14 @@ pub fn bool2string(b: bool) -> String{
 }
 
 
-#[allow(dead_code)]
-pub fn transpose<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
+/// Transposing a 2D vector
+///
+/// Creating a totally new 2D vector
+pub fn transpose_generic<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
     where
         T: Clone,
 {
+    info!("Transposing");
     assert!(!v.is_empty());
     (0..v[0].len())
         .map(|i| v.iter().map(|inner| inner[i].clone()).collect::<Vec<T>>())
@@ -63,11 +66,12 @@ pub fn transpose<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
 }
 
 
-
-pub fn trans5(v: &Vec<BitVec<u8, Msb0>>) -> Vec<BitVec<u8, Msb0>>{
+/// Transposing a 2D Vec<BitVec>
+///
+/// Creating a totally new vector
+pub fn transpose_bitvec(v: &Vec<BitVec<u8, Msb0>>) -> Vec<BitVec<u8, Msb0>>{
     info!("Transposing");
     let mut o: Vec<BitVec<u8, Msb0>> = Vec::new();
-    println!("HELP {:?}", o);
     for x in 0..v[0].len(){
         let mut o2: BitVec<u8, Msb0> = BitVec::new();
         for y in 0..v.len(){
@@ -77,12 +81,6 @@ pub fn trans5(v: &Vec<BitVec<u8, Msb0>>) -> Vec<BitVec<u8, Msb0>>{
     }
     return o;
 }
-
-
-
-
-
-
 
 pub fn get_thresh(filename: &str) -> u16{
     let size = BigEndian::read_u16(&mut & get_file_as_byte_vec(filename)[7..9]);

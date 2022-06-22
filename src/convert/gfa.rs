@@ -25,7 +25,6 @@ pub fn matrix_node_wrapper(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut Ma
 
     // Chunking graph data for multithreading
     let chunks = chunk_inplace(graph.paths.clone(), threads.clone());
-    let chunks2 = chunk_inplace(_gwrapper.genomes.clone(), threads.clone());
     // Add handles, result data structure, and the BiMap
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));

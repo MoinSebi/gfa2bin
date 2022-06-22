@@ -7,7 +7,7 @@ mod find;
 use clap::{App, Arg};
 use gfaR_wrapper::{GraphWrapper, NGfa};
 use std::process;
-use crate::helper::{get_thresh, trans5, transpose};
+use crate::helper::{get_thresh, transpose_bitvec, transpose_generic};
 use bimap::BiMap;
 use chrono::Local;
 use env_logger::{Builder, Target};
@@ -181,7 +181,7 @@ fn main() {
             process::exit(0x0100);
         }
         // Check additional fam file
-        let _fam;
+        let mut _fam = Fam::new();
         if matches.is_present("fam"){
             _fam = Fam::from_file(matches.value_of("fam").unwrap())
 
@@ -264,16 +264,28 @@ fn main() {
             }
         }
         //--------------------------------------------------------------------------------------------------------------------------
-        // Transpose that thing
 
+
+
+
+
+        // We only transpose once!
         if matrix.matrix_bin.is_empty(){
-            matrix.matrix_core = transpose(&matrix.matrix_core);
+            let k: Vec<String> = matrix.column_name.values().cloned().collect();
+            for (key, value) in k.iter().enumerate(){
+                if !_fam.family_id.contains(value){
+                    matrix.remove_col((key as u32));
+                }
+            }
+            matrix.matrix_core = transpose_generic(&matrix.matrix_core);
             matrix.shape = (matrix.matrix_core.len(), matrix.matrix_core[0].len());
         } else {
-            matrix.matrix_bin = trans5(&matrix.matrix_bin);
+            matrix.matrix_bin = transpose_bitvec(&matrix.matrix_bin);
             matrix.shape = (matrix.matrix_bin.len(), matrix.matrix_bin[0].len());
-            eprintln!("shape {:?}", matrix.shape);
-        }
+
+        };
+
+        info!("Shape is {:?}", matrix.shape);
 
 
 

@@ -18,4 +18,10 @@ impl Fam {
             family_id: k,
         }
     }
+
+    pub fn new() -> Self{
+        Self{
+            family_id: Vec::new(),
+        }
+    }
 }
