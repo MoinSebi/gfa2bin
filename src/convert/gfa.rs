@@ -55,7 +55,7 @@ pub fn matrix_node_wrapper(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut Ma
     }
 
     let o = result2.lock().unwrap();
-    reduce_dataset2(o, _gwrapper, mw);
+    combine_chromosomes(o, _gwrapper, mw);
 
 
 
@@ -123,7 +123,7 @@ pub fn matrix_dir_node(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut Matrix
     }
 
     let o = result2.lock().unwrap();
-    reduce_dataset2(o, _gwrapper, mw);
+    combine_chromosomes(o, _gwrapper, mw);
 
 }
 
@@ -175,7 +175,7 @@ pub fn matrix_edge(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut MatrixWrap
         let rro = k.clone();
         let handle = thread::spawn(move || {
             for x in chunk.iter(){
-                let g = tt2(x, & rro);
+                let g = matrix_edge_helper(x, & rro);
                 let mut rr = r2.lock().unwrap();
                 rr.push((x.name.clone(), g));
             }
@@ -189,13 +189,15 @@ pub fn matrix_edge(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut MatrixWrap
     }
 
     let o = result2.lock().unwrap();
-    reduce_dataset2(o, _gwrapper, mw);
+    combine_chromosomes(o, _gwrapper, mw);
 
 
 }
 
-/// Counting
-pub fn tt2(path: &NPath, h2: &Arc<BiMap<(u32, bool, u32, bool), usize>>) -> Vec<u32> {
+/// Helper function for matrix_edge
+///
+/// Counting number of edges in a path
+pub fn matrix_edge_helper(path: &NPath, h2: &Arc<BiMap<(u32, bool, u32, bool), usize>>) -> Vec<u32> {
     let mut dir_nodes : Vec<u32> = vec![0; h2.len()] ;
 
     for x2 in 0..path.nodes.len()-1{
@@ -207,7 +209,10 @@ pub fn tt2(path: &NPath, h2: &Arc<BiMap<(u32, bool, u32, bool), usize>>) -> Vec<
     dir_nodes
 }
 
-pub fn reduce_dataset2(o: MutexGuard<Vec<(String, Vec<u32>)>>, h: & GraphWrapper, mw: &mut MatrixWrapper){
+/// Combine path of the same genome
+///
+/// Based on genome name in PanSN naming
+pub fn combine_chromosomes(o: MutexGuard<Vec<(String, Vec<u32>)>>, h: & GraphWrapper, mw: &mut MatrixWrapper){
     let mut ggg = HashMap::new();
     for (pathname, counts) in o.iter(){
         let genome_name = h.path2genome.get(pathname).unwrap();
@@ -226,9 +231,7 @@ pub fn reduce_dataset2(o: MutexGuard<Vec<(String, Vec<u32>)>>, h: & GraphWrapper
     }
 
     mw.matrix_core = Vec::with_capacity(o.len());
-    println!("len is {}", o.len());
     for (i, x) in g2.iter().enumerate(){
-        println!("dasdasd {:?}", x);
         mw.matrix_core.push(x.1.clone());
         mw.column_name.insert(i as u32, (**x.0).clone());
     }
