@@ -105,15 +105,12 @@ impl MatrixWrapper {
 
     pub fn remove_col(&mut self, number: u32){
         self.matrix_core.remove(number as usize);
-        println!("{:?}", self.column_name);
         self.column_name.remove(&number);
-        println!("{:?}", self.column_name);
-        for old_key in number..(self.column_name.len() as u32){
+        for old_key in number..(self.column_name.len() as u32 +1){
             if let Some(v) = self.column_name.remove(&(old_key as u32)) {
                 self.column_name.insert((old_key as u32) - 1, v);
             }
         }
-        println!("{:?}", self.column_name);
 
     }
 

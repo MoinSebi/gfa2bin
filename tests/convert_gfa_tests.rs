@@ -65,3 +65,28 @@ fn gfa_dirnode() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+
+#[test]
+/// Test for convert subcommand
+/// -g (gfa)
+/// -t d (directed node)
+fn gfa_dirnode2() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gfa2bin")?;
+    cmd.arg("convert")
+        .arg("-g")
+        .arg("data/example_data/testGraph.gfa")
+        .arg("-o")
+        .arg("data/output/tt5")
+        .arg("-t")
+        .arg("d")
+        .arg("-f")
+        .arg("data/example_data/fam_testGraph.fam");
+    cmd.assert().success();
+    //cmd.assert().stderr(predicate::str::contains("No file with such name"));
+    //fs::remove_file("example_data/test3.bubble.stats")?;
+    //fs::remove_file("example_data/test3.bubble.txt")?;
+    //fs::remove_file("example_data/test3.traversal.bed")?;
+
+    Ok(())
+}

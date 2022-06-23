@@ -13,7 +13,7 @@ impl Fam {
         for line in reader.lines(){
             lines.push(line.unwrap());
         }
-        let k: Vec<String> = lines.iter().map(|x| x.split("\t").nth(0).unwrap().to_string()).collect();
+        let k: Vec<String> = lines.iter().map(|x| x.split("\t").nth(1).unwrap().to_string()).collect();
         Self{
             family_id: k,
         }

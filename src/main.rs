@@ -56,7 +56,8 @@ fn main() {
             .arg(Arg::new("fam")
                 .short('f')
                 .long("fam")
-                .about("For filtering and removing information from the matrix"))
+                .about("For filtering and removing information from the matrix")
+                .takes_value(true))
             .arg(Arg::new("type")
                 .short('t')
                 .long("type")
@@ -272,11 +273,17 @@ fn main() {
         // We only transpose once!
         if matrix.matrix_bin.is_empty(){
             let k: Vec<String> = matrix.column_name.values().cloned().collect();
-            for (key, value) in k.iter().enumerate(){
-                if !_fam.family_id.contains(value){
-                    matrix.remove_col((key as u32));
+            let mut hit = 0;
+
+            if !_fam.family_id.is_empty(){
+                for (key, value) in k.iter().enumerate(){
+                    if !_fam.family_id.contains(value){
+                        matrix.remove_col((key as u32) - hit);
+                        hit += 1;
+                    }
                 }
             }
+
             matrix.matrix_core = transpose_generic(&matrix.matrix_core);
             matrix.shape = (matrix.matrix_core.len(), matrix.matrix_core[0].len());
         } else {

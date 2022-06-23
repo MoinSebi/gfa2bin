@@ -135,7 +135,7 @@ pub fn tt (path: &NPath, h2: &Arc<BiMap<(u32, bool), usize>>) -> Vec<u32> {
         dir_nodes[*h2.get_by_left(&(node, path.dir[x2].clone())).unwrap()] += 1;
 
     }
-    println!("{:?}", dir_nodes);
+    println!("dir nodes {:?}", dir_nodes);
     return dir_nodes
 
 
@@ -213,25 +213,23 @@ pub fn matrix_edge_helper(path: &NPath, h2: &Arc<BiMap<(u32, bool, u32, bool), u
 ///
 /// Based on genome name in PanSN naming
 pub fn combine_chromosomes(o: MutexGuard<Vec<(String, Vec<u32>)>>, h: & GraphWrapper, mw: &mut MatrixWrapper){
-    let mut ggg = HashMap::new();
+    let mut data1 = HashMap::new();
     for (pathname, counts) in o.iter(){
         let genome_name = h.path2genome.get(pathname).unwrap();
-        if ggg.contains_key(genome_name){
-            ggg.entry(genome_name).or_insert(vec![counts.clone()]).push(counts.clone());
-        }
+        data1.entry(genome_name).or_insert(vec![counts.clone()]).push(counts.clone());
     }
 
-    let mut g2 = HashMap::new();
-    for (key, value) in ggg.iter_mut(){
+    let mut data_merge = HashMap::new();
+    for (key, value) in data1.iter_mut(){
         let mut f = value[0].clone();
         for x in value.iter().skip(1){
             f = f.iter().zip(x.iter()).map(|(x, y)| x + y).collect();
         }
-        g2.insert(key, f);
+        data_merge.insert(key, f);
     }
 
     mw.matrix_core = Vec::with_capacity(o.len());
-    for (i, x) in g2.iter().enumerate(){
+    for (i, x) in data_merge.iter().enumerate(){
         mw.matrix_core.push(x.1.clone());
         mw.column_name.insert(i as u32, (**x.0).clone());
     }

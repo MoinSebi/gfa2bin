@@ -67,6 +67,7 @@ pub fn write_matrix(se: & mut MatrixWrapper, what: &str, out_prefix: &str, t: &s
 pub fn write_genome_order(se: & mut MatrixWrapper, out_prefix: &str){
     let f = File::create([out_prefix,  "bim_names"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
+    println!("colls {:?}", se.column_name);
     for x in 0..se.column_name.len(){
         write!(f, "{}\n", se.column_name.get(&(x as u32)).unwrap()).expect("Can not write file");
     }
