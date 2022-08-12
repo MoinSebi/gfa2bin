@@ -34,6 +34,7 @@ fn main() {
         .subcommand(App::new("convert")
             .about("Convert GFA or PACK format to binary data matrix")
             .version("0.1.0")
+            .help_heading("Input parameters")
             .arg(Arg::new("gfa")
                 .short('g')
                 .long("gfa")
@@ -64,8 +65,7 @@ fn main() {
                 .about("Type of the matrix (when on graph)")
                 .takes_value(true))
 
-
-        // Computational
+            .help_heading("Modification")
         .arg(Arg::new("threshold")
             .long("Copy number threshold")
             .about("Normalize to this number")
@@ -77,8 +77,9 @@ fn main() {
             .long("filter")
             .about("Filter this"))
 
-            // Output
-        .arg(Arg::new("genomes")
+            .help_heading("Output parameters")
+
+            .arg(Arg::new("genomes")
             .long("genomes")
             .about("Output just the genomes"))
         .arg(Arg::new("split")
