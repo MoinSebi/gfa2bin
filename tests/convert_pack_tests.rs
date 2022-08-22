@@ -29,7 +29,8 @@ fn pack_unknown2() -> Result<(), Box<dyn std::error::Error>> {
         .arg("/home/svorbrugg_local/Rust/packing/testing/jo3.bin.zst")
         .arg("-o")
         .arg("data/output/pack2")
-        .arg("--split");
+        .arg("--split")
+        .arg("5");
     cmd.assert().success();
     //cmd.assert().stderr(predicate::str::contains("No file with such name"));
     //fs::remove_file("example_data/test3.bubble.stats")?;

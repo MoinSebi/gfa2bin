@@ -308,7 +308,7 @@ fn main() {
         if matches.is_present("split") {
             let splits: usize = matches.value_of("split").unwrap().parse().unwrap();
             info!("Splitting matrix in ");
-            let o = matrix.split_bin(split);
+            let o = matrix.split_bin(splits);
             let size = ((matrix.matrix_bin.len() as f64)/(10 as f64)).ceil() as usize;
             let mut count = 0;
             for (index, x) in o.enumerate() {
