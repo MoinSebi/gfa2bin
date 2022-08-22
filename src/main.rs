@@ -2,6 +2,7 @@ mod counting;
 mod helper;
 mod convert;
 mod find;
+mod logging;
 
 
 use clap::{App, Arg};
@@ -19,6 +20,7 @@ use crate::convert::fam::Fam;
 use crate::convert::gfa::{matrix_dir_node, matrix_edge, matrix_node_wrapper};
 use crate::convert::pack::{matrix_pack_bit, matrix_pack_u16};
 use crate::convert::writer::{write_bed_split, write_bimhelper, write_matrix, write_reduce};
+use crate::logging::newbuilder;
 
 
 fn main() {
@@ -84,7 +86,9 @@ fn main() {
             .about("Output just the genomes"))
         .arg(Arg::new("split")
             .long("split")
-            .about("Split the output bed and bim"))
+            .about("Split the output bed and bim")
+            .takes_value(true))
+
         .arg(Arg::new("output")
             .short('o')
             .long("output")
@@ -111,10 +115,6 @@ fn main() {
             .about("Number of threads if multithreading")
             .takes_value(true)
             .default_value("1"))
-        .arg(Arg::new("number")
-            .short('n')
-            .about("Number of output")
-            .takes_value(true))
         )
 
 
@@ -144,34 +144,7 @@ fn main() {
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
 
     // Checking verbose
-    if matches.is_present("verbose"){
-        Builder::new()
-            .format(|buf, record| {
-                writeln!(buf,
-                         "{} [{}] - {}",
-                         Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                         record.level(),
-                         record.args()
-                )
-            })
-            .filter(None, LevelFilter::Trace)
-            .target(Target::Stderr)
-            .init();
-    } else {
-        Builder::new()
-            .format(|buf, record| {
-                writeln!(buf,
-                         "{} [{}] - {}",
-                         Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                         record.level(),
-                         record.args()
-                )
-            })
-            .filter(None, LevelFilter::Info)
-            .target(Target::Stderr)
-            .init();
-    }
-
+    newbuilder(&matches);
 
 
     // Check subcommands
@@ -214,6 +187,7 @@ fn main() {
         }
 
 
+        // Different
         let mut matrix = MatrixWrapper::new();
         let mut index_normal: BiMap<u32, usize> = BiMap::new();
         let mut index_dir: BiMap<(u32, bool), usize> = BiMap::new();
@@ -332,14 +306,13 @@ fn main() {
 
 
         if matches.is_present("split") {
-            info!("Splitting matrix");
-            let o = matrix.split_bin(10);
-            println!("long {}", matrix.matrix_bin.len());
-            println!("long {}", matrix.matrix_core.len());
+            let splits: usize = matches.value_of("split").unwrap().parse().unwrap();
+            info!("Splitting matrix in ");
+            let o = matrix.split_bin(split);
             let size = ((matrix.matrix_bin.len() as f64)/(10 as f64)).ceil() as usize;
             let mut count = 0;
             for (index, x) in o.enumerate() {
-                println!("index {}", index);
+                println!("Writing file {}", index);
                 write_bed_split(x, _output, &*index.to_string());
                 if count+size > matrix.matrix_bin.len(){
                     count = matrix.matrix_bin.len()-size;
