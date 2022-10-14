@@ -9,7 +9,7 @@ use crate::MatrixWrapper;
 
 
 /// Multithread wrapper to get MatrixWrapper from a graph
-pub fn matrix_node_wrapper(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap: & mut Vec<u32>, threads: &usize) {
+pub fn matrix_node_wrapper(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut MatrixWrapper, bimap:  &mut Vec<u32>, threads: &usize) {
     // Create a VECTOR of all node id
     let mut nodes: Vec<u32> = graph.nodes.keys().cloned().collect();
 
@@ -49,6 +49,7 @@ pub fn matrix_node_wrapper(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut Ma
 
     }
 
+    *bimap = nodes;
     for handle in handles {
         handle.join().unwrap()
 
@@ -121,7 +122,7 @@ pub fn matrix_dir_node(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut Matrix
         handle.join().unwrap()
 
     }
-    bimap = k;
+    *bimap = k;
 
     let o = result2.lock().unwrap();
     combine_chromosomes(o, _gwrapper, mw);
@@ -188,7 +189,7 @@ pub fn matrix_edge(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut MatrixWrap
 
     }
 
-    bimap = k;
+    *bimap = k;
     let o = result2.lock().unwrap();
     combine_chromosomes(o, _gwrapper, mw);
 

@@ -32,5 +32,7 @@ pub fn matrix_pack_u16(filename: &str, matrix_w: & mut MatrixWrapper, h2: & mut 
         matrix_w.matrix_core.push(u);
     }
     info!("Make BIMAP");
+    let length = matrix_w.matrix_core[0].len();
+
     h2.extend(0..length as u32);
 }
