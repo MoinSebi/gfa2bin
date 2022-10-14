@@ -18,9 +18,9 @@ pub fn matrix_node_wrapper(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut Ma
 
 
     // Create BiMap of nodeID <> index
-
-    for id in nodes.iter() {
-        bimap.push(id.clone());
+    let mut gz = HashMap::new();
+    for (index, id) in nodes.iter().enumerate() {
+        gz.insert(id.clone(), index);
     }
 
     // Chunking graph data for multithreading
@@ -28,14 +28,14 @@ pub fn matrix_node_wrapper(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut Ma
     // Add handles, result data structure, and the BiMap
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));
-    let k = Arc::new(bimap.clone());
+    let k2 = Arc::new(gz.clone());
 
     // Iterate over each chunk
     // Copy the result
     // Copy the BiMap
     for chunk in chunks{
         let r2 = result2.clone();
-        let rro = k.clone();
+        let rro = k2.clone();
         let handle = thread::spawn(move || {
 
             for pair in chunk.iter(){
@@ -66,11 +66,11 @@ pub fn matrix_node_wrapper(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut Ma
 /// Helper function for matrix_node_wrapper
 ///
 /// Counting number of nodes in a path
-pub fn matrix_node(path: &NPath, h2: &Arc<BiMap<u32, usize>>) -> Vec<u32>{
+pub fn matrix_node(path: &NPath, h2: &Arc<HashMap<u32, usize>>) -> Vec<u32>{
     let mut count: Vec<u32> = vec![0; h2.len()];
 
     for x in path.nodes.iter(){
-        count[*h2.get_by_left(&x).unwrap()] += 1;
+        count[*h2.get(&x).unwrap()] += 1;
     }
     count
 }
@@ -102,11 +102,11 @@ pub fn matrix_dir_node(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut Matrix
 
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));
-    let k = Arc::new(map1.clone());
+    let k2 = Arc::new(map1.clone());
 
     for chunk in chunks {
         let r2 = result2.clone();
-        let rro = k.clone();
+        let rro = k2.clone();
         let handle = thread::spawn(move || {
             for x in chunk.iter(){
                 let g = tt(x, & rro);
@@ -166,13 +166,13 @@ pub fn matrix_edge(_gwrapper: & GraphWrapper, graph: &NGfa, mw: & mut MatrixWrap
 
     let mut handles = Vec::new();
     let result2 = Arc::new(Mutex::new(vec![]));
-    let k = Arc::new(bw.clone());
+    let k2 = Arc::new(bw.clone());
     let chunks = chunk_inplace(graph.paths.clone(), threads.clone());
 
 
     for chunk in chunks {
         let r2 = result2.clone();
-        let rro = k.clone();
+        let rro = k2.clone();
         let handle = thread::spawn(move || {
             for x in chunk.iter(){
                 let g = matrix_edge_helper(x, & rro);
@@ -204,7 +204,7 @@ pub fn matrix_edge_helper(path: &NPath, h2: &Arc<HashMap<(u32, bool, u32, bool),
     for x2 in 0..path.nodes.len()-1{
         let node: u32 = path.nodes[x2];
         let node2: u32 = path.nodes[x2+1];
-        dir_nodes[*h2.get_by_left(&(node, path.dir[x2], node2, path.dir[x2+1])).unwrap()] += 1;
+        dir_nodes[*h2.get(&(node, path.dir[x2], node2, path.dir[x2+1])).unwrap()] += 1;
 
     }
     dir_nodes

@@ -189,9 +189,9 @@ fn main() {
 
         // Different
         let mut matrix = MatrixWrapper::new();
-        let mut index_normal: Vec<u32> = BiMap::new();
-        let mut index_dir: Vec<(u32, bool)> = BiMap::new();
-        let mut index_edge: Vec<(u32, bool, u32, bool)> = BiMap::new();
+        let mut index_normal: Vec<u32> = Vec::new();
+        let mut index_dir: Vec<(u32, bool)> = Vec::new();
+        let mut index_edge: Vec<(u32, bool, u32, bool)> = Vec::new();
         // Check if gfa or coverage
         if matches.is_present("gfa") {
             let mut _input: &str = "not relevant";
@@ -343,15 +343,15 @@ fn main() {
         info!("Remove and writing");
         // THEN FILTER ROWS (BIMAP)
         if !index_normal.is_empty() {
-            remove_bimap(&mut index_normal, remove_this);
+            //remove_bimap(&mut index_normal, remove_this);
             //write_bim(& index_normal,_output, "gfa2bin");
             write_bimhelper(&index_normal, _output, "test");
         } else if !index_dir.is_empty() {
-            remove_bimap(&mut index_dir, remove_this);
+            //remove_bimap(&mut index_dir, remove_this);
             //write_bim(& index_dir,_output, "gfa2bin");
             write_bimhelper(&index_dir, _output, "test");
         } else if !index_edge.is_empty() {
-            remove_bimap(&mut index_edge, remove_this);
+            //remove_bimap(&mut index_edge, remove_this);
             //write_bim(& index_edge,_output, "gfa2bin");
             write_bimhelper(&index_edge, _output, "test");
         }

@@ -31,13 +31,14 @@ pub fn write_bim<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 /// Index because wrongly removed
 pub fn write_bimhelper<T>(ll: &Vec<T>, out_prefix: &str, t: &str)
     where
-        T: Debug + std::hash::Hash + std::cmp::Eq + Ord + Display
+        T: Debug + std::hash::Hash + std::cmp::Eq + Ord
 {
 
     let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
-    for x in ll.iter(){
-        write!(f, "{}\t{:?}\n", x, ll.get_by_right(&x).unwrap()).expect("Not able to write ");
+    for (index, x) in ll.iter().enumerate(){
+        write!(f, "{:?}\t{:?}\n", index, x).expect("Not able to write ");
+
     }
 
 
