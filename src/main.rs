@@ -189,9 +189,9 @@ fn main() {
 
         // Different
         let mut matrix = MatrixWrapper::new();
-        let mut index_normal: BiMap<u32, usize> = BiMap::new();
-        let mut index_dir: BiMap<(u32, bool), usize> = BiMap::new();
-        let mut index_edge: BiMap<(u32, bool, u32, bool), usize> = BiMap::new();
+        let mut index_normal: Vec<u32> = BiMap::new();
+        let mut index_dir: Vec<(u32, bool)> = BiMap::new();
+        let mut index_edge: Vec<(u32, bool, u32, bool)> = BiMap::new();
         // Check if gfa or coverage
         if matches.is_present("gfa") {
             let mut _input: &str = "not relevant";
@@ -264,7 +264,6 @@ fn main() {
         } else {
             matrix.matrix_bin = transpose_bitvec(&matrix.matrix_bin);
             matrix.shape = (matrix.matrix_bin.len(), matrix.matrix_bin[0].len());
-
         };
 
         info!("Shape is {:?}", matrix.shape);

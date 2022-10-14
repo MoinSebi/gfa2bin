@@ -5,6 +5,7 @@ use byteorder::{BigEndian, ByteOrder};
 use log::info;
 use packing_lib::reader::get_file_as_byte_vec;
 
+
 #[allow(dead_code)]
 pub fn binary2dec_bed(vecc: &[bool]) -> u8{
     let mut result: u8 = 0;
@@ -58,7 +59,7 @@ pub fn transpose_generic<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
     where
         T: Clone,
 {
-    info!("Transposing");
+    info!("Transposing generic");
     assert!(!v.is_empty());
     (0..v[0].len())
         .map(|i| v.iter().map(|inner| inner[i].clone()).collect::<Vec<T>>())
@@ -70,7 +71,7 @@ pub fn transpose_generic<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
 ///
 /// Creating a totally new vector
 pub fn transpose_bitvec(v: &Vec<BitVec<u8, Msb0>>) -> Vec<BitVec<u8, Msb0>>{
-    info!("Transposing");
+    info!("Transposing bitvec");
     let mut o: Vec<BitVec<u8, Msb0>> = Vec::new();
     for x in 0..v[0].len(){
         let mut o2: BitVec<u8, Msb0> = BitVec::new();
@@ -86,4 +87,3 @@ pub fn get_thresh(filename: &str) -> u16{
     let size = BigEndian::read_u16(&mut & get_file_as_byte_vec(filename)[7..9]);
     size
 }
-

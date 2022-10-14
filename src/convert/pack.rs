@@ -4,7 +4,7 @@ use packing_lib::reader::{get_file_as_byte_vec, ReaderBit, ReaderU16, wrapper_bo
 use crate::MatrixWrapper;
 
 /// Matrix constructor from mappings (bits)
-pub fn matrix_pack_bit(filename: &str, matrix_w: & mut MatrixWrapper, h2: & mut BiMap<u32, usize>) {
+pub fn matrix_pack_bit(filename: &str, matrix_w: & mut MatrixWrapper, h2: &mut Vec<u32>) {
     let buf: Vec<u8> = get_file_as_byte_vec(filename);
     let data: Vec<ReaderBit> = wrapper_bool(&buf);
     for (index, reader_bit) in data.iter().enumerate(){
@@ -14,25 +14,13 @@ pub fn matrix_pack_bit(filename: &str, matrix_w: & mut MatrixWrapper, h2: & mut 
         let k = reader_bit.data.clone();
         matrix_w.matrix_bin.push(k);
     }
-    for x in 0..matrix_w.matrix_bin[0].len(){
-        h2.insert(x as u32, x);
-    }
-}
-
-#[allow(dead_code)]
-pub fn make_bimap(maxlen: usize){
-    let mut j1: hashbrown::HashMap<u32, usize> = hashbrown::HashMap::new();
-    let mut j2: hashbrown::HashMap<usize, u32> = hashbrown::HashMap::new();
-    for x in 0..maxlen{
-        j1.insert(x as u32, x.clone());
-        j2.insert(x, x as u32);
-    }
-
+    let length = matrix_w.matrix_bin[0].len();
+    h2.extend(0..length);
 }
 
 
 /// Matrix constructor from mappings (u16)
-pub fn matrix_pack_u16(filename: &str, matrix_w: & mut MatrixWrapper, h2: & mut BiMap<u32, usize>) {
+pub fn matrix_pack_u16(filename: &str, matrix_w: & mut MatrixWrapper, h2: & mut Vec<u32>) {
     let g: Vec<u8> = get_file_as_byte_vec(filename);
     let k: Vec<ReaderU16> = wrapper_u16(&g);
 
@@ -44,7 +32,5 @@ pub fn matrix_pack_u16(filename: &str, matrix_w: & mut MatrixWrapper, h2: & mut 
         matrix_w.matrix_core.push(u);
     }
     info!("Make BIMAP");
-    for x in 0..matrix_w.matrix_core[0].len(){
-        h2.insert(x as u32, x);
-    }
+    h2.extend(0..length);
 }

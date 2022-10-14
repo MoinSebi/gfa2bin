@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::fs::File;
 use std::io::{Write, BufWriter};
 use bimap::BiMap;
@@ -29,14 +29,14 @@ pub fn write_bim<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
 /// Writing bim helper
 /// Index -> Feature
 /// Index because wrongly removed
-pub fn write_bimhelper<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
+pub fn write_bimhelper<T>(ll: &Vec<T>, out_prefix: &str, t: &str)
     where
-        T: Debug + std::hash::Hash + std::cmp::Eq + Ord
+        T: Debug + std::hash::Hash + std::cmp::Eq + Ord + Display
 {
 
     let f = File::create([out_prefix, t,  "bimhelper"].join(".")).expect("Unable to create file");
     let mut f = BufWriter::new(f);
-    for x in ll.right_values(){
+    for x in ll.iter(){
         write!(f, "{}\t{:?}\n", x, ll.get_by_right(&x).unwrap()).expect("Not able to write ");
     }
 
