@@ -17,7 +17,8 @@ pub struct MatrixWrapper {
     pub shape: (usize, usize),
     pub matrix_core: Vec<Vec<u32>>,
     pub column_name: HashMap<u32, String>,
-    pub matrix_bin: Vec<BitVec<u8, Msb0>>//Vec<Vec<bool>>
+    pub matrix_bin: Vec<BitVec<u8, Msb0>>, //Vec<Vec<bool>>
+    pub transposed: bool,
 
 }
 
@@ -35,6 +36,7 @@ impl MatrixWrapper {
             matrix_core: matrix,
             column_name: col,
             matrix_bin: bv,
+            transposed: false,
         }
     }
 

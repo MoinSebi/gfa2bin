@@ -15,6 +15,7 @@ use env_logger::{Builder, Target};
 use log::{info, LevelFilter, warn};
 use std::io::Write;
 use std::path::Path;
+use crate::convert::bfile::bfile_wrapper;
 use crate::convert::core::{MatrixWrapper, remove_bimap, write_bim2};
 use crate::convert::fam::Fam;
 use crate::convert::gfa::{matrix_dir_node, matrix_edge, matrix_node_wrapper};
@@ -47,6 +48,10 @@ fn main() {
                 .short('p')
                 .long("pack")
                 .about("if the input is coverage")
+                .takes_value(true))
+            .arg(Arg::new("bfile")
+                .long("bfile")
+                .about("bfile")
                 .takes_value(true))
             .arg(Arg::new("delimiter")
                 .short('d')
@@ -151,7 +156,7 @@ fn main() {
     if let Some(ref matches) = matches.subcommand_matches("convert") {
         let threads: usize = matches.value_of("threads").unwrap().parse().unwrap();
         // Check if input exists
-        if !(matches.is_present("gfa") | matches.is_present("pack")) {
+        if !(matches.is_present("gfa") | matches.is_present("pack") | matches.is_present("bfile")) {
             eprintln!("No input");
             process::exit(0x0100);
         }
@@ -192,6 +197,7 @@ fn main() {
         let mut index_normal: Vec<u32> = Vec::new();
         let mut index_dir: Vec<(u32, bool)> = Vec::new();
         let mut index_edge: Vec<(u32, bool, u32, bool)> = Vec::new();
+        let mut index_snp: Vec<String> = Vec::new();
         // Check if gfa or coverage
         if matches.is_present("gfa") {
             let mut _input: &str = "not relevant";
@@ -238,6 +244,10 @@ fn main() {
                     matrix_pack_bit(file_pack, &mut matrix, &mut index_normal);
                 }
             }
+            if matches.is_present("bfile"){
+                bfile_wrapper(matches.value_of("bfile").unwrap(), &mut matrix, &mut index_snp);
+
+            }
         }
         //--------------------------------------------------------------------------------------------------------------------------
 
@@ -259,11 +269,14 @@ fn main() {
                 }
             }
 
+
             matrix.matrix_core = transpose_generic(&matrix.matrix_core);
             matrix.shape = (matrix.matrix_core.len(), matrix.matrix_core[0].len());
         } else {
-            matrix.matrix_bin = transpose_bitvec(&matrix.matrix_bin);
-            matrix.shape = (matrix.matrix_bin.len(), matrix.matrix_bin[0].len());
+            if ! matrix.transposed {
+                matrix.matrix_bin = transpose_bitvec(&matrix.matrix_bin);
+                matrix.shape = (matrix.matrix_bin.len(), matrix.matrix_bin[0].len());
+            }
         };
 
         info!("Shape is {:?}", matrix.shape);
@@ -354,6 +367,8 @@ fn main() {
             //remove_bimap(&mut index_edge, remove_this);
             //write_bim(& index_edge,_output, "gfa2bin");
             write_bimhelper(&index_edge, _output, "test");
+        } else if !index_snp.is_empty(){
+            write_bimhelper(&index_snp, _output, "test");
         }
     }
 
