@@ -22,12 +22,12 @@ pub fn bfile_wrapper(filename: &str, matrix: &mut MatrixWrapper, names: &mut Vec
 /// Add it to the matrix
 pub fn read_fam(filename: &str, matrix: &mut MatrixWrapper){
     let data = fs::read_to_string(filename).expect("Unable to read file");
-    let mut dd: Vec<_> = data.split("\n").collect();
+    let dd: Vec<_> = data.split("\n").collect();
     println!("{}", dd.len());
-    let mut dd2: Vec<_> = dd.into_iter().map(| e| e.to_string()).collect();
+    let dd2: Vec<_> = dd.into_iter().map(| e| e.to_string()).collect();
     for (i, x) in dd2.into_iter().enumerate(){
         let gg: Vec<_> = x.split("\t").collect();
-        matrix.column_name.insert(i as u32, gg[0].to_string());
+        matrix.core_names.insert(i as u32, gg[0].to_string());
     }
 }
 
@@ -57,8 +57,8 @@ pub fn read_bed(filename: &str, matrix_w: & mut MatrixWrapper, numbsnp: usize) {
     buffer = buffer[3..].to_vec();
 
     // do i need this
-    let mut num = matrix_w.column_name.len()/4;
-    if (matrix_w.column_name.len() % 4) > 0{
+    let mut num = matrix_w.core_names.len()/4;
+    if (matrix_w.core_names.len() % 4) > 0{
         num += 1;
     }
     // Each chunk
