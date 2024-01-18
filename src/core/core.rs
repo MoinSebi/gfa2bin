@@ -15,7 +15,7 @@ use crate::helper::{bitvec_to_u8, custom_retain_two_vectors, is_all_ones, is_all
 pub struct MatrixWrapper {
     pub shape: (usize, usize),
     pub matrix_core: Vec<Vec<u32>>,
-    pub matrix_bin: Vec<BitVec<u8, Msb0>>, //Vec<Vec<bool>>
+    pub matrix_bin: Vec<BitVec<u8, Lsb0>>, //Vec<Vec<bool>>
 
     // Check if node, edges, dirnode, or alignment
     pub feature: Feature,
@@ -59,7 +59,8 @@ impl MatrixWrapper {
         match t {
             Feature::Node => {
                 for (i, x) in data.nodes.iter().enumerate(){
-                    self.geno_map.insert(GenoName{name: x.id as u64-1}, i);
+                    self.geno_map.insert(GenoName{name: x.id as u64}, i);
+                    self.geno_names.push(GenoName{name: x.id as u64});
                 }
             }
             Feature::DirNode => {
@@ -67,6 +68,7 @@ impl MatrixWrapper {
                     let value = data.edges.as_ref().unwrap();
                     for (i, x) in value.iter().enumerate(){
                         self.geno_map.insert(GenoName{name: x.from as u64*2 + x.from_dir as u64}, i);
+                        self.geno_names.push(GenoName{name: x.from as u64*2 + x.from_dir as u64});
                     }
                     }
                 }
@@ -76,6 +78,7 @@ impl MatrixWrapper {
                     for (i, x) in value.iter().enumerate(){
 
                         self.geno_map.insert(GenoName{name: x.from as u64*2 + x.from_dir as u64}, i);
+                        self.geno_names.push(GenoName{name: x.from as u64*2 + x.from_dir as u64});
                     }
                 }
             }
@@ -140,11 +143,19 @@ impl MatrixWrapper {
 
         let mut buff: Vec<u8> = vec![108, 27, 1];
         // Make SNP Vector
+
+
         for sel in self.matrix_bin.iter() {
-            let j = sel.chunks(8);
-            for x in j {
-                buff.push(bitvec_to_u8(x));
-            }
+            buff.extend(sel.as_raw_slice());
+
+        }
+        for u8_value in buff.iter() {
+            let binary_representation = format!("{:08b}", u8_value);
+            println!("{} {}", binary_representation, u8_value);
+        }
+
+        for u8_value in self.matrix_bin.iter() {
+            println!("{}", u8_value);
         }
 
         let mut output = [out_prefix,  feature, &number.to_string(), "bed"].join(".");
@@ -163,6 +174,7 @@ impl MatrixWrapper {
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
+        println!("dsakdhas {:?}", self.geno_names);
         for x in self.geno_names.iter() {
             write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, x.to_string(feature), "A", "T").expect("Can not write file");
         }
@@ -177,39 +189,32 @@ impl MatrixWrapper {
 
 
 
-    /// Filter out all entries which have
-    /// - only zeros
-    /// - only ones
-    pub fn filter_shared1<T>(&mut self, vec1: &mut Vec<T>){
-        custom_retain_two_vectors(&mut self.matrix_bin, vec1, |x| !is_all_zeros(x));
-        custom_retain_two_vectors(&mut self.matrix_bin, vec1, |x| !is_all_ones(x));
 
-    }
 
-    pub fn filter_shared2(&mut self){
-        let mut write_index = 0;
-        for read_index in 0..self.sample_names.len() {
-            if is_all_ones(&self.matrix_bin[read_index])  || is_all_zeros(&self.matrix_bin[read_index]) {
-                // Retain elements that satisfy the condition
-                if write_index != read_index {
-                    // Move the elements to their new positions
-                    self.matrix_bin.swap(write_index, read_index);
-                    self.sample_names.swap(write_index, read_index);
-                }
-
-                write_index += 1;
-            }
-        }
-        let a = &self.sample_names[0..write_index];
-
-        for x in a{
-            self.geno_map.remove(&GenoName{name: x.parse::<u64>().unwrap()});
-        }
-        // Truncate both vectors to their new length
-        self.matrix_bin.truncate(write_index);
-        self.sample_names.truncate(write_index);
-
-    }
+    // pub fn filter_shared2(&mut self){
+    //     let mut write_index = 0;
+    //     for read_index in 0..self.sample_names.len() {
+    //         if is_all_ones(&self.matrix_bin[read_index])  || is_all_zeros(&self.matrix_bin[read_index]) {
+    //             // Retain elements that satisfy the condition
+    //             if write_index != read_index {
+    //                 // Move the elements to their new positions
+    //                 self.matrix_bin.swap(write_index, read_index);
+    //                 self.sample_names.swap(write_index, read_index);
+    //             }
+    //
+    //             write_index += 1;
+    //         }
+    //     }
+    //     let a = &self.sample_names[0..write_index];
+    //
+    //     for x in a{
+    //         self.geno_map.remove(&GenoName{name: x.parse::<u64>().unwrap()});
+    //     }
+    //     // Truncate both vectors to their new length
+    //     self.matrix_bin.truncate(write_index);
+    //     self.sample_names.truncate(write_index);
+    //
+    // }
 
 
 

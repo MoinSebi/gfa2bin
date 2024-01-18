@@ -1,4 +1,4 @@
-use bitvec::order::Msb0;
+use bitvec::order::{Lsb0, Msb0};
 use bitvec::prelude::BitVec;
 use packing_lib::reader::{get_file_as_byte_vec, ReaderBit, ReaderU16, wrapper_bool, wrapper_u16};
 use crate::core::core::MatrixWrapper;
@@ -9,7 +9,7 @@ pub fn matrix_pack_bit_v2(filename: &str, matrix_w: & mut MatrixWrapper, h2: &mu
     let k: Vec<ReaderBit> = wrapper_bool(&buf);
     let ll = k[0].data.len().clone();
 
-    matrix_w.matrix_bin = vec![BitVec::<u8, Msb0>::repeat(false, k.len() * 2); ll];
+    matrix_w.matrix_bin = vec![BitVec::<u8, Lsb0>::repeat(false, k.len() * 2); ll];
     for (i2, x) in k.iter().enumerate(){
         matrix_w.sample_names.push(x.name.clone());
         for (i, y) in x.data.iter().enumerate(){

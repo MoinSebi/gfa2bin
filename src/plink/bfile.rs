@@ -1,7 +1,7 @@
 use std::fs;
 use std::fs::File;
 use std::io::{BufReader, BufRead, Read};
-use bitvec::order::Msb0;
+use bitvec::order::{Lsb0, Msb0};
 use bitvec::prelude::BitVec;
 use crate::core::helper::GenoName;
 use crate::MatrixWrapper;
@@ -99,7 +99,7 @@ pub fn read_bed(filename: &str, matrix_w: & mut MatrixWrapper, numbsnp: usize) {
     println!("{}", numbsnp);
     for chunk in chunks.into_iter() {
         let bv: BitVec<u8, Msb0> = BitVec::from_slice(&chunk[..]);
-        let mut dd: BitVec<u8, Msb0> = BitVec::new();
+        let mut dd: BitVec<u8, Lsb0> = BitVec::new();
 
         for (i, x) in bv.iter().step_by(2).enumerate(){
             if i < num as usize {

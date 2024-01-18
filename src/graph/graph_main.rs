@@ -84,9 +84,9 @@ pub fn graph_main(matches: &ArgMatches){
     info!("Shape is {:?} - {}", mw.matrix_bin.len(), mw.matrix_bin[0].len());
 
     info!("Filtering matrix");
-    if feature == "node"{
-        mw.filter_shared2();
-    }
+    //if feature == "node"{
+    //    mw.filter_shared2();
+    //}
 
 
     info!("Write files");
@@ -97,7 +97,7 @@ pub fn graph_main(matches: &ArgMatches){
 
         let len = chunks.len();
         for (index, y) in chunks.enumerate(){
-            write_bed2(y, output_prefix, feature, index, len);
+            //write_bed2(y, output_prefix, feature, index, len);
             mw.write_fam(index, output_prefix, feature, len);
             mw.write_bed(index, output_prefix, feature, len);
             mw.write_bim(index, output_prefix, &feature_enum, len);
