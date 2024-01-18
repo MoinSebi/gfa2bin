@@ -1,16 +1,15 @@
-use bitvec::order::{Msb0};
+use bitvec::order::Msb0;
 use bitvec::prelude::BitVec;
 use bitvec::slice::BitSlice;
 use byteorder::{BigEndian, ByteOrder};
 use log::info;
 use packing_lib::reader::get_file_as_byte_vec;
 
-
 #[allow(dead_code)]
-pub fn binary2dec_bed(vecc: &[bool]) -> u8{
+pub fn binary2dec_bed(vecc: &[bool]) -> u8 {
     let mut result: u8 = 0;
     let mut count = 0;
-    for x in vecc.iter(){
+    for x in vecc.iter() {
         let t: u8 = 2;
         result += (t.pow(count as u32)) * (*x as u8);
         count += 1;
@@ -19,9 +18,6 @@ pub fn binary2dec_bed(vecc: &[bool]) -> u8{
     }
     result
 }
-
-
-
 
 pub fn bitvec_to_u8(bitvec: &BitSlice<u8, Msb0>) -> u8 {
     let mut result: u8 = 0;
@@ -38,9 +34,9 @@ pub fn bitvec_to_u8(bitvec: &BitSlice<u8, Msb0>) -> u8 {
     result
 }
 
-pub fn make_dir_name(maxval: &usize) -> Vec<(usize, bool)>{
+pub fn make_dir_name(maxval: &usize) -> Vec<(usize, bool)> {
     let mut f = Vec::new();
-    for x in 0..*maxval{
+    for x in 0..*maxval {
         f.push((x, false));
         f.push((x, true));
     }
@@ -66,8 +62,8 @@ pub fn is_all_ones(bitvector: &BitVec<u8, Msb0>) -> bool {
 }
 
 pub fn custom_retain_two_vectors<T, F, S>(vec1: &mut Vec<T>, vec2: &mut Vec<S>, condition: F)
-    where
-        F: Fn(&T) -> bool,
+where
+    F: Fn(&T) -> bool,
 {
     assert_eq!(vec1.len(), vec2.len(), "Vectors must have the same length");
 
@@ -91,7 +87,7 @@ pub fn custom_retain_two_vectors<T, F, S>(vec1: &mut Vec<T>, vec2: &mut Vec<S>, 
     vec2.truncate(write_index);
 }
 
-pub fn get_thresh(filename: &str) -> u16{
-    let size = BigEndian::read_u16(&mut & get_file_as_byte_vec(filename)[7..9]);
+pub fn get_thresh(filename: &str) -> u16 {
+    let size = BigEndian::read_u16(&mut &get_file_as_byte_vec(filename)[7..9]);
     size
 }

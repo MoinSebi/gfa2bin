@@ -1,2 +1,2 @@
-pub mod fam;
 pub mod bfile;
+pub mod fam;

@@ -1,12 +1,11 @@
-use std::collections::{HashMap};
-use std::fmt::{Debug, Display};
-use std::io::{Write, BufWriter};
-use std::fs::{File, read_to_string};
-use bitvec::prelude::*;
-use gfa_reader::{Edges, NCGfa, OptElem};
 use crate::core::helper::{Feature, GenoName};
 use crate::helper::{bitvec_to_u8, custom_retain_two_vectors, is_all_ones, is_all_zeros};
-
+use bitvec::prelude::*;
+use gfa_reader::{Edges, NCGfa, OptElem};
+use std::collections::HashMap;
+use std::fmt::{Debug, Display};
+use std::fs::{read_to_string, File};
+use std::io::{BufWriter, Write};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 /// Core data structure
@@ -20,24 +19,20 @@ pub struct MatrixWrapper {
     // Check if node, edges, dirnode, or alignment
     pub feature: Feature,
 
-
-    pub geno_names: Vec<GenoName>,           // Name of all
-    pub geno_map: HashMap<GenoName, usize>,  // Mapping from "name" to index in the matrix
-    pub sample_names: Vec<String>,      // Sample names (same order as in the matrix)
+    pub geno_names: Vec<GenoName>,          // Name of all
+    pub geno_map: HashMap<GenoName, usize>, // Mapping from "name" to index in the matrix
+    pub sample_names: Vec<String>,          // Sample names (same order as in the matrix)
 
     // Plink specific stuff
     pub fam_entries: Vec<String>,
     pub bim_entries: Vec<String>,
 }
 
-
-
 impl MatrixWrapper {
-
     /// Dummy initialization
     pub fn new() -> Self {
         Self {
-            shape: (0,0),
+            shape: (0, 0),
             matrix_core: Vec::new(),
             matrix_bin: Vec::new(),
             feature: Feature::Node,
@@ -51,39 +46,50 @@ impl MatrixWrapper {
         }
     }
 
-
     //--------------------------------------------------------------------------------
 
-    pub fn make_index(&mut self, data: &NCGfa<()>, t: Feature){
-
+    pub fn make_index(&mut self, data: &NCGfa<()>, t: Feature) {
         match t {
             Feature::Node => {
-                for (i, x) in data.nodes.iter().enumerate(){
-                    self.geno_map.insert(GenoName{name: x.id as u64}, i);
-                    self.geno_names.push(GenoName{name: x.id as u64});
+                for (i, x) in data.nodes.iter().enumerate() {
+                    self.geno_map.insert(GenoName { name: x.id as u64 }, i);
+                    self.geno_names.push(GenoName { name: x.id as u64 });
                 }
             }
             Feature::DirNode => {
-                if data.edges.is_some(){
+                if data.edges.is_some() {
                     let value = data.edges.as_ref().unwrap();
-                    for (i, x) in value.iter().enumerate(){
-                        self.geno_map.insert(GenoName{name: x.from as u64*2 + x.from_dir as u64}, i);
-                        self.geno_names.push(GenoName{name: x.from as u64*2 + x.from_dir as u64});
-                    }
-                    }
-                }
-            Feature::Edge => {
-                if data.edges.is_some(){
-                    let value = data.edges.as_ref().unwrap();
-                    for (i, x) in value.iter().enumerate(){
-
-                        self.geno_map.insert(GenoName{name: x.from as u64*2 + x.from_dir as u64}, i);
-                        self.geno_names.push(GenoName{name: x.from as u64*2 + x.from_dir as u64});
+                    for (i, x) in value.iter().enumerate() {
+                        self.geno_map.insert(
+                            GenoName {
+                                name: x.from as u64 * 2 + x.from_dir as u64,
+                            },
+                            i,
+                        );
+                        self.geno_names.push(GenoName {
+                            name: x.from as u64 * 2 + x.from_dir as u64,
+                        });
                     }
                 }
             }
+            Feature::Edge => {
+                if data.edges.is_some() {
+                    let value = data.edges.as_ref().unwrap();
+                    for (i, x) in value.iter().enumerate() {
+                        self.geno_map.insert(
+                            GenoName {
+                                name: x.from as u64 * 2 + x.from_dir as u64,
+                            },
+                            i,
+                        );
+                        self.geno_names.push(GenoName {
+                            name: x.from as u64 * 2 + x.from_dir as u64,
+                        });
+                    }
+                }
             }
         }
+    }
 
     // pub fn make_binary(& mut self, threshold: u32, haplotype: &Haplotype){
     //     let mut new_matrix =  vec![BitVec::repeat(false,haplotype.haplotype.len()*2); self.matrix_core.len()];
@@ -102,85 +108,66 @@ impl MatrixWrapper {
     //     self.matrix_bin = new_matrix;
     // }
 
-
-
     //--------------------------------------------------------------------------------
     // Modification
 
-
-
-
-
-
-
-
-
-
-
-
-
     /// Write "empty" fam with no phenotypes
     /// Contains the names of the individuals in the same order as plink bed file
-    pub fn write_fam(&self, number: usize, out_prefix: &str, feature: &str, len: usize){
-        let mut output = [out_prefix,  feature, &number.to_string(), "fam"].join(".");
-        if len == 1{
-            output = [out_prefix,  feature, "fam"].join(".");
+    pub fn write_fam(&self, number: usize, out_prefix: &str, feature: &str, len: usize) {
+        let mut output = [out_prefix, feature, &number.to_string(), "fam"].join(".");
+        if len == 1 {
+            output = [out_prefix, feature, "fam"].join(".");
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
-        for x in self.sample_names.iter(){
-            write!(f,"{}\t{}\t{}\t{}\t{}\t{}\n", x, x, 0, 0, 0, 0).expect("Can not write file");
+        for x in self.sample_names.iter() {
+            write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", x, x, 0, 0, 0, 0).expect("Can not write file");
         }
     }
 
-    pub fn write_bed(&self, number: usize, out_prefix: &str, feature: &str, len: usize){
+    pub fn write_bed(&self, number: usize, out_prefix: &str, feature: &str, len: usize) {
         //hexdump -C test.bin
         // xxd -b file
         // xxd file
         // SNP: 00000001 , 0
         // IND: 00000000, 1
 
-
         let mut buff: Vec<u8> = vec![108, 27, 1];
         // Make SNP Vector
 
-
         for sel in self.matrix_bin.iter() {
             buff.extend(sel.as_raw_slice());
-
         }
 
-        let mut output = [out_prefix,  feature, &number.to_string(), "bed"].join(".");
-        if len == 1{
-            output = [out_prefix,  feature, "bed"].join(".");
+        let mut output = [out_prefix, feature, &number.to_string(), "bed"].join(".");
+        if len == 1 {
+            output = [out_prefix, feature, "bed"].join(".");
         }
         let mut file = File::create(output).expect("Not able to write ");
         file.write_all(&buff).expect("Not able to write ")
     }
 
-
-    pub fn write_bim(&self, number: usize, out_prefix: &str, feature: &Feature, len: usize){
-        let mut output = [out_prefix,  &feature.to_string(), &number.to_string(), "bim"].join(".");
-        if len == 1{
-            output = [out_prefix,  &feature.to_string(), "bim"].join(".");
+    pub fn write_bim(&self, number: usize, out_prefix: &str, feature: &Feature, len: usize) {
+        let mut output = [out_prefix, &feature.to_string(), &number.to_string(), "bim"].join(".");
+        if len == 1 {
+            output = [out_prefix, &feature.to_string(), "bim"].join(".");
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         for x in self.geno_names.iter() {
-            write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, x.to_string(feature), "A", "T").expect("Can not write file");
+            write!(
+                f,
+                "{}\t{}\t{}\t{}\t{}\t{}\n",
+                "graph",
+                ".",
+                0,
+                x.to_string(feature),
+                "A",
+                "T"
+            )
+            .expect("Can not write file");
         }
     }
-
-
-
-
-
-
-
-
-
-
-
 
     // pub fn filter_shared2(&mut self){
     //     let mut write_index = 0;
@@ -206,9 +193,4 @@ impl MatrixWrapper {
     //     self.sample_names.truncate(write_index);
     //
     // }
-
-
-
 }
-
-

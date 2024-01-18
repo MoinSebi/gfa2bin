@@ -1,11 +1,10 @@
-use std::fs;
-use std::fs::File;
-use std::io::{BufReader, BufRead, Read};
-use bitvec::order::{Lsb0, Msb0};
-use bitvec::prelude::BitVec;
 use crate::core::helper::GenoName;
 use crate::MatrixWrapper;
-
+use bitvec::order::{Lsb0, Msb0};
+use bitvec::prelude::BitVec;
+use std::fs;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Read};
 
 /// Wrapper for reading all entries of a plink genotype file (bed, bam, fam)
 /// matrix_bin -> bim, bam
@@ -14,7 +13,7 @@ use crate::MatrixWrapper;
 pub fn bfile_wrapper(filename: &str, matrix: &mut MatrixWrapper, names: &mut Vec<String>) {
     read_fam(&format!("{}{}", filename, ".fam"), matrix);
     read_bim(&format!("{}{}", filename, ".bim"), names);
-    read_bed(&format!("{}{}", filename, ".bed"), matrix,  names.len());
+    read_bed(&format!("{}{}", filename, ".bed"), matrix, names.len());
 }
 
 /// Read plink fam file
@@ -25,7 +24,7 @@ pub fn bfile_wrapper(filename: &str, matrix: &mut MatrixWrapper, names: &mut Vec
 /// 0 = unknown or not in data set
 ///
 ///
-pub fn read_fam(filename: &str, matrix: &mut MatrixWrapper){
+pub fn read_fam(filename: &str, matrix: &mut MatrixWrapper) {
     let data = fs::read_to_string(filename).expect("Unable to read file");
 
     // Split the file at the newlines
@@ -36,9 +35,9 @@ pub fn read_fam(filename: &str, matrix: &mut MatrixWrapper){
     let lines_vec_string: Vec<_> = lines_vec.into_iter().map(|e| e.to_string()).collect();
 
     // Add name to thing
-    for (i, x) in lines_vec_string.into_iter().enumerate(){
+    for (i, x) in lines_vec_string.into_iter().enumerate() {
         let line_split: Vec<_> = x.split("\t").collect();
-        matrix.geno_map.insert(GenoName{name: i as u64}, i);
+        matrix.geno_map.insert(GenoName { name: i as u64 }, i);
     }
 }
 
@@ -47,12 +46,11 @@ pub fn read_fam(filename: &str, matrix: &mut MatrixWrapper){
 /// More information about the file: https://www.cog-genomics.org/plink/1.9/formats#bim
 /// [Chromosome code, variant identifier, position in morgans, bp, allele1, allele2]
 /// allele code can hold more than one identifier
-pub fn read_bim(filename: &str, snp_names: &mut Vec<String>){
+pub fn read_bim(filename: &str, snp_names: &mut Vec<String>) {
     let file = BufReader::new(File::open(filename).expect("Unable to open file"));
 
-
     for x in file.lines() {
-        let f: Vec<String> = x.unwrap().split("\t").map(| s | s.to_string()).collect();
+        let f: Vec<String> = x.unwrap().split("\t").map(|s| s.to_string()).collect();
         let ff = f[0].clone();
         let ff2 = f[3].clone();
 
@@ -60,8 +58,6 @@ pub fn read_bim(filename: &str, snp_names: &mut Vec<String>){
     }
     println!("dasd{}", snp_names.len());
 }
-
-
 
 /// Read plink bed file
 ///
@@ -78,8 +74,7 @@ pub fn read_bim(filename: &str, snp_names: &mut Vec<String>){
 ///          CD     11  -- other homozygote (second)
 ///        EF       01  -- heterozygote (third)
 ///      GH         10  -- missing genotype (fourth)
-pub fn read_bed(filename: &str, matrix_w: & mut MatrixWrapper, numbsnp: usize) {
-
+pub fn read_bed(filename: &str, matrix_w: &mut MatrixWrapper, numbsnp: usize) {
     let mut file = File::open(filename).expect("no file found");
     let metadata = fs::metadata(&filename).expect("unable to read metadata");
     let mut buffer = vec![0; metadata.len() as usize];
@@ -89,8 +84,8 @@ pub fn read_bed(filename: &str, matrix_w: & mut MatrixWrapper, numbsnp: usize) {
     buffer = buffer[3..].to_vec();
 
     // do i need this
-    let mut num = matrix_w.geno_map.len()/4;
-    if (matrix_w.geno_map.len() % 4) > 0{
+    let mut num = matrix_w.geno_map.len() / 4;
+    if (matrix_w.geno_map.len() % 4) > 0 {
         num += 1;
     }
     // Each chunk
@@ -101,13 +96,11 @@ pub fn read_bed(filename: &str, matrix_w: & mut MatrixWrapper, numbsnp: usize) {
         let bv: BitVec<u8, Msb0> = BitVec::from_slice(&chunk[..]);
         let mut dd: BitVec<u8, Lsb0> = BitVec::new();
 
-        for (i, x) in bv.iter().step_by(2).enumerate(){
+        for (i, x) in bv.iter().step_by(2).enumerate() {
             if i < num as usize {
                 dd.push(*x);
             }
-
         }
         matrix_w.matrix_bin.push(dd);
     }
 }
-
