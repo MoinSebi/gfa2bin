@@ -91,38 +91,6 @@ pub fn custom_retain_two_vectors<T, F, S>(vec1: &mut Vec<T>, vec2: &mut Vec<S>, 
     vec2.truncate(write_index);
 }
 
-#[allow(dead_code)]
-/// Transposing a 2D vector
-///
-/// Creating a totally new 2D vector
-pub fn transpose_generic<T>(v: &Vec<Vec<T>>) -> Vec<Vec<T>>
-    where
-        T: Clone,
-{
-    info!("Transposing generic");
-    assert!(!v.is_empty());
-    (0..v[0].len())
-        .map(|i| v.iter().map(|inner| inner[i].clone()).collect::<Vec<T>>())
-        .collect()
-}
-
-#[allow(dead_code)]
-/// Transposing a 2D Vec<BitVec>
-///
-/// Creating a totally new vector
-pub fn transpose_bitvec(v: &Vec<BitVec<u8, Msb0>>) -> Vec<BitVec<u8, Msb0>>{
-    info!("Transposing bitvec");
-    let mut o: Vec<BitVec<u8, Msb0>> = Vec::new();
-    for x in 0..v[0].len(){
-        let mut o2: BitVec<u8, Msb0> = BitVec::new();
-        for y in 0..v.len(){
-            o2.push(v[y][x].clone());
-        }
-        o.push(o2);
-    }
-    return o;
-}
-
 pub fn get_thresh(filename: &str) -> u16{
     let size = BigEndian::read_u16(&mut & get_file_as_byte_vec(filename)[7..9]);
     size

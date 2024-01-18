@@ -1,32 +1,9 @@
 use std::fmt::{Debug};
 use std::fs::File;
 use std::io::{Write, BufWriter};
-use bimap::BiMap;
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
 use crate::helper::{bitvec_to_u8};
-
-//---------------------------------------------------------------------------------------------------
-// This is for writing (may move later)
-#[allow(dead_code)]
-/// Writing bim file
-/// Information: https://www.cog-genomics.org/plink/1.9/formats#bim
-pub fn write_bim<T>(ll: &BiMap<T, usize>, out_prefix: &str, t: &str)
-    where
-        T: Debug + std::hash::Hash + std::cmp::Eq + Ord
-{
-
-
-    let f = File::create([out_prefix, t,  "bim"].join(".")).expect("Unable to create file");
-    let mut f = BufWriter::new(f);
-    for x in 0..ll.len(){
-        write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, x, "A", "T").expect("Not able to write ");
-    }
-
-}
-
-
-
 
 
 

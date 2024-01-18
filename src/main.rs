@@ -1,5 +1,5 @@
 mod helper;
-mod convert;
+mod plink;
 mod find;
 mod logging;
 
@@ -34,9 +34,9 @@ fn main() {
                 .long("gfa")
                 .about("Sets the input file to use")
                 .takes_value(true))
-            .arg(Arg::new("feature")
+            .arg(Arg::new("Feature")
                 .short('f')
-                .long("feature")
+                .long("Feature")
                 .about("Feature to check")
                 .takes_value(true)
                 .default_value("node")
@@ -129,7 +129,7 @@ fn main() {
 
 
         // Input
-        .subcommand(App::new("convert")
+        .subcommand(App::new("plink")
             .about("Convert GFA or PACK format to binary data matrix")
             .version("0.1.0")
             .help_heading("Input parameters")
@@ -251,14 +251,11 @@ fn main() {
 
     } else if let Some(ref matches) = matches.subcommand_matches("align") {
         align_main(matches);
+    } else if let Some(ref matches) = matches.subcommand_matches("mod") {
+        println!("dasjkdjas");
     }
 
 
-
-        //--------------------------------------------------------------------------------------------------------------------------
-
-
-        // We only transpose once!
 }
 
 

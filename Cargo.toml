@@ -8,13 +8,10 @@ edition = "2018"
 [dependencies]
 clap = "=3.0.0-beta.4"
 #gfaR_wrapper = {path = "../gfaR_wrapper"}
-gfaR_wrapper = {git = "https://github.com/MoinSebi/gfaR_wrapper"}
 packing = {git = "https://github.com/MoinSebi/packing"}
-bimap = "=0.6.1"
 hashbrown = "0.11"
 bitvec = "1"
 byteorder = "1.0.0"
-bifurcation = {git = "https://github.com/MoinSebi/bifurcation"}
 gfa-reader = {git = "https://github.com/MoinSebi/gfa-reader"}
 
 

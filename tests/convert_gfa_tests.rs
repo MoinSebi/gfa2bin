@@ -2,12 +2,12 @@ use assert_cmd::prelude::*; // Add methods on commands
 use std::process::Command;
 
 #[test]
-/// Test for convert subcommand
+/// Test for plink subcommand
 /// -g (gfa)
 /// default is node
 fn gfa_node() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
-    cmd.arg("convert")
+    cmd.arg("plink")
         .arg("-g")
         .arg("/home/svorbrugg_local/Rust/gSV/example_data/testGraph.gfa")
         .arg("-o")
@@ -20,14 +20,13 @@ fn gfa_node() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
 #[test]
-/// Test for convert subcommand
+/// Test for plink subcommand
 /// -g (gfa)
 /// -t e (type edge)
 fn gfa_edges() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
-    cmd.arg("convert")
+    cmd.arg("plink")
         .arg("-g")
         .arg("/home/svorbrugg_local/Rust/gSV/example_data/testGraph.gfa")
         .arg("-o")
@@ -43,14 +42,13 @@ fn gfa_edges() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
 #[test]
-/// Test for convert subcommand
+/// Test for plink subcommand
 /// -g (gfa)
 /// -t d (directed node)
 fn gfa_dirnode() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
-    cmd.arg("convert")
+    cmd.arg("plink")
         .arg("-g")
         .arg("/home/svorbrugg_local/Rust/gSV/example_data/testGraph.gfa")
         .arg("-o")
@@ -66,14 +64,13 @@ fn gfa_dirnode() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
 #[test]
-/// Test for convert subcommand
+/// Test for plink subcommand
 /// -g (gfa)
 /// -t d (directed node)
 fn gfa_dirnode2() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
-    cmd.arg("convert")
+    cmd.arg("plink")
         .arg("-g")
         .arg("data/example_data/testGraph.gfa")
         .arg("-o")

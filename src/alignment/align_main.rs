@@ -1,7 +1,7 @@
 use clap::ArgMatches;
 use log::info;
 use crate::alignment::pack::{matrix_pack_bit_v2, matrix_pack_u16_v2};
-use crate::convert::bfile::bfile_wrapper;
+use crate::plink::bfile::bfile_wrapper;
 use crate::core::core::MatrixWrapper;
 use crate::helper::get_thresh;
 
