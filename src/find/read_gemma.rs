@@ -10,7 +10,7 @@ fn read_table(filename: &str, col_pval: usize, col_pos: usize) -> (Vec<f64>, Vec
     for (i, line) in reader.lines().enumerate() {
         let l = line.unwrap();
         if i != 0 {
-            let line_split: Vec<&str> = l.split("\t").collect();
+            let line_split: Vec<&str> = l.split('\t').collect();
             let pval: f64 = line_split[col_pval].parse().unwrap();
             vector_pval.push(pval);
 
@@ -18,5 +18,5 @@ fn read_table(filename: &str, col_pval: usize, col_pos: usize) -> (Vec<f64>, Vec
             vector_pval.push(pos);
         }
     }
-    return (vector_pval, vector_pos);
+    (vector_pval, vector_pos)
 }

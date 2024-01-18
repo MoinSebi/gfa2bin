@@ -21,7 +21,7 @@ pub fn align_main(matches: &ArgMatches) {
 
     if matches.is_present("pack") {
         let file_pack = matches.value_of("pack").unwrap();
-        let j = get_thresh(&file_pack);
+        let j = get_thresh(file_pack);
         if j == 0 {
             info!("Reading u16 pack");
             matrix_pack_u16_v2(file_pack, &mut mw, &mut index_normal);

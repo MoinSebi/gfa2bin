@@ -15,7 +15,7 @@ impl Fam {
         }
         let k: Vec<String> = lines
             .iter()
-            .map(|x| x.split("\t").nth(1).unwrap().to_string())
+            .map(|x| x.split('\t').nth(1).unwrap().to_string())
             .collect();
         Self { family_id: k }
     }

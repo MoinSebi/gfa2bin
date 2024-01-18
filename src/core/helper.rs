@@ -33,7 +33,7 @@ pub struct GenoName {
 
 impl GenoName {
     pub fn new() -> Self {
-        return GenoName { name: 0 };
+        GenoName { name: 0 }
     }
     pub fn from_string(name_input: &str, ftype: Feature) -> Self {
         if ftype == Feature::Node {
@@ -65,7 +65,7 @@ impl GenoName {
 
     pub fn to_string(&self, ftype: &Feature) -> String {
         if Feature::Node == *ftype {
-            return self.name.to_string();
+            self.name.to_string()
         } else if *ftype == Feature::DirNode {
             return format_unsigned_as_string(self.name);
         } else {

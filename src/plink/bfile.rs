@@ -28,7 +28,7 @@ pub fn read_fam(filename: &str, matrix: &mut MatrixWrapper) {
     let data = fs::read_to_string(filename).expect("Unable to read file");
 
     // Split the file at the newlines
-    let lines_vec: Vec<_> = data.split("\n").collect();
+    let lines_vec: Vec<_> = data.split('\n').collect();
     println!("GFA2BIN: Fam file has {} entries.", lines_vec.len());
 
     // Convert to String Vector
@@ -36,7 +36,7 @@ pub fn read_fam(filename: &str, matrix: &mut MatrixWrapper) {
 
     // Add name to thing
     for (i, x) in lines_vec_string.into_iter().enumerate() {
-        let line_split: Vec<_> = x.split("\t").collect();
+        let _line_split: Vec<_> = x.split('\t').collect();
         matrix.geno_map.insert(GenoName { name: i as u64 }, i);
     }
 }
@@ -50,11 +50,11 @@ pub fn read_bim(filename: &str, snp_names: &mut Vec<String>) {
     let file = BufReader::new(File::open(filename).expect("Unable to open file"));
 
     for x in file.lines() {
-        let f: Vec<String> = x.unwrap().split("\t").map(|s| s.to_string()).collect();
+        let f: Vec<String> = x.unwrap().split('\t').map(|s| s.to_string()).collect();
         let ff = f[0].clone();
         let ff2 = f[3].clone();
 
-        snp_names.push(format!("{}_{}", ff.to_string(), ff2));
+        snp_names.push(format!("{}_{}", ff, ff2));
     }
     println!("dasd{}", snp_names.len());
 }
@@ -76,7 +76,7 @@ pub fn read_bim(filename: &str, snp_names: &mut Vec<String>) {
 ///      GH         10  -- missing genotype (fourth)
 pub fn read_bed(filename: &str, matrix_w: &mut MatrixWrapper, numbsnp: usize) {
     let mut file = File::open(filename).expect("no file found");
-    let metadata = fs::metadata(&filename).expect("unable to read metadata");
+    let metadata = fs::metadata(filename).expect("unable to read metadata");
     let mut buffer = vec![0; metadata.len() as usize];
 
     file.read_exact(&mut buffer).expect("buffer overflow");
@@ -93,11 +93,11 @@ pub fn read_bed(filename: &str, matrix_w: &mut MatrixWrapper, numbsnp: usize) {
 
     println!("{}", numbsnp);
     for chunk in chunks.into_iter() {
-        let bv: BitVec<u8, Msb0> = BitVec::from_slice(&chunk[..]);
+        let bv: BitVec<u8, Msb0> = BitVec::from_slice(chunk);
         let mut dd: BitVec<u8, Lsb0> = BitVec::new();
 
         for (i, x) in bv.iter().step_by(2).enumerate() {
-            if i < num as usize {
+            if i < num {
                 dd.push(*x);
             }
         }

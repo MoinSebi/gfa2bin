@@ -1,7 +1,7 @@
 use crate::helper::bitvec_to_u8;
 use bitvec::order::Msb0;
 use bitvec::vec::BitVec;
-use std::fmt::Debug;
+
 use std::fs::File;
 use std::io::{BufWriter, Write};
 
@@ -55,7 +55,7 @@ pub fn write_bim_nodes(
     let f = File::create(output).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     for x in names.iter() {
-        write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, x, "A", "T")
+        writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, x)
             .expect("Can not write file");
     }
 }
@@ -78,15 +78,11 @@ pub fn write_bim_dirnode(
     let f = File::create(output).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     for x in names.iter() {
-        write!(
+        writeln!(
             f,
-            "{}\t{}\t{}\t{}\t{}\t{}\n",
-            "graph",
-            ".",
+            "graph\t.\t{}\t{}\tA\tT",
             0,
-            x.0.to_string() + &(if x.1 { "+" } else { "-" }).to_string(),
-            "A",
-            "T"
+            x.0.to_string() + (if x.1 { "+" } else { "-" })
         )
         .expect("Can not write file");
     }
@@ -110,18 +106,14 @@ pub fn write_bim_edges(
     let f = File::create(output).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     for x in names.iter() {
-        write!(
+        writeln!(
             f,
-            "{}\t{}\t{}\t{}\t{}\t{}\n",
-            "graph",
-            ".",
+            "graph\t.\t{}\t{}\tA\tT",
             0,
             x.0.to_string()
-                + &(if x.1 { "+" } else { "-" }).to_string()
+                + (if x.1 { "+" } else { "-" })
                 + &x.2.to_string()
-                + &(if x.3 { "+" } else { "-" }).to_string(),
-            "A",
-            "T"
+                + (if x.3 { "+" } else { "-" })
         )
         .expect("Can not write file");
     }

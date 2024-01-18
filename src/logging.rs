@@ -34,5 +34,5 @@ fn get_level(matches: &ArgMatches) -> LevelFilter {
             level = LevelFilter::Trace
         }
     }
-    return level;
+    level
 }

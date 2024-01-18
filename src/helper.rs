@@ -2,7 +2,7 @@ use bitvec::order::Msb0;
 use bitvec::prelude::BitVec;
 use bitvec::slice::BitSlice;
 use byteorder::{BigEndian, ByteOrder};
-use log::info;
+
 use packing_lib::reader::get_file_as_byte_vec;
 
 #[allow(dead_code)]
@@ -88,6 +88,6 @@ where
 }
 
 pub fn get_thresh(filename: &str) -> u16 {
-    let size = BigEndian::read_u16(&mut &get_file_as_byte_vec(filename)[7..9]);
-    size
+    
+    BigEndian::read_u16(&get_file_as_byte_vec(filename)[7..9])
 }

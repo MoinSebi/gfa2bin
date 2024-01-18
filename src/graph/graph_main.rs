@@ -1,9 +1,9 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
-use crate::core::writer::{write_bed2, write_bim_dirnode, write_bim_edges, write_bim_nodes};
+
 use crate::graph::parser::gfa_nodes_reader2;
-use crate::helper::make_dir_name;
-use bitvec::macros::internal::funty::Fundamental;
+
+
 use clap::ArgMatches;
 use gfa_reader::{NCGfa, NCPath, Pansn};
 use log::{info, warn};
@@ -21,7 +21,7 @@ pub fn graph_main(matches: &ArgMatches) {
     }
 
     // Input parameters
-    let mut feature1 = matches.value_of("Feature").unwrap_or("node");
+    let feature1 = matches.value_of("Feature").unwrap_or("node");
     let threshold = matches
         .value_of("threshold")
         .unwrap_or("1")
@@ -65,7 +65,7 @@ pub fn graph_main(matches: &ArgMatches) {
     // Read the graph and wrapper
     let mut graph: NCGfa<()> = NCGfa::new();
     graph.parse_gfa_file_direct(graph_file, true);
-    let mut wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, sep);
+    let wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, sep);
 
     info!("Number of samples: {}", wrapper.genomes.len());
 
@@ -99,7 +99,7 @@ pub fn graph_main(matches: &ArgMatches) {
         let chunks = mw.matrix_bin.chunks(chunk_size);
 
         let len = chunks.len();
-        for (index, y) in chunks.enumerate() {
+        for (index, _y) in chunks.enumerate() {
             //write_bed2(y, output_prefix, feature, index, len);
             mw.write_fam(index, output_prefix, feature, len);
             mw.write_bed(index, output_prefix, feature, len);

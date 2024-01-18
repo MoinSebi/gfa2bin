@@ -263,11 +263,11 @@ fn main() {
     // Checking verbose
     newbuilder(&matches);
 
-    if let Some(ref matches) = matches.subcommand_matches("graph") {
+    if let Some(matches) = matches.subcommand_matches("graph") {
         graph_main(matches);
-    } else if let Some(ref matches) = matches.subcommand_matches("align") {
+    } else if let Some(matches) = matches.subcommand_matches("align") {
         align_main(matches);
-    } else if let Some(ref matches) = matches.subcommand_matches("mod") {
+    } else if let Some(_matches) = matches.subcommand_matches("mod") {
         println!("dasjkdjas");
     }
 }

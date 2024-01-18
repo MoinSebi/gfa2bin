@@ -1,10 +1,10 @@
 use crate::core::helper::{Feature, GenoName};
-use crate::helper::{bitvec_to_u8, custom_retain_two_vectors, is_all_ones, is_all_zeros};
+
 use bitvec::prelude::*;
-use gfa_reader::{Edges, NCGfa, OptElem};
+use gfa_reader::{NCGfa};
 use std::collections::HashMap;
-use std::fmt::{Debug, Display};
-use std::fs::{read_to_string, File};
+use std::fmt::{Debug};
+use std::fs::{File};
 use std::io::{BufWriter, Write};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -121,7 +121,7 @@ impl MatrixWrapper {
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         for x in self.sample_names.iter() {
-            write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", x, x, 0, 0, 0, 0).expect("Can not write file");
+            writeln!(f, "{}\t{}\t{}\t{}\t{}\t{}", x, x, 0, 0, 0, 0).expect("Can not write file");
         }
     }
 
@@ -155,15 +155,11 @@ impl MatrixWrapper {
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         for x in self.geno_names.iter() {
-            write!(
+            writeln!(
                 f,
-                "{}\t{}\t{}\t{}\t{}\t{}\n",
-                "graph",
-                ".",
+                "graph\t.\t{}\t{}\tA\tT",
                 0,
-                x.to_string(feature),
-                "A",
-                "T"
+                x.to_string(feature)
             )
             .expect("Can not write file");
         }
