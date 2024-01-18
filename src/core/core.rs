@@ -149,14 +149,6 @@ impl MatrixWrapper {
             buff.extend(sel.as_raw_slice());
 
         }
-        for u8_value in buff.iter() {
-            let binary_representation = format!("{:08b}", u8_value);
-            println!("{} {}", binary_representation, u8_value);
-        }
-
-        for u8_value in self.matrix_bin.iter() {
-            println!("{}", u8_value);
-        }
 
         let mut output = [out_prefix,  feature, &number.to_string(), "bed"].join(".");
         if len == 1{
@@ -174,7 +166,6 @@ impl MatrixWrapper {
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
-        println!("dsakdhas {:?}", self.geno_names);
         for x in self.geno_names.iter() {
             write!(f, "{}\t{}\t{}\t{}\t{}\t{}\n", "graph", ".", 0, x.to_string(feature), "A", "T").expect("Can not write file");
         }
