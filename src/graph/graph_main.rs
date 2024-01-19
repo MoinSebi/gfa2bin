@@ -1,7 +1,7 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
 
-use crate::graph::parser::gfa_nodes_reader2;
+use crate::graph::parser::gfa_reader;
 
 use clap::ArgMatches;
 use gfa_reader::{NCGfa, NCPath, Pansn};
@@ -77,7 +77,7 @@ pub fn graph_main(matches: &ArgMatches) {
     if feature == "node" {
         //dir_nodes2(&graph, &haplo, &wrapper, &mut mw, false);
 
-        gfa_nodes_reader2(&mut mw, &wrapper, &graph, bin, &feature_enum)
+        gfa_reader(&mut mw, &wrapper, &graph, bin, feature_enum)
     }
 
     info!(

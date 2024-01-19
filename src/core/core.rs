@@ -6,7 +6,7 @@ use nohash_hasher::NoHashHasher;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
-use std::hash::{BuildHasherDefault};
+use std::hash::BuildHasherDefault;
 use std::io::{BufWriter, Write};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -97,10 +97,11 @@ impl MatrixWrapper {
         let mut write_index = 0;
         let mut remove_index = Vec::new();
 
-        for read_index in 0..self.sample_names.len() {
-            if is_all_ones(&self.matrix_bin[read_index])
-                || is_all_zeros(&self.matrix_bin[read_index])
+        for read_index in 0..self.geno_names.len() {
+            if !is_all_ones(&self.matrix_bin[read_index])
+                || !is_all_zeros(&self.matrix_bin[read_index])
             {
+                println!("dsajkdja {:?}", self.matrix_bin[read_index]);
                 remove_index.push(read_index);
                 // Retain elements that satisfy the condition
                 if write_index != read_index {
@@ -110,8 +111,11 @@ impl MatrixWrapper {
                 }
 
                 write_index += 1;
+            } else {
+                println!("dsajkdasdadadsadja {:?}", self.matrix_bin[read_index]);
             }
         }
+        println!("{:?}", write_index);
         self.matrix_bin.truncate(write_index);
         self.geno_names.truncate(write_index);
 
@@ -121,11 +125,13 @@ impl MatrixWrapper {
             .map(|(k, v)| (*v, k.clone()))
             .collect::<Vec<(usize, GenoName)>>();
         k.sort_by(|a, b| a.0.cmp(&b.0));
-        let gg = 0;
+        let mut gg = 0;
         for x in remove_index {
             for y in gg..k.len() {
                 if k[y].0 == x {
                     self.geno_map.remove(&k[y].1);
+                    gg = y;
+                    break;
                 }
             }
             self.geno_map.remove(&k[x].1);

@@ -5,12 +5,12 @@ use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
 use gfa_reader::{NCGfa, NCPath, Pansn};
 
-pub fn gfa_nodes_reader2(
+pub fn gfa_reader(
     matrix: &mut MatrixWrapper,
     graph_wrapper: &Pansn<NCPath>,
     graph: &NCGfa<()>,
     bin: bool,
-    _feature: &Feature,
+    _feature: Feature,
 ) {
     if bin {
         matrix.matrix_bin = vec![
@@ -23,8 +23,9 @@ pub fn gfa_nodes_reader2(
             matrix.sample_names.push(nn.name.clone());
             if nn.haplotypes.len() == 1 {
                 for node1 in nn.haplotypes[0].paths.iter() {
-                    for node in node1.nodes.iter() {
-                        let index = hm.get(&GenoName { name: *node as u64 }).unwrap();
+                    let iter1 = paths_to_u64vec(node1, _feature);
+                    for node in iter1.iter() {
+                        let index = hm.get(&GenoName { name: *node }).unwrap();
                         matrix.matrix_bin[*index]
                             .get_mut(path_index * 2 + 1)
                             .unwrap()
@@ -37,8 +38,9 @@ pub fn gfa_nodes_reader2(
                 }
             } else if nn.haplotypes.len() == 2 {
                 for node1 in nn.haplotypes[0].paths.iter() {
-                    for node in node1.nodes.iter() {
-                        let index = hm.get(&GenoName { name: *node as u64 }).unwrap();
+                    let iter1 = paths_to_u64vec(node1, _feature);
+                    for node in iter1.iter() {
+                        let index = hm.get(&GenoName { name: *node }).unwrap();
                         matrix.matrix_bin[*index]
                             .get_mut(path_index * 2)
                             .unwrap()
@@ -46,8 +48,9 @@ pub fn gfa_nodes_reader2(
                     }
                 }
                 for node1 in nn.haplotypes[1].paths.iter() {
-                    for node in node1.nodes.iter() {
-                        let index = hm.get(&GenoName { name: *node as u64 }).unwrap();
+                    let iter1 = paths_to_u64vec(node1, _feature);
+                    for node in iter1.iter() {
+                        let index = hm.get(&GenoName { name: *node }).unwrap();
                         let check = matrix.matrix_bin[*index][path_index * 2];
                         if check.as_bool() {
                             matrix.matrix_bin[*index]
@@ -67,4 +70,25 @@ pub fn gfa_nodes_reader2(
             }
         }
     }
+}
+
+pub fn paths_to_u64vec(path: &NCPath, feature: Feature) -> Vec<u64> {
+    let mut v = Vec::new();
+    for i in 0..path.nodes.len() - 1 {
+        let v1 = path.nodes[i];
+        let v2 = path.dir[i];
+        let v3 = path.nodes[i + 1];
+        let v4 = path.dir[i + 1];
+
+        if feature == Feature::Node {
+            v.push(v1 as u64);
+        } else if feature == Feature::DirNode {
+            v.push(v1 as u64 * 2 + v2 as u64);
+        } else if feature == Feature::Edge {
+            let u1 = v1 * 2 + v2 as u32;
+            let u2 = v3 * 2 + v4 as u32;
+            v.push(u1 as u64 * u2 as u64);
+        }
+    }
+    v
 }
