@@ -1,5 +1,8 @@
+use bitvec::order::Lsb0;
+use bitvec::prelude::BitVec;
+use nohash_hasher::NoHashHasher;
 use std::fmt::Display;
-
+use std::hash::{Hash, Hasher};
 #[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub enum Feature {
     Node,
@@ -26,10 +29,24 @@ impl Feature {
     }
 }
 
-#[derive(Eq, Hash, PartialEq, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct GenoName {
     pub name: u64,
 }
+
+impl Hash for GenoName {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
+        let _hasher: NoHashHasher<u32> = NoHashHasher::default();
+    }
+}
+
+impl PartialEq for GenoName {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
+impl Eq for GenoName {}
 
 impl GenoName {
     pub fn new() -> Self {
@@ -99,4 +116,12 @@ fn merge_u32_to_u64(high: u32, low: u32) -> u64 {
     let result: u64 = (high_u64 << 32) | low_u64;
 
     result
+}
+
+pub fn is_all_zeros(bitvector: &BitVec<u8, Lsb0>) -> bool {
+    return bitvector.iter().all(|byte| !byte);
+}
+
+pub fn is_all_ones(bitvector: &BitVec<u8, Lsb0>) -> bool {
+    return bitvector.iter().all(|byte| *byte);
 }

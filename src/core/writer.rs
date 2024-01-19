@@ -55,8 +55,7 @@ pub fn write_bim_nodes(
     let f = File::create(output).expect("Unable to create file");
     let mut f = BufWriter::new(f);
     for x in names.iter() {
-        writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, x)
-            .expect("Can not write file");
+        writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, x).expect("Can not write file");
     }
 }
 

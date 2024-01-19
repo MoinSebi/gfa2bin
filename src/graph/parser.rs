@@ -1,11 +1,9 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{Feature, GenoName};
 use bitvec::macros::internal::funty::Fundamental;
-use bitvec::order::{Lsb0};
+use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
 use gfa_reader::{NCGfa, NCPath, Pansn};
-
-
 
 pub fn gfa_nodes_reader2(
     matrix: &mut MatrixWrapper,
@@ -24,19 +22,17 @@ pub fn gfa_nodes_reader2(
         for (path_index, nn) in graph_wrapper.genomes.iter().enumerate() {
             matrix.sample_names.push(nn.name.clone());
             if nn.haplotypes.len() == 1 {
-                for haplotype in nn.haplotypes.iter() {
-                    for node1 in haplotype.paths.iter() {
-                        for node in node1.nodes.iter() {
-                            let index = hm.get(&GenoName { name: *node as u64 }).unwrap();
-                            matrix.matrix_bin[*index]
-                                .get_mut(path_index * 2 + 1)
-                                .unwrap()
-                                .set(true);
-                            matrix.matrix_bin[*index]
-                                .get_mut(path_index * 2)
-                                .unwrap()
-                                .set(true);
-                        }
+                for node1 in nn.haplotypes[0].paths.iter() {
+                    for node in node1.nodes.iter() {
+                        let index = hm.get(&GenoName { name: *node as u64 }).unwrap();
+                        matrix.matrix_bin[*index]
+                            .get_mut(path_index * 2 + 1)
+                            .unwrap()
+                            .set(true);
+                        matrix.matrix_bin[*index]
+                            .get_mut(path_index * 2)
+                            .unwrap()
+                            .set(true);
                     }
                 }
             } else if nn.haplotypes.len() == 2 {

@@ -3,7 +3,6 @@ use crate::core::helper::Feature;
 
 use crate::graph::parser::gfa_nodes_reader2;
 
-
 use clap::ArgMatches;
 use gfa_reader::{NCGfa, NCPath, Pansn};
 use log::{info, warn};
@@ -86,24 +85,19 @@ pub fn graph_main(matches: &ArgMatches) {
         mw.matrix_bin.len(),
         mw.matrix_bin[0].len()
     );
+    // Filter the matrix
+    mw.remove_non_info();
 
-    info!("Filtering matrix");
-    //if feature == "node"{
-    //    mw.filter_shared2();
-    //}
-
-    info!("Write files");
     // Output
-    if output_format == "plink" {
-        let chunk_size = (mw.matrix_bin.len() / split) + 1;
-        let chunks = mw.matrix_bin.chunks(chunk_size);
+    info!("Writing the output");
+    let chunk_size = (mw.matrix_bin.len() / split) + 1;
+    let chunks = mw.matrix_bin.chunks(chunk_size);
 
-        let len = chunks.len();
-        for (index, _y) in chunks.enumerate() {
-            //write_bed2(y, output_prefix, feature, index, len);
-            mw.write_fam(index, output_prefix, feature, len);
-            mw.write_bed(index, output_prefix, feature, len);
-            mw.write_bim(index, output_prefix, &feature_enum, len);
-        }
+    let len = chunks.len();
+    for (index, _y) in chunks.enumerate() {
+        //write_bed2(y, output_prefix, feature, index, len);
+        mw.write_fam(index, output_prefix, feature, len);
+        mw.write_bed(index, output_prefix, feature, len);
+        mw.write_bim(index, output_prefix, &feature_enum, len);
     }
 }

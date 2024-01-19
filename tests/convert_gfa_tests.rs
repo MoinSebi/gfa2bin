@@ -26,13 +26,11 @@ fn gfa_node() -> Result<(), Box<dyn std::error::Error>> {
 /// -t e (type edge)
 fn gfa_edges() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
-    cmd.arg("plink")
+    cmd.arg("graph")
         .arg("-g")
-        .arg("/home/svorbrugg_local/Rust/gSV/example_data/testGraph.gfa")
+        .arg("/home/svorbrugg/code/gfa2bin/data/example_data/testGraph2.gfa")
         .arg("-o")
-        .arg("data/output/tt2")
-        .arg("-t")
-        .arg("e");
+        .arg("data/output/tt2");
     cmd.assert().success();
     //cmd.assert().stderr(predicate::str::contains("No file with such name"));
     //fs::remove_file("example_data/test3.bubble.stats")?;

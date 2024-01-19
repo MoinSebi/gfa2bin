@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use bitvec::order::{Lsb0};
+use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use packing_lib::reader::{get_file_as_byte_vec, wrapper_bool, wrapper_u16, ReaderBit, ReaderU16};
 

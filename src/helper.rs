@@ -1,5 +1,5 @@
 use bitvec::order::Msb0;
-use bitvec::prelude::BitVec;
+
 use bitvec::slice::BitSlice;
 use byteorder::{BigEndian, ByteOrder};
 
@@ -43,24 +43,6 @@ pub fn make_dir_name(maxval: &usize) -> Vec<(usize, bool)> {
     f
 }
 
-pub fn is_all_zeros(bitvector: &BitVec<u8, Msb0>) -> bool {
-    for byte in bitvector.iter() {
-        if byte.as_ref() != &false {
-            return false; // If any byte is not zero, the bitvector is not all zeros
-        }
-    }
-    true // If no non-zero byte is found, the bitvector is all zeros
-}
-
-pub fn is_all_ones(bitvector: &BitVec<u8, Msb0>) -> bool {
-    for byte in bitvector.iter() {
-        if byte.as_ref() != &true {
-            return false; // If any byte is not zero, the bitvector is not all zeros
-        }
-    }
-    true // If no non-zero byte is found, the bitvector is all zeros
-}
-
 pub fn custom_retain_two_vectors<T, F, S>(vec1: &mut Vec<T>, vec2: &mut Vec<S>, condition: F)
 where
     F: Fn(&T) -> bool,
@@ -88,6 +70,5 @@ where
 }
 
 pub fn get_thresh(filename: &str) -> u16 {
-    
     BigEndian::read_u16(&get_file_as_byte_vec(filename)[7..9])
 }

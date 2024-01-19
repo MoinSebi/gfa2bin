@@ -1,6 +1,5 @@
 use assert_cmd::Command;
 
-
 #[test]
 /// Check if the normal plink command it working
 fn pack_filter() -> Result<(), Box<dyn std::error::Error>> {
