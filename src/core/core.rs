@@ -1,4 +1,4 @@
-use crate::core::helper::{is_all_ones, is_all_zeros, Feature, GenoName};
+use crate::core::helper::{is_all_ones, is_all_zeros, merge_u32_to_u64, Feature, GenoName};
 
 use bitvec::prelude::*;
 use gfa_reader::NCGfa;
@@ -8,6 +8,7 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::hash::BuildHasherDefault;
 use std::io::{BufWriter, Write};
+use hashbrown::HashSet;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 /// Core data structure
@@ -40,12 +41,14 @@ impl MatrixWrapper {
             matrix_bin: Vec::new(),
             feature: Feature::Node,
 
+            // SNP
             geno_names: Vec::new(),
             geno_map: HashMap::default(),
-            sample_names: Vec::new(),
-
-            fam_entries: Vec::new(),
             bim_entries: Vec::new(),
+
+            // Fam
+            sample_names: Vec::new(),
+            fam_entries: Vec::new(),
         }
     }
 
@@ -61,15 +64,23 @@ impl MatrixWrapper {
             Feature::DirNode => {
                 if data.edges.is_some() {
                     let value = data.edges.as_ref().unwrap();
-                    for (i, x) in value.iter().enumerate() {
+                    let mut edd = HashSet::new();
+                    for x in value.iter() {
+                        edd.insert(x.from as u64 * 2 + x.from_dir as u64);
+                        edd.insert(x.to as u64 * 2 + x.to_dir as u64);
+                    }
+                    let mut edd2 = edd.into_iter().collect::<Vec<u64>>();
+                    edd2.sort();
+
+                    for (i, x) in edd2.iter().enumerate() {
                         self.geno_map.insert(
                             GenoName {
-                                name: x.from as u64 * 2 + x.from_dir as u64,
+                                name: *x,
                             },
                             i,
                         );
                         self.geno_names.push(GenoName {
-                            name: x.from as u64 * 2 + x.from_dir as u64,
+                            name: *x,
                         });
                     }
                 }
@@ -78,15 +89,12 @@ impl MatrixWrapper {
                 if data.edges.is_some() {
                     let value = data.edges.as_ref().unwrap();
                     for (i, x) in value.iter().enumerate() {
-                        self.geno_map.insert(
-                            GenoName {
-                                name: x.from as u64 * 2 + x.from_dir as u64,
-                            },
-                            i,
-                        );
-                        self.geno_names.push(GenoName {
-                            name: x.from as u64 * 2 + x.from_dir as u64,
-                        });
+                        let (v1, v2, v3, v4) = (x.from, x.from_dir, x.to, x.to_dir);
+                        let u1 = v1 * 2 + v2 as u32;
+                        let u2 = v3 * 2 + v4 as u32;
+                        let uu = merge_u32_to_u64(u1, u2);
+                        self.geno_map.insert(GenoName { name: uu }, i);
+                        self.geno_names.push(GenoName { name: uu });
                     }
                 }
             }
@@ -101,7 +109,6 @@ impl MatrixWrapper {
             if !is_all_ones(&self.matrix_bin[read_index])
                 || !is_all_zeros(&self.matrix_bin[read_index])
             {
-                println!("dsajkdja {:?}", self.matrix_bin[read_index]);
                 remove_index.push(read_index);
                 // Retain elements that satisfy the condition
                 if write_index != read_index {
@@ -111,11 +118,8 @@ impl MatrixWrapper {
                 }
 
                 write_index += 1;
-            } else {
-                println!("dsajkdasdadadsadja {:?}", self.matrix_bin[read_index]);
             }
         }
-        println!("{:?}", write_index);
         self.matrix_bin.truncate(write_index);
         self.geno_names.truncate(write_index);
 
@@ -198,33 +202,5 @@ impl MatrixWrapper {
             writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, x.to_string(feature))
                 .expect("Can not write file");
         }
-    }
-
-    pub fn filter_shared2(&mut self) {
-        let mut write_index = 0;
-        for read_index in 0..self.sample_names.len() {
-            if is_all_ones(&self.matrix_bin[read_index])
-                || is_all_zeros(&self.matrix_bin[read_index])
-            {
-                // Retain elements that satisfy the condition
-                if write_index != read_index {
-                    // Move the elements to their new positions
-                    self.matrix_bin.swap(write_index, read_index);
-                    self.sample_names.swap(write_index, read_index);
-                }
-
-                write_index += 1;
-            }
-        }
-        let a = &self.sample_names[0..write_index];
-
-        for x in a {
-            self.geno_map.remove(&GenoName {
-                name: x.parse::<u64>().unwrap(),
-            });
-        }
-        // Truncate both vectors to their new length
-        self.matrix_bin.truncate(write_index);
-        self.sample_names.truncate(write_index);
     }
 }

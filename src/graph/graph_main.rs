@@ -74,11 +74,7 @@ pub fn graph_main(matches: &ArgMatches) {
     info!("Create the matrix");
     mw.make_index(&graph, feature_enum);
 
-    if feature == "node" {
-        //dir_nodes2(&graph, &haplo, &wrapper, &mut mw, false);
-
-        gfa_reader(&mut mw, &wrapper, &graph, bin, feature_enum)
-    }
+    gfa_reader(&mut mw, &wrapper, bin, feature_enum);
 
     info!(
         "Shape is {:?} - {}",

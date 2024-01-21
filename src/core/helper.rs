@@ -98,7 +98,7 @@ fn format_unsigned_as_string<T: Display + Into<u64>>(name: T) -> String {
     format!(
         "{}{}",
         name_u64 / 2,
-        if name_u64 % 2 == 1 { "-" } else { "+" }
+        if name_u64 % 2 == 1 { "+" } else { "-" }
     )
 }
 
@@ -109,7 +109,7 @@ fn split_u64_to_u32s(value: u64) -> (u32, u32) {
     (high, low)
 }
 
-fn merge_u32_to_u64(high: u32, low: u32) -> u64 {
+pub fn merge_u32_to_u64(high: u32, low: u32) -> u64 {
     let high_u64 = u64::from(high);
     let low_u64 = u64::from(low);
 
