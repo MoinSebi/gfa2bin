@@ -45,7 +45,6 @@ fn gfa_nodes() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
 #[test]
 /// Test for plink subcommand
 /// -g (gfa)

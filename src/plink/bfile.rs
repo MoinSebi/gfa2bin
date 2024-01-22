@@ -1,4 +1,3 @@
-use crate::core::helper::GenoName;
 use crate::MatrixWrapper;
 use bitvec::order::{Lsb0, Msb0};
 use bitvec::prelude::BitVec;
@@ -37,7 +36,7 @@ pub fn read_fam(filename: &str, matrix: &mut MatrixWrapper) {
     // Add name to thing
     for (i, x) in lines_vec_string.into_iter().enumerate() {
         let _line_split: Vec<_> = x.split('\t').collect();
-        matrix.geno_map.insert(GenoName { name: i as u64 }, i);
+        matrix.geno_map.insert(i as u64, i);
     }
 }
 

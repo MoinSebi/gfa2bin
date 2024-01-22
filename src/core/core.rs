@@ -1,14 +1,14 @@
-use crate::core::helper::{is_all_ones, is_all_zeros, merge_u32_to_u64, Feature, GenoName};
+use crate::core::helper::{is_all_ones, is_all_zeros, merge_u32_to_u64, to_string1, Feature};
 
 use bitvec::prelude::*;
 use gfa_reader::NCGfa;
+use hashbrown::HashSet;
 use nohash_hasher::NoHashHasher;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fs::File;
 use std::hash::BuildHasherDefault;
 use std::io::{BufWriter, Write};
-use hashbrown::HashSet;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 /// Core data structure
@@ -23,8 +23,8 @@ pub struct MatrixWrapper {
     // Check if node, edges, dirnode, or alignment
     pub feature: Feature,
 
-    pub geno_names: Vec<GenoName>, // Name of all
-    pub geno_map: HashMap<GenoName, usize, BuildHasherDefault<NoHashHasher<u32>>>, // Mapping from "name" to index in the matrix
+    pub geno_names: Vec<u64>, // Name of all
+    pub geno_map: HashMap<u64, usize, BuildHasherDefault<NoHashHasher<u32>>>, // Mapping from "name" to index in the matrix
     pub sample_names: Vec<String>, // Sample names (same order as in the matrix)
 
     // Plink specific stuff
@@ -54,11 +54,15 @@ impl MatrixWrapper {
 
     /// Initialize the SNP index
     pub fn make_index(&mut self, data: &NCGfa<()>, t: Feature) {
+        //let mut bb = HashMap::with_hasher(BuildHasherDefault::<NoHashHasher<u32>>::default());
         match t {
             Feature::Node => {
                 for (i, x) in data.nodes.iter().enumerate() {
-                    self.geno_map.insert(GenoName { name: x.id as u64 }, i);
-                    self.geno_names.push(GenoName { name: x.id as u64 });
+                    println!("{}", i);
+                    println!("{}", x.id);
+                    self.geno_map.insert(x.id as u64, i);
+                    self.geno_names.push(x.id as u64);
+                    //bb.insert(x.id as u64, i);
                 }
             }
             Feature::DirNode => {
@@ -73,15 +77,8 @@ impl MatrixWrapper {
                     edd2.sort();
 
                     for (i, x) in edd2.iter().enumerate() {
-                        self.geno_map.insert(
-                            GenoName {
-                                name: *x,
-                            },
-                            i,
-                        );
-                        self.geno_names.push(GenoName {
-                            name: *x,
-                        });
+                        self.geno_map.insert(*x, i);
+                        self.geno_names.push(*x);
                     }
                 }
             }
@@ -93,8 +90,8 @@ impl MatrixWrapper {
                         let u1 = v1 * 2 + v2 as u32;
                         let u2 = v3 * 2 + v4 as u32;
                         let uu = merge_u32_to_u64(u1, u2);
-                        self.geno_map.insert(GenoName { name: uu }, i);
-                        self.geno_names.push(GenoName { name: uu });
+                        self.geno_map.insert(uu, i);
+                        self.geno_names.push(uu);
                     }
                 }
             }
@@ -126,8 +123,8 @@ impl MatrixWrapper {
         let mut k = self
             .geno_map
             .iter()
-            .map(|(k, v)| (*v, k.clone()))
-            .collect::<Vec<(usize, GenoName)>>();
+            .map(|(k, v)| (*v, *k))
+            .collect::<Vec<(usize, u64)>>();
         k.sort_by(|a, b| a.0.cmp(&b.0));
         let mut gg = 0;
         for x in remove_index {
@@ -192,14 +189,14 @@ impl MatrixWrapper {
     /// Allele 2 (corresponding to set bits in .bed; usually major)
     /// Representation here: [graph, ., 1, 0, A, T]
     pub fn write_bim(&self, number: usize, out_prefix: &str, feature: &Feature, len: usize) {
-        let mut output = [out_prefix, &feature.to_string(), &number.to_string(), "bim"].join(".");
+        let mut output = [out_prefix, &feature.to_string1(), &number.to_string(), "bim"].join(".");
         if len == 1 {
-            output = [out_prefix, &feature.to_string(), "bim"].join(".");
+            output = [out_prefix, &feature.to_string1(), "bim"].join(".");
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         for x in self.geno_names.iter() {
-            writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, x.to_string(feature))
+            writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, to_string1(*x, feature))
                 .expect("Can not write file");
         }
     }

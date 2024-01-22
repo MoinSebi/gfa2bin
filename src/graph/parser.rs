@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{merge_u32_to_u64, Feature, GenoName};
+use crate::core::helper::{merge_u32_to_u64, to_string1, Feature};
 use bitvec::macros::internal::funty::Fundamental;
 use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
@@ -24,10 +24,8 @@ pub fn gfa_reader(
                 for ncpath in nn.haplotypes[0].paths.iter() {
                     let iter1 = paths_to_u64vec(ncpath, feature);
                     for node in iter1.iter() {
-                        println!("{} {}", node, path_index);
-                        println!("{:?}", hm);
-
-                        let index = hm.get(&GenoName { name: *node }).unwrap();
+                        println!("{}", to_string1(*node, &feature));
+                        let index = hm.get(node).unwrap();
                         matrix.matrix_bin[*index]
                             .get_mut(path_index * 2 + 1)
                             .unwrap()
@@ -42,7 +40,7 @@ pub fn gfa_reader(
                 for node1 in nn.haplotypes[0].paths.iter() {
                     let iter1 = paths_to_u64vec(node1, feature);
                     for node in iter1.iter() {
-                        let index = hm.get(&GenoName { name: *node }).unwrap();
+                        let index = hm.get(node).unwrap();
                         matrix.matrix_bin[*index]
                             .get_mut(path_index * 2)
                             .unwrap()
@@ -52,7 +50,7 @@ pub fn gfa_reader(
                 for node1 in nn.haplotypes[1].paths.iter() {
                     let iter1 = paths_to_u64vec(node1, feature);
                     for node in iter1.iter() {
-                        let index = hm.get(&GenoName { name: *node }).unwrap();
+                        let index = hm.get(node).unwrap();
                         let check = matrix.matrix_bin[*index][path_index * 2];
                         if check.as_bool() {
                             matrix.matrix_bin[*index]
@@ -95,10 +93,7 @@ pub fn paths_to_u64vec(path: &NCPath, feature: Feature) -> Vec<u64> {
     if feature == Feature::Node {
         v.push(path.nodes[path.nodes.len() - 1] as u64);
     } else if feature == Feature::DirNode {
-        v.push(
-            path.nodes[path.nodes.len() - 1] as u64 * 2
-                + path.dir[path.nodes.len() - 1] as u64,
-        );
+        v.push(path.nodes[path.nodes.len() - 1] as u64 * 2 + path.dir[path.nodes.len() - 1] as u64);
     }
     v
 }

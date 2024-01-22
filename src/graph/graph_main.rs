@@ -11,13 +11,13 @@ use std::process;
 
 pub fn graph_main(matches: &ArgMatches) {
     // Check graph file
-    let graph_file: &str;
-    if Path::new(matches.value_of("gfa").unwrap()).exists() {
-        graph_file = matches.value_of("gfa").unwrap();
+    let _graph_file: &str;
+    let graph_file: &str = if Path::new(matches.value_of("gfa").unwrap()).exists() {
+        matches.value_of("gfa").unwrap()
     } else {
         warn!("No file with such name");
         process::exit(0x0100);
-    }
+    };
 
     // Input parameters
     let feature1 = matches.value_of("Feature").unwrap_or("node");
@@ -48,6 +48,7 @@ pub fn graph_main(matches: &ArgMatches) {
         "node"
     };
     let feature_enum = Feature::from_str(feature);
+    let need_edges = feature != "node";
 
     info!("Input parameters");
     info!("Graph file: {}", graph_file);
@@ -63,7 +64,7 @@ pub fn graph_main(matches: &ArgMatches) {
     info!("Reading the graph");
     // Read the graph and wrapper
     let mut graph: NCGfa<()> = NCGfa::new();
-    graph.parse_gfa_file_direct(graph_file, true);
+    graph.parse_gfa_file(graph_file, need_edges);
     let wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, sep);
 
     info!("Number of samples: {}", wrapper.genomes.len());
@@ -71,9 +72,10 @@ pub fn graph_main(matches: &ArgMatches) {
     // This is the matrix
     let mut mw = MatrixWrapper::new();
 
-    info!("Create the matrix");
+    info!("Create the index");
     mw.make_index(&graph, feature_enum);
 
+    info!("Create matrix");
     gfa_reader(&mut mw, &wrapper, bin, feature_enum);
 
     info!(

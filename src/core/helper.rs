@@ -1,8 +1,8 @@
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-use nohash_hasher::NoHashHasher;
+
 use std::fmt::Display;
-use std::hash::{Hash, Hasher};
+use std::hash::{Hasher};
 #[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub enum Feature {
     Node,
@@ -20,7 +20,7 @@ impl Feature {
         }
     }
 
-    pub fn to_string(&self) -> String {
+    pub fn to_string1(&self) -> String {
         match self {
             Feature::Node => "node".to_string(),
             Feature::DirNode => "dirnode".to_string(),
@@ -29,67 +29,38 @@ impl Feature {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct GenoName {
-    pub name: u64,
-}
+pub fn from_string(name_input: &str, ftype: Feature) -> u64 {
+    if ftype == Feature::Node {
+        name_input.parse().unwrap()
+    } else if ftype == Feature::DirNode {
+        let last_char = &name_input[name_input.len() - 1..];
+        let rest = &name_input[..name_input.len() - 1];
 
-impl Hash for GenoName {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        let _hasher: NoHashHasher<u32> = NoHashHasher::default();
+        rest.parse::<u64>().unwrap() * 2 + (last_char == "+") as u64
+    } else {
+        let ff = name_input.find(|c| c == '+' || c == '-').unwrap();
+        let dir1 = &name_input[ff..ff];
+        let dir2 = &name_input[name_input.len() - 1..name_input.len() - 1];
+
+        let number1 = &name_input[..ff];
+        let number2 = &name_input[ff + 1..];
+
+        let numb1: u32 = number1.parse::<u32>().unwrap() * 2 + (dir1 == "+") as u32;
+        let numb2: u32 = number2.parse::<u32>().unwrap() * 2 + (dir2 == "+") as u32;
+
+        merge_u32_to_u64(numb1, numb2)
     }
 }
 
-impl PartialEq for GenoName {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
+pub fn to_string1(input: u64, ftype: &Feature) -> String {
+    if Feature::Node == *ftype {
+        input.to_owned().to_string()
+    } else if *ftype == Feature::DirNode {
+        return format_unsigned_as_string(input);
+    } else {
+        let (left, right) = split_u64_to_u32s(input);
 
-impl Eq for GenoName {}
-
-impl GenoName {
-    pub fn new() -> Self {
-        GenoName { name: 0 }
-    }
-    pub fn from_string(name_input: &str, ftype: Feature) -> Self {
-        if ftype == Feature::Node {
-            GenoName {
-                name: name_input.parse().unwrap(),
-            }
-        } else if ftype == Feature::DirNode {
-            let last_char = &name_input[name_input.len() - 1..];
-            let rest = &name_input[..name_input.len() - 1];
-
-            GenoName {
-                name: rest.parse::<u64>().unwrap() * 2 + (last_char == "+") as u64,
-            }
-        } else {
-            let ff = name_input.find(|c| c == '+' || c == '-').unwrap();
-            let dir1 = &name_input[ff..ff];
-            let dir2 = &name_input[name_input.len() - 1..name_input.len() - 1];
-
-            let number1 = &name_input[..ff];
-            let number2 = &name_input[ff + 1..];
-
-            let numb1: u32 = number1.parse::<u32>().unwrap() * 2 + (dir1 == "+") as u32;
-            let numb2: u32 = number2.parse::<u32>().unwrap() * 2 + (dir2 == "+") as u32;
-            GenoName {
-                name: merge_u32_to_u64(numb1, numb2),
-            }
-        }
-    }
-
-    pub fn to_string(&self, ftype: &Feature) -> String {
-        if Feature::Node == *ftype {
-            self.name.to_string()
-        } else if *ftype == Feature::DirNode {
-            return format_unsigned_as_string(self.name);
-        } else {
-            let (left, right) = split_u64_to_u32s(self.name);
-
-            return format_unsigned_as_string(left) + &format_unsigned_as_string(right);
-        }
+        return format_unsigned_as_string(left) + &format_unsigned_as_string(right);
     }
 }
 
