@@ -9,6 +9,7 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::hash::BuildHasherDefault;
 use std::io::{BufWriter, Write};
+use crate::r#mod::input_data::FileData;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 /// Core data structure
@@ -139,6 +140,42 @@ impl MatrixWrapper {
         }
     }
 
+
+
+    pub fn remove_paths(&mut self, to_be_removed: &Vec<String>){
+        let mut remove_index = Vec::new();
+        let remo: HashSet<String> = to_be_removed.iter().cloned().collect();
+        for (i, x) in self.sample_names.iter().enumerate(){
+            if remo.contains(x){
+                remove_index.push(i);
+            }
+        }
+        remove_index.sort();
+
+        self.sample_names.retain(|x| !remo.contains(x));
+        if self.fam_entries.is_empty(){
+            self.fam_entries.retain(|x| !remo.contains(&x.split_whitespace().collect::<Vec<&str>>()[0].to_string()));
+        }
+        assert_eq!(self.sample_names.len(), self.fam_entries.len());
+        let mut i = 0;
+        while i < self.matrix_bin.len(){
+            let mut a = &mut self.matrix_bin[i];
+            let mut f = 0;
+            for x in remove_index.iter(){
+                a.remove(*x*2 - f*2);
+                a.remove(*x*2 - f*2 + 1);
+                f += 1
+            }
+            i += 1;
+
+        }
+
+
+    }
+
+
+
+
     /// Write "empty" fam with no phenotypes
     ///
     /// Contains the names of the samples in the same order as plink bed file
@@ -149,8 +186,14 @@ impl MatrixWrapper {
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
-        for x in self.sample_names.iter() {
-            writeln!(f, "{}\t{}\t{}\t{}\t{}\t{}", x, x, 0, 0, 0, 0).expect("Can not write file");
+        if self.fam_entries.is_empty() {
+            for x in self.sample_names.iter() {
+                writeln!(f, "{}\t{}\t{}\t{}\t{}\t{}", x, x, 0, 0, 0, 0).expect("Can not write file");
+            }
+        } else {
+            for x in self.fam_entries.iter() {
+                writeln!(f, "{}", x).expect("Can not write file");
+            }
         }
     }
 
@@ -189,15 +232,27 @@ impl MatrixWrapper {
     /// Allele 2 (corresponding to set bits in .bed; usually major)
     /// Representation here: [graph, ., 1, 0, A, T]
     pub fn write_bim(&self, number: usize, out_prefix: &str, feature: &Feature, len: usize) {
-        let mut output = [out_prefix, &feature.to_string1(), &number.to_string(), "bim"].join(".");
+        let mut output = [
+            out_prefix,
+            &feature.to_string1(),
+            &number.to_string(),
+            "bim",
+        ]
+        .join(".");
         if len == 1 {
             output = [out_prefix, &feature.to_string1(), "bim"].join(".");
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
-        for x in self.geno_names.iter() {
-            writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, to_string1(*x, feature))
-                .expect("Can not write file");
+        if self.bim_entries.is_empty() {
+            for x in self.geno_names.iter() {
+                writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, to_string1(*x, feature))
+                    .expect("Can not write file");
+            }
+        } else {
+            for x in self.bim_entries.iter() {
+                writeln!(f, "{}", x).expect("Can not write file");
+            }
         }
     }
 }

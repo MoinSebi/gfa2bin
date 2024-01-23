@@ -1,7 +1,6 @@
 use crate::alignment::pack::{matrix_pack_bit_v2, matrix_pack_u16_v2};
 use crate::core::core::MatrixWrapper;
 use crate::helper::get_thresh;
-use crate::plink::bfile::bfile_wrapper;
 use clap::ArgMatches;
 use log::info;
 
@@ -31,10 +30,6 @@ pub fn align_main(matches: &ArgMatches) {
         }
     }
 
-    let mut index_snp = Vec::new();
-    if matches.is_present("bfile") {
-        bfile_wrapper(matches.value_of("bfile").unwrap(), &mut mw, &mut index_snp);
-    }
 
     // // We only transpose once!
     // if matrix.matrix_bin.is_empty(){

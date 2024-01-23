@@ -1,17 +1,16 @@
 mod find;
 mod helper;
 mod logging;
-mod plink;
-
 mod alignment;
 mod core;
 mod graph;
+mod r#mod;
 
 use crate::alignment::align_main::align_main;
-use crate::core::core::MatrixWrapper;
 use crate::graph::graph_main::graph_main;
 use crate::logging::newbuilder;
 use clap::{App, Arg};
+use crate::r#mod::mod_main::mod_main;
 
 fn main() {
     let matches = App::new("gfa2bin")
@@ -133,109 +132,47 @@ fn main() {
                         .about("Output bimbam format"),
                 ),
         )
-        // Input
+
         .subcommand(
-            App::new("plink")
-                .about("Convert GFA or PACK format to binary data matrix")
-                .version("0.1.0")
-                .help_heading("Input parameters")
+            App::new("mod")
+                .about("Modify a plink file made by a graph")
                 .arg(
-                    Arg::new("gfa")
-                        .short('g')
-                        .long("gfa")
-                        .about("Sets the input file to use")
-                        .takes_value(true),
-                )
-                .arg(
-                    Arg::new("pack")
+                    Arg::new("plink")
                         .short('p')
-                        .long("pack")
-                        .about("if the input is coverage")
-                        .takes_value(true),
+                        .long("plink")
+                        .about("Plink input file")
+                        .takes_value(true)
+                        .required(true),
                 )
                 .arg(
-                    Arg::new("bfile")
-                        .long("bfile")
-                        .about("bfile")
+                    Arg::new("graph")
+                        .short('g')
+                        .long("graph")
+                        .about("Graph file")
                         .takes_value(true),
                 )
+
                 .arg(
-                    Arg::new("delimiter")
-                        .short('d')
-                        .long("delimiter")
-                        .about("Delimiter between genome and chromosome number")
-                        .takes_value(true),
-                )
-                .arg(Arg::new("removeNames").long("rgenomes").about("Only this"))
-                .arg(
-                    Arg::new("fam")
+                    Arg::new("features")
                         .short('f')
-                        .long("fam")
-                        .about("For filtering and removing information from the matrix")
+                        .long("feature")
+                        .about("Feature list to remove (one per line)")
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::new("type")
-                        .short('t')
-                        .long("type")
-                        .about("Type of the matrix (when on graph)")
-                        .takes_value(true),
-                )
-                .help_heading("Modification")
-                .arg(
-                    Arg::new("threshold")
-                        .long("Copy number threshold")
-                        .about("Normalize to this number")
-                        .takes_value(true),
-                )
-                .arg(Arg::new("reduce").long("reduce").about("Reduce to minimum"))
-                .arg(Arg::new("filter").long("filter").about("Filter this"))
-                .help_heading("Output parameters")
-                .arg(
-                    Arg::new("genomes")
-                        .long("genomes")
-                        .about("Output just the genomes"),
-                )
-                .arg(
-                    Arg::new("split")
-                        .long("split")
-                        .about("Split the output bed and bim")
+                    Arg::new("paths")
+                        .short('p')
+                        .long("paths")
+                        .about("Path to remove (one per line)")
                         .takes_value(true),
                 )
                 .arg(
                     Arg::new("output")
                         .short('o')
                         .long("output")
-                        .about("Output prefix")
-                        .takes_value(true)
-                        .default_value("gfa2bin.default"),
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true),
                 )
-                .arg(Arg::new("bed").long("bed").about("Output bed + bim file"))
-                .arg(
-                    Arg::new("bimbam")
-                        .long("bimbam")
-                        .about("Output bimbam format"),
-                )
-                .arg(
-                    Arg::new("traversal")
-                        .long("traversal")
-                        .about("Additional traversaloutput file")
-                        .takes_value(true)
-                        .hidden(true),
-                )
-                .arg(
-                    Arg::new("smart")
-                        .long("smart")
-                        .short('j')
-                        .about("Reduce the number of tests"),
-                )
-                .arg(
-                    Arg::new("threads")
-                        .long("threads")
-                        .about("Number of threads if multithreading")
-                        .takes_value(true)
-                        .default_value("1"),
-                ),
         )
         // Will work on this later
         .subcommand(
@@ -249,12 +186,7 @@ fn main() {
                         .about("GEMMA ouptut file")
                         .takes_value(true),
                 )
-                .arg(Arg::new("Helper").about("helper file").takes_value(true))
-                .arg(Arg::new("Number").about(""))
-                .arg(Arg::new("One hit"))
-                .arg(Arg::new("bed"))
-                .arg(Arg::new("sequence"))
-                .arg(Arg::new("ACC")),
+
         )
         .get_matches();
 
@@ -268,6 +200,6 @@ fn main() {
     } else if let Some(matches) = matches.subcommand_matches("align") {
         align_main(matches);
     } else if let Some(_matches) = matches.subcommand_matches("mod") {
-        println!("dasjkdjas");
+        mod_main(&matches);
     }
 }

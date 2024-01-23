@@ -1,8 +1,7 @@
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-
 use std::fmt::Display;
-use std::hash::{Hasher};
+
 #[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub enum Feature {
     Node,
