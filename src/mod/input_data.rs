@@ -1,6 +1,6 @@
 use crate::core::helper::{merge_u32_to_u64, Feature};
 
-use std::fs::{File, read};
+use std::fs::{read, File};
 use std::io::{BufRead, BufReader};
 
 pub struct FileData {
@@ -42,6 +42,7 @@ impl FileData {
                 data.push(line.parse::<u64>().unwrap());
             }
         }
+        // Sort very important
         data.sort();
         Self { data, feature }
     }
@@ -72,7 +73,7 @@ pub fn get_type(file_path: &str) -> Feature {
     }
 }
 
-pub fn read_paths(filename: &str) -> Vec<String>{
+pub fn read_paths(filename: &str) -> Vec<String> {
     let mut paths = Vec::new();
 
     let file = File::open(filename).expect("ERROR: CAN NOT READ FILE\n");
@@ -80,8 +81,8 @@ pub fn read_paths(filename: &str) -> Vec<String>{
     // Parse plain text or gzipped file
     let reader = BufReader::new(file);
 
-    for x in reader.lines(){
+    for x in reader.lines() {
         paths.push(x.unwrap());
     }
-    return paths
+    return paths;
 }

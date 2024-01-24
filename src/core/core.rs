@@ -1,15 +1,13 @@
 use crate::core::helper::{is_all_ones, is_all_zeros, merge_u32_to_u64, to_string1, Feature};
 
+use crate::r#mod::input_data::FileData;
 use bitvec::prelude::*;
 use gfa_reader::NCGfa;
 use hashbrown::HashSet;
-use nohash_hasher::NoHashHasher;
-use std::collections::HashMap;
 use std::fmt::Debug;
-use std::fs::File;
-use std::hash::BuildHasherDefault;
+use std::fs::{metadata, File};
 use std::io::{BufWriter, Write};
-use crate::r#mod::input_data::FileData;
+use std::ptr::write;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 /// Core data structure
@@ -24,8 +22,7 @@ pub struct MatrixWrapper {
     // Check if node, edges, dirnode, or alignment
     pub feature: Feature,
 
-    pub geno_names: Vec<u64>, // Name of all
-    pub geno_map: HashMap<u64, usize, BuildHasherDefault<NoHashHasher<u32>>>, // Mapping from "name" to index in the matrix
+    pub geno_names: Vec<u64>,      // Name of all
     pub sample_names: Vec<String>, // Sample names (same order as in the matrix)
 
     // Plink specific stuff
@@ -44,7 +41,6 @@ impl MatrixWrapper {
 
             // SNP
             geno_names: Vec::new(),
-            geno_map: HashMap::default(),
             bim_entries: Vec::new(),
 
             // Fam
@@ -56,13 +52,11 @@ impl MatrixWrapper {
     /// Initialize the SNP index
     pub fn make_index(&mut self, data: &NCGfa<()>, t: Feature) {
         //let mut bb = HashMap::with_hasher(BuildHasherDefault::<NoHashHasher<u32>>::default());
+        let mut geno_names = Vec::new();
         match t {
             Feature::Node => {
                 for (i, x) in data.nodes.iter().enumerate() {
-                    println!("{}", i);
-                    println!("{}", x.id);
-                    self.geno_map.insert(x.id as u64, i);
-                    self.geno_names.push(x.id as u64);
+                    geno_names.push(x.id as u64);
                     //bb.insert(x.id as u64, i);
                 }
             }
@@ -78,8 +72,7 @@ impl MatrixWrapper {
                     edd2.sort();
 
                     for (i, x) in edd2.iter().enumerate() {
-                        self.geno_map.insert(*x, i);
-                        self.geno_names.push(*x);
+                        geno_names.push(*x);
                     }
                 }
             }
@@ -91,28 +84,26 @@ impl MatrixWrapper {
                         let u1 = v1 * 2 + v2 as u32;
                         let u2 = v3 * 2 + v4 as u32;
                         let uu = merge_u32_to_u64(u1, u2);
-                        self.geno_map.insert(uu, i);
-                        self.geno_names.push(uu);
+                        geno_names.push(uu);
                     }
                 }
             }
         }
+        self.geno_names = geno_names;
     }
 
     pub fn remove_non_info(&mut self) {
         let mut write_index = 0;
-        let mut remove_index = Vec::new();
 
         for read_index in 0..self.geno_names.len() {
-            if !is_all_ones(&self.matrix_bin[read_index])
-                || !is_all_zeros(&self.matrix_bin[read_index])
+            if !(is_all_ones(&self.matrix_bin[read_index])
+                || is_all_zeros(&self.matrix_bin[read_index]))
             {
-                remove_index.push(read_index);
                 // Retain elements that satisfy the condition
                 if write_index != read_index {
                     // Move the elements to their new positions
                     self.matrix_bin.swap(write_index, read_index);
-                    self.sample_names.swap(write_index, read_index);
+                    self.geno_names.swap(write_index, read_index);
                 }
 
                 write_index += 1;
@@ -120,75 +111,78 @@ impl MatrixWrapper {
         }
         self.matrix_bin.truncate(write_index);
         self.geno_names.truncate(write_index);
-
-        let mut k = self
-            .geno_map
-            .iter()
-            .map(|(k, v)| (*v, *k))
-            .collect::<Vec<(usize, u64)>>();
-        k.sort_by(|a, b| a.0.cmp(&b.0));
-        let mut gg = 0;
-        for x in remove_index {
-            for y in gg..k.len() {
-                if k[y].0 == x {
-                    self.geno_map.remove(&k[y].1);
-                    gg = y;
-                    break;
-                }
-            }
-            self.geno_map.remove(&k[x].1);
-        }
     }
 
-
-
-    pub fn remove_paths(&mut self, to_be_removed: &Vec<String>){
-        let mut remove_index = Vec::new();
+    pub fn remove_paths(&mut self, to_be_removed: &Vec<String>) {
+        let mut remove_index: Vec<usize> = Vec::new();
         let remo: HashSet<String> = to_be_removed.iter().cloned().collect();
-        for (i, x) in self.sample_names.iter().enumerate(){
-            if remo.contains(x){
+        for (i, x) in self.sample_names.iter().enumerate() {
+            if remo.contains(x) {
                 remove_index.push(i);
             }
         }
-        remove_index.sort();
+
 
         self.sample_names.retain(|x| !remo.contains(x));
-        if self.fam_entries.is_empty(){
-            self.fam_entries.retain(|x| !remo.contains(&x.split_whitespace().collect::<Vec<&str>>()[0].to_string()));
+        if !self.fam_entries.is_empty() {
+            self.fam_entries.retain(|x| {
+                !remo.contains(&x.split_whitespace().collect::<Vec<&str>>()[0].to_string())
+            });
         }
         assert_eq!(self.sample_names.len(), self.fam_entries.len());
         let mut i = 0;
-        while i < self.matrix_bin.len(){
+        while i < self.matrix_bin.len() {
             let mut a = &mut self.matrix_bin[i];
             let mut f = 0;
-            for x in remove_index.iter(){
-                a.remove(*x*2 - f*2);
-                a.remove(*x*2 - f*2 + 1);
+            for x in remove_index.iter() {
+                a.remove(*x * 2 - f * 2);
+                a.remove(*x * 2 - f * 2 + 1);
                 f += 1
             }
             i += 1;
-
         }
-
-
     }
 
-
-
+    pub fn remove_feature(&mut self, d: &FileData) {
+        let mut write_index = 0;
+        let mut i = 0;
+        let mut j = 0;
+        while i < self.geno_names.len() && j < d.data.len() {
+            if self.geno_names[i] != d.data[j] {
+                if write_index != i {
+                    // Move the elements to their new positions
+                    self.matrix_bin.swap(write_index, i);
+                    self.geno_names.swap(write_index, i);
+                }
+                write_index += 1;
+                if self.geno_names[i] < d.data[j] {
+                    i += 1;
+                } else {
+                    j += 1;
+                }
+            } else {
+                i += 1;
+                j += 1;
+            }
+        }
+        self.matrix_bin.truncate(write_index);
+        self.geno_names.truncate(write_index);
+    }
 
     /// Write "empty" fam with no phenotypes
     ///
     /// Contains the names of the samples in the same order as plink bed file
-    pub fn write_fam(&self, number: usize, out_prefix: &str, feature: &str, len: usize) {
-        let mut output = [out_prefix, feature, &number.to_string(), "fam"].join(".");
+    pub fn write_fam(&self, number: usize, out_prefix: &str, feature: Feature, len: usize) {
+        let mut output = [out_prefix, &feature.to_string1(), &number.to_string(), "fam"].join(".");
         if len == 1 {
-            output = [out_prefix, feature, "fam"].join(".");
+            output = [out_prefix, &feature.to_string1(), "fam"].join(".");
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         if self.fam_entries.is_empty() {
             for x in self.sample_names.iter() {
-                writeln!(f, "{}\t{}\t{}\t{}\t{}\t{}", x, x, 0, 0, 0, 0).expect("Can not write file");
+                writeln!(f, "{}\t{}\t{}\t{}\t{}\t{}", x, x, 0, 0, 0, 0)
+                    .expect("Can not write file");
             }
         } else {
             for x in self.fam_entries.iter() {
@@ -198,7 +192,7 @@ impl MatrixWrapper {
     }
 
     /// Write bed file in SNP-major mode
-    pub fn write_bed(&self, number: usize, out_prefix: &str, feature: &str, len: usize) {
+    pub fn write_bed(&self, number: usize, out_prefix: &str, feature: Feature, len: usize) {
         //hexdump -C test.bin
         // xxd -b file
         // xxd file
@@ -212,9 +206,9 @@ impl MatrixWrapper {
             buff.extend(sel.as_raw_slice());
         }
 
-        let mut output = [out_prefix, feature, &number.to_string(), "bed"].join(".");
+        let mut output = [out_prefix, &feature.to_string1(), &number.to_string(), "bed"].join(".");
         if len == 1 {
-            output = [out_prefix, feature, "bed"].join(".");
+            output = [out_prefix, &feature.to_string1(), "bed"].join(".");
         }
         let mut file = File::create(output).expect("Not able to write ");
         file.write_all(&buff).expect("Not able to write ")

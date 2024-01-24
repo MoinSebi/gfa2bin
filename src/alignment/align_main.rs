@@ -30,7 +30,6 @@ pub fn align_main(matches: &ArgMatches) {
         }
     }
 
-
     // // We only transpose once!
     // if matrix.matrix_bin.is_empty(){
     //     let k: Vec<String> = matrix.core_names.values().cloned().collect();

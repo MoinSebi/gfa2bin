@@ -85,7 +85,11 @@ pub fn graph_main(matches: &ArgMatches) {
     );
     // Filter the matrix
     mw.remove_non_info();
-
+    info!(
+        "Shape is {:?} - {}",
+        mw.matrix_bin.len(),
+        mw.matrix_bin[0].len()
+    );
     // Output
     info!("Writing the output");
     let chunk_size = (mw.matrix_bin.len() / split) + 1;
@@ -94,8 +98,8 @@ pub fn graph_main(matches: &ArgMatches) {
     let len = chunks.len();
     for (index, _y) in chunks.enumerate() {
         //write_bed2(y, output_prefix, feature, index, len);
-        mw.write_fam(index, output_prefix, feature, len);
-        mw.write_bed(index, output_prefix, feature, len);
+        mw.write_fam(index, output_prefix, feature_enum, len);
+        mw.write_bed(index, output_prefix, feature_enum, len);
         mw.write_bim(index, output_prefix, &feature_enum, len);
     }
 }
