@@ -122,7 +122,6 @@ impl MatrixWrapper {
             }
         }
 
-
         self.sample_names.retain(|x| !remo.contains(x));
         if !self.fam_entries.is_empty() {
             self.fam_entries.retain(|x| {
@@ -173,7 +172,13 @@ impl MatrixWrapper {
     ///
     /// Contains the names of the samples in the same order as plink bed file
     pub fn write_fam(&self, number: usize, out_prefix: &str, feature: Feature, len: usize) {
-        let mut output = [out_prefix, &feature.to_string1(), &number.to_string(), "fam"].join(".");
+        let mut output = [
+            out_prefix,
+            &feature.to_string1(),
+            &number.to_string(),
+            "fam",
+        ]
+        .join(".");
         if len == 1 {
             output = [out_prefix, &feature.to_string1(), "fam"].join(".");
         }
@@ -206,7 +211,13 @@ impl MatrixWrapper {
             buff.extend(sel.as_raw_slice());
         }
 
-        let mut output = [out_prefix, &feature.to_string1(), &number.to_string(), "bed"].join(".");
+        let mut output = [
+            out_prefix,
+            &feature.to_string1(),
+            &number.to_string(),
+            "bed",
+        ]
+        .join(".");
         if len == 1 {
             output = [out_prefix, &feature.to_string1(), "bed"].join(".");
         }

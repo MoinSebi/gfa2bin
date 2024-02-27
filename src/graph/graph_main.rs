@@ -86,7 +86,7 @@ pub fn graph_main(matches: &ArgMatches) {
     // Filter the matrix
     mw.remove_non_info();
     info!(
-        "Shape is {:?} - {}",
+        "Shape (after remove) is {:?} - {}",
         mw.matrix_bin.len(),
         mw.matrix_bin[0].len()
     );

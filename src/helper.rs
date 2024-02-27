@@ -1,6 +1,5 @@
 use byteorder::{BigEndian, ByteOrder};
-
-use packing_lib::reader::get_file_as_byte_vec;
+use packing_lib::core::reader::unpack_zstd_to_byte;
 
 #[allow(dead_code)]
 pub fn binary2dec_bed(vecc: &[bool]) -> u8 {
@@ -26,5 +25,5 @@ pub fn make_dir_name(maxval: &usize) -> Vec<(usize, bool)> {
 }
 
 pub fn get_thresh(filename: &str) -> u16 {
-    BigEndian::read_u16(&get_file_as_byte_vec(filename)[7..9])
+    BigEndian::read_u16(&unpack_zstd_to_byte(filename)[7..9])
 }
