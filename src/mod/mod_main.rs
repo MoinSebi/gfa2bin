@@ -5,7 +5,7 @@ use clap::ArgMatches;
 use log::info;
 
 pub fn mod_main(matches: &ArgMatches) {
-    let plink_file = matches.value_of("pp").unwrap();
+    let plink_file = matches.value_of("plink").unwrap();
     let output_prefix = matches.value_of("output").unwrap_or("gfa2bin.mod");
     let split = matches
         .value_of("split")
@@ -14,14 +14,13 @@ pub fn mod_main(matches: &ArgMatches) {
         .unwrap();
     let mut mw = MatrixWrapper::new();
     mw.bfile_wrapper(plink_file);
-    if (matches.is_present("feature") || matches.is_present("paths")) || matches.is_present("graph")
-    {
+    if matches.is_present("feature") || matches.is_present("paths") {
         info!("All good");
     }
 
     if matches.is_present("features") {
         let feature_file = matches.value_of("features").unwrap();
-        let mut data = FileData::from_file(feature_file);
+        let data = FileData::from_file(feature_file);
 
         if mw.feature != data.feature {
             panic!("Feature is not the same");

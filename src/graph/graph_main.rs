@@ -20,13 +20,13 @@ pub fn graph_main(matches: &ArgMatches) {
     };
 
     // Input parameters
-    let feature1 = matches.value_of("Feature").unwrap_or("node");
+    let feature1 = matches.value_of("feature").unwrap_or("node");
     let threshold = matches
         .value_of("threshold")
         .unwrap_or("1")
         .parse::<usize>()
         .unwrap();
-    let sep = matches.value_of("sep").unwrap_or("#");
+    let sep = matches.value_of("pansn").unwrap_or("#");
 
     let mut bin = matches.is_present("bin");
     let diploid = matches.is_present("diploid");
@@ -37,11 +37,11 @@ pub fn graph_main(matches: &ArgMatches) {
         .unwrap_or("1")
         .parse::<usize>()
         .unwrap();
-    let output_format = matches.value_of("format").unwrap();
+    let bimbam_output = matches.is_present("bimbam");
     let output_prefix = matches.value_of("output").unwrap_or("gfa2bin.graph");
 
     // Modifications
-    bin = bin || (output_format == "plink" && threshold == 1);
+    bin = bin || ((!bimbam_output) && threshold == 1);
     let feature = if ["node", "dirnode", "edge"].contains(&feature1) {
         feature1
     } else {
@@ -58,7 +58,10 @@ pub fn graph_main(matches: &ArgMatches) {
     info!("Binary: {}", bin);
     info!("Diploid: {}", diploid);
     info!("Split: {}", split);
-    info!("Output format: {}", output_format);
+    info!(
+        "Output format: {}",
+        if bimbam_output { "bimbam" } else { "plink" }
+    );
     info!("Output prefix: {}", output_prefix);
 
     info!("Reading the graph");

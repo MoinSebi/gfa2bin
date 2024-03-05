@@ -1,14 +1,19 @@
 use crate::core::core::MatrixWrapper;
+use crate::core::helper::{node2index, split_u64_to_u32s};
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use packing_lib::core::core::PackCompact;
 
-pub fn matrix_pack_wrapper(matrix_w: &mut MatrixWrapper, input: &Vec<PackCompact>, index: &Vec<u32>) {
-    let tt = &input[0];
+pub fn matrix_pack_wrapper(
+    matrix_w: &mut MatrixWrapper,
+    input: &Vec<PackCompact>,
+    index: &Vec<u32>,
+) {
+    let first_entry = &input[0];
 
-    if tt.is_binary {
+    if first_entry.is_binary {
         matrix_w.matrix_bin =
-            vec![BitVec::<u8, Lsb0>::repeat(false, input.len() * 2); tt.length as usize];
+            vec![BitVec::<u8, Lsb0>::repeat(false, input.len() * 2); first_entry.length as usize];
         for (i2, x) in input.iter().enumerate() {
             matrix_w.sample_names.push(x.name.clone());
             for (i, y) in x.bin_coverage.iter().enumerate() {
@@ -23,36 +28,32 @@ pub fn matrix_pack_wrapper(matrix_w: &mut MatrixWrapper, input: &Vec<PackCompact
         }
         matrix_w.shape = (matrix_w.matrix_bin.len(), matrix_w.matrix_bin[0].len());
         matrix_w.sample_names = input.iter().map(|x| x.name.clone()).collect();
-        if tt.is_sequence {
-            matrix_w.geno_names = index.into_iter().map(|n| *n as u64).collect();
+        if first_entry.is_sequence {
+            matrix_w.geno_names = node2index(index);
         } else {
-            let i2 = remove_duplicates(index);
-            matrix_w.geno_names = i2.into_iter().map(|n| n as u64).collect();
+            matrix_w.geno_names = node2index(&remove_duplicates(index));
         }
-
     } else {
-        let ll = tt.length as usize;
+        let ll = first_entry.length as usize;
         matrix_w.matrix_core = vec![vec![0; input.len()]; ll];
         for (i, x) in input.iter().enumerate() {
-            let mut d = &vec![];
-
+            let d;
             if x.is_sequence {
                 d = &x.coverage;
             } else {
                 d = &x.node_coverage;
             }
             matrix_w.sample_names.push(x.name.clone());
-            for (i2, y) in x.coverage.iter().enumerate() {
+            for (i2, y) in d.iter().enumerate() {
                 matrix_w.matrix_core[i2][i] = *y as u32;
             }
         }
         matrix_w.shape = (matrix_w.matrix_core.len(), matrix_w.matrix_core[0].len());
         matrix_w.sample_names = input.iter().map(|x| x.name.clone()).collect();
-        if tt.is_sequence {
-            matrix_w.geno_names = index.into_iter().map(|n| *n as u64).collect();
+        if first_entry.is_sequence {
+            matrix_w.geno_names = node2index(index);
         } else {
-            let i2 = remove_duplicates(index);
-            matrix_w.geno_names = i2.into_iter().map(|n| n as u64).collect();
+            matrix_w.geno_names = node2index(&remove_duplicates(index));
         }
     }
 }

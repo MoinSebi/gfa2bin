@@ -88,6 +88,7 @@ impl MatrixWrapper {
                     }
                 }
             }
+            _ => {}
         }
         self.geno_names = geno_names;
     }
@@ -131,7 +132,7 @@ impl MatrixWrapper {
         assert_eq!(self.sample_names.len(), self.fam_entries.len());
         let mut i = 0;
         while i < self.matrix_bin.len() {
-            let mut a = &mut self.matrix_bin[i];
+            let a = &mut self.matrix_bin[i];
             let mut f = 0;
             for x in remove_index.iter() {
                 a.remove(*x * 2 - f * 2);

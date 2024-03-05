@@ -7,6 +7,7 @@ pub enum Feature {
     Node,
     DirNode,
     Edge,
+    Alignment,
 }
 
 impl Feature {
@@ -24,6 +25,7 @@ impl Feature {
             Feature::Node => "node".to_string(),
             Feature::DirNode => "dirnode".to_string(),
             Feature::Edge => "edge".to_string(),
+            Feature::Alignment => "alignment".to_string(),
         }
     }
 }
@@ -56,10 +58,13 @@ pub fn to_string1(input: u64, ftype: &Feature) -> String {
         input.to_owned().to_string()
     } else if *ftype == Feature::DirNode {
         return format_unsigned_as_string(input);
-    } else {
+    } else if *ftype == Feature::Edge {
         let (left, right) = split_u64_to_u32s(input);
 
         return format_unsigned_as_string(left) + &format_unsigned_as_string(right);
+    } else {
+        let (left, right) = split_u64_to_u32s(input);
+        return left.to_string() + "_" + right.to_string().as_str();
     }
 }
 
@@ -72,11 +77,29 @@ fn format_unsigned_as_string<T: Display + Into<u64>>(name: T) -> String {
     )
 }
 
-fn split_u64_to_u32s(value: u64) -> (u32, u32) {
+pub fn split_u64_to_u32s(value: u64) -> (u32, u32) {
     let low = value as u32;
     let high = (value >> 32) as u32;
 
     (high, low)
+}
+
+pub fn node2index(vector: &Vec<u32>) -> Vec<u64> {
+    let mut result = Vec::new();
+    let mut node_id = vector[0];
+    let mut seq_count = 1;
+
+    for &value in vector.iter().skip(1) {
+        if value == node_id {
+            seq_count += 1;
+        } else {
+            result.push(merge_u32_to_u64(node_id, seq_count));
+            node_id = value;
+            seq_count = 1;
+        }
+    }
+    result.push(merge_u32_to_u64(node_id, seq_count));
+    result
 }
 
 pub fn merge_u32_to_u64(high: u32, low: u32) -> u64 {
