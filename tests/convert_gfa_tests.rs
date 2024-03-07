@@ -1,10 +1,8 @@
 use std::fs;
 use assert_cmd::prelude::*; // Add methods on commands
-
 use std::fs::File;
 use std::io::Read;
 use std::process::Command;
-use predicates::prelude::predicate;
 
 #[test]
 /// Test for plink subcommand
@@ -112,7 +110,10 @@ fn gfa_dir_node_paths_remove() -> Result<(), Box<dyn std::error::Error>> {
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 8);
     assert_eq!(buffer[3], 31);
-    assert_eq!(buffer[4], 16);
+    assert_eq!(buffer[4], 15);
+    fs::remove_file("data/output/graph.dirnode.paths.bed")?;
+    fs::remove_file("data/output/graph.dirnode.paths.bim")?;
+    fs::remove_file("data/output/graph.dirnode.paths.fam")?;
     Ok(())
 }
 

@@ -1,3 +1,4 @@
+use std::fs;
 use assert_cmd::prelude::*; // Add methods on commands
 
 use std::fs::File;
@@ -16,18 +17,19 @@ fn mod_feature() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-p")
         .arg("data/example_data/node.mod")
         .arg("-o")
-        .arg("data/output/tt3.node")
+        .arg("data/output/mod.feature.node")
         .arg("-f")
         .arg("data/example_data/nodes.txt");
     cmd.assert().success();
 
-    let mut b = File::open("data/output/tt3.node.bed").unwrap();
+    let mut b = File::open("data/output/mod.feature.node.bed").unwrap();
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + ((8-2) * 2));
     assert_eq!(buffer[3], 127);
-
-    Ok(())
+    fs::remove_file("data/output/mod.feature.node.bed")?;
+    fs::remove_file("data/output/mod.feature.node.bim")?;
+    fs::remove_file("data/output/mod.feature.node.fam")?;    Ok(())
 }
 
 
@@ -41,16 +43,19 @@ fn mod_path1() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-p")
         .arg("data/example_data/node.mod")
         .arg("-o")
-        .arg("data/output/tt10.node")
+        .arg("data/output/mod.path.node")
         .arg("--paths")
         .arg("data/example_data/mod_path.txt");
     cmd.assert().success();
 
-    let mut b = File::open("data/output/tt10.node.bed").unwrap();
+    let mut b = File::open("data/output/mod.path.node.bed").unwrap();
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 8);
     assert_eq!(buffer[3], 31);
+    fs::remove_file("data/output/mod.path.node.bed")?;
+    fs::remove_file("data/output/mod.path.node.bim")?;
+    fs::remove_file("data/output/mod.path.node.fam")?;
 
     Ok(())
 }

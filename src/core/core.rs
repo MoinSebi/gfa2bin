@@ -201,7 +201,7 @@ impl MatrixWrapper {
     /// Write "empty" fam with no phenotypes
     ///
     /// Contains the names of the samples in the same order as plink bed file
-    pub fn write_fam(&self, number: usize, out_prefix: &str, feature: Feature, len: usize) {
+    pub fn write_fam(&self, number: usize, out_prefix: &str, _feature: Feature, len: usize) {
         let mut output = [
             out_prefix,
             &number.to_string(),
@@ -226,7 +226,7 @@ impl MatrixWrapper {
     }
 
     /// Write bed file in SNP-major mode
-    pub fn write_bed(&self, number: usize, out_prefix: &str, feature: Feature, len: usize) {
+    pub fn write_bed(&self, number: usize, out_prefix: &str, _feature: Feature, len: usize) {
         //hexdump -C test.bin
         // xxd -b file
         // xxd file
