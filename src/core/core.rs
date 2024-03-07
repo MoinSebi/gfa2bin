@@ -271,7 +271,8 @@ impl MatrixWrapper {
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
-        if !self.matrix_u16.is_empty() {
+
+        if self.bim_entries.is_empty() {
             for x in self.geno_names.iter() {
                 writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, to_string1(*x, feature))
                     .expect("Can not write file");
