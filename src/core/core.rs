@@ -204,13 +204,12 @@ impl MatrixWrapper {
     pub fn write_fam(&self, number: usize, out_prefix: &str, feature: Feature, len: usize) {
         let mut output = [
             out_prefix,
-            &feature.to_string1(),
             &number.to_string(),
             "fam",
         ]
         .join(".");
         if len == 1 {
-            output = [out_prefix, &feature.to_string1(), "fam"].join(".");
+            output = [out_prefix, "fam"].join(".");
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
@@ -243,13 +242,12 @@ impl MatrixWrapper {
 
         let mut output = [
             out_prefix,
-            &feature.to_string1(),
             &number.to_string(),
             "bed",
         ]
         .join(".");
         if len == 1 {
-            output = [out_prefix, &feature.to_string1(), "bed"].join(".");
+            output = [out_prefix, "bed"].join(".");
         }
         let mut file = File::create(output).expect("Not able to write ");
         file.write_all(&buff).expect("Not able to write ")
@@ -269,7 +267,7 @@ impl MatrixWrapper {
     pub fn write_bim(&self, number: usize, out_prefix: &str, feature: &Feature, len: usize) {
         let mut output = [out_prefix, &number.to_string(), "bim"].join(".");
         if len == 1 {
-            output = [out_prefix, &feature.to_string1(), "bim"].join(".");
+            output = [out_prefix, "bim"].join(".");
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);

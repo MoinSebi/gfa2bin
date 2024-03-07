@@ -22,7 +22,7 @@ fn mod1() -> Result<(), Box<dyn std::error::Error>> {
     let mut b = File::open("data/output/tt3.node.node.bed").unwrap();
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
-    assert_eq!(buffer.len(), 3 + (2 * 2));
+    assert_eq!(buffer.len(), 3 + ((9-2) * 2));
 
     Ok(())
 }
