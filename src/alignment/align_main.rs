@@ -3,14 +3,14 @@ use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
 use clap::ArgMatches;
 use log::info;
-use packing_lib::convert::convert_helper::OutputType::Pack;
+
 use packing_lib::core::core::PackCompact;
 use packing_lib::core::reader::{
-    get_meta, read_index, unpack_zstd_to_byte, wrapper_bool, wrapper_u16, zstd_decode,
+    get_meta, read_index, unpack_zstd_to_byte, wrapper_bool, wrapper_u16,
 };
 use std::fs::File;
 use std::io::{self, BufRead};
-use std::ops::Index;
+
 
 pub fn align_main(matches: &ArgMatches) {
     // You have either a pack or a compressed pack (cat or list), but you need to provide a index
@@ -52,7 +52,7 @@ pub fn align_main(matches: &ArgMatches) {
             let file_pack = cpack.unwrap();
             let bytes = unpack_zstd_to_byte(file_pack);
             let meta_data = get_meta(&bytes);
-            let mut pc_vec;
+            let pc_vec;
             if meta_data.1 {
                 info!("Reading bool pack");
                 pc_vec = wrapper_bool(&bytes);
@@ -75,16 +75,16 @@ pub fn align_main(matches: &ArgMatches) {
     }
     info!(
         "Shape (after remove) is {:?} - {}",
-        mw.matrix_bin.len(),
-        mw.matrix_bin[0].len()
+        mw.matrix_bit.len(),
+        mw.matrix_bit[0].len()
     );
     //mw.remove_non_info();
 
     let feature_enum = Feature::Alignment;
     let output_prefix = "out.ppp";
     info!("Writing the output");
-    let chunk_size = (mw.matrix_bin.len() / 1) + 1;
-    let chunks = mw.matrix_bin.chunks(chunk_size);
+    let chunk_size = mw.matrix_bit.len() + 1;
+    let chunks = mw.matrix_bit.chunks(chunk_size);
 
     let len = chunks.len();
     for (index, _y) in chunks.enumerate() {

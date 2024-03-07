@@ -41,9 +41,7 @@ fn main() {
                     Arg::new("feature")
                         .short('f')
                         .long("feature")
-                        .about(
-                            "Specific the observed feature (node, dirnode, edge) [default: node]",
-                        )
+                        .about("Specific the observed feature (node, dirnode, edge)")
                         .takes_value(true)
                         .default_value("node"),
                 )
@@ -53,6 +51,11 @@ fn main() {
                         .about("PanSN-spec separator")
                         .takes_value(true),
                 )
+                .arg(
+                    Arg::new("paths")
+                        .long("paths")
+                        .about("Ignore these paths (one per line)"),
+                )
                 .help_heading("Thresholds")
                 .arg(
                     Arg::new("threshold")
@@ -60,12 +63,6 @@ fn main() {
                         .long("threshold")
                         .about("Set a absolute threshold")
                         .takes_value(true),
-                )
-                .arg(
-                    Arg::new("diploid")
-                        .short('d')
-                        .long("diploid")
-                        .about("Diploid dataset"),
                 )
                 .help_heading("Output parameter")
                 .arg(
@@ -82,11 +79,7 @@ fn main() {
                         .takes_value(true)
                         .about("Output prefix for all files"),
                 )
-                .arg(
-                    Arg::new("bimbam")
-                        .long("bimbam")
-                        .about("Output in bimbam [default: off]"),
-                ),
+                .arg(Arg::new("bimbam").long("bimbam").about("Output in bimbam")),
         )
         .subcommand(
             App::new("align")

@@ -1,5 +1,7 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
+use std::fs::File;
+use std::io::Read;
 
 use crate::graph::parser::gfa_reader;
 
@@ -21,6 +23,7 @@ pub fn graph_main(matches: &ArgMatches) {
 
     // Input parameters
     let feature1 = matches.value_of("feature").unwrap_or("node");
+
     let threshold = matches
         .value_of("threshold")
         .unwrap_or("1")
@@ -29,7 +32,6 @@ pub fn graph_main(matches: &ArgMatches) {
     let sep = matches.value_of("pansn").unwrap_or("#");
 
     let mut bin = matches.is_present("bin");
-    let diploid = matches.is_present("diploid");
 
     // Output
     let split = matches
@@ -56,7 +58,6 @@ pub fn graph_main(matches: &ArgMatches) {
     info!("Threshold: {}", threshold);
     info!("Separator: {:?}", sep);
     info!("Binary: {}", bin);
-    info!("Diploid: {}", diploid);
     info!("Split: {}", split);
     info!(
         "Output format: {}",
@@ -68,7 +69,27 @@ pub fn graph_main(matches: &ArgMatches) {
     // Read the graph and wrapper
     let mut graph: NCGfa<()> = NCGfa::new();
     graph.parse_gfa_file(graph_file, need_edges);
+    if matches.is_present("paths") {
+        let mut file = File::open(matches.value_of("paths").unwrap()).unwrap();
+        let mut contents = String::new();
+        file.read_to_string(&mut contents).unwrap();
+        graph.paths.retain(|x| !contents.contains(&x.name));
+    }
+
     let wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, sep);
+
+    let mut is_diploid = false;
+    for x in wrapper.genomes.iter() {
+        if x.haplotypes.len() == 2 {
+            is_diploid = true;
+        }
+        if x.haplotypes.len() > 2 {
+            warn!("More than 2 haplotypes");
+            process::exit(0x0100);
+        }
+    }
+
+    info!("Diploid: {}", is_diploid);
 
     info!("Number of samples: {}", wrapper.genomes.len());
 
@@ -81,28 +102,42 @@ pub fn graph_main(matches: &ArgMatches) {
     info!("Create matrix");
     gfa_reader(&mut mw, &wrapper, bin, feature_enum);
 
-    info!(
-        "Shape is {:?} - {}",
-        mw.matrix_bin.len(),
-        mw.matrix_bin[0].len()
-    );
-    // Filter the matrix
-    mw.remove_non_info();
-    info!(
-        "Shape (after remove) is {:?} - {}",
-        mw.matrix_bin.len(),
-        mw.matrix_bin[0].len()
-    );
-    // Output
-    info!("Writing the output");
-    let chunk_size = (mw.matrix_bin.len() / split) + 1;
-    let chunks = mw.matrix_bin.chunks(chunk_size);
+    if !mw.matrix_bit.is_empty() {
+        info!(
+            "Shape is {:?} - {}",
+            mw.matrix_bit.len(),
+            mw.matrix_bit[0].len()
+        );
+        mw.remove_non_info();
+        info!(
+            "Shape (after remove) is {:?} - {}",
+            mw.matrix_bit.len(),
+            mw.matrix_bit[0].len()
+        );
+    }
 
-    let len = chunks.len();
-    for (index, _y) in chunks.enumerate() {
-        //write_bed2(y, output_prefix, feature, index, len);
-        mw.write_fam(index, output_prefix, feature_enum, len);
-        mw.write_bed(index, output_prefix, feature_enum, len);
-        mw.write_bim(index, output_prefix, &feature_enum, len);
+    if bimbam_output {
+        info!("Writing the bimbam");
+        let chunk_size = (mw.matrix_u16.len() / split) + 1;
+        let chunks = mw.matrix_u16.chunks(chunk_size);
+        let len = chunks.len();
+
+        for (index, _y) in chunks.enumerate() {
+            mw.write_bimbam(index, output_prefix, &feature_enum, len, 1);
+            mw.write_phenotype_bimbam(index, output_prefix, len);
+        }
+    } else {
+        // Output
+        info!("Writing the output");
+        let chunk_size = (mw.matrix_bit.len() / split) + 1;
+        let chunks = mw.matrix_bit.chunks(chunk_size);
+
+        let len = chunks.len();
+        for (index, _y) in chunks.enumerate() {
+            //write_bed2(y, output_prefix, feature, index, len);
+            mw.write_fam(index, output_prefix, feature_enum, len);
+            mw.write_bed(index, output_prefix, feature_enum, len);
+            mw.write_bim(index, output_prefix, &feature_enum, len);
+        }
     }
 }

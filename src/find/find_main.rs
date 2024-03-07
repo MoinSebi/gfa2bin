@@ -1,14 +1,13 @@
-use crate::core::core::MatrixWrapper;
-use crate::core::helper::{merge_u32_to_u64, Feature, to_string1};
-use crate::r#mod::input_data::{read_paths, FileData};
+
+use crate::core::helper::{merge_u32_to_u64, to_string1, Feature};
+use crate::r#mod::input_data::{FileData};
 use clap::ArgMatches;
-use gfa_reader::{NCGfa, NCPath, Pansn};
-use log::info;
+use gfa_reader::{NCGfa};
+use hashbrown::HashSet;
+
 use std::cmp::max;
 use std::fs::File;
-use hashbrown::HashSet;
 use std::io::Write;
-
 
 pub fn find_main(matches: &ArgMatches) {
     let graph_file = matches.value_of("gfa").unwrap();
@@ -56,33 +55,31 @@ pub fn find_main(matches: &ArgMatches) {
         position_nodesize.push(index)
     }
 
-
     let file = File::create(output).unwrap();
     let mut writer = std::io::BufWriter::new(file);
     let data_hs = data.data.iter().collect::<HashSet<&u64>>();
     for (i, x) in vec_res_u64.iter().enumerate() {
         for (i2, y) in x.iter().enumerate() {
-
             if data_hs.contains(y) {
-                write!(writer,
-                    "{}\t{}\t{}\tID:{};NS:{};NB:{}\n",
+                writeln!(
+                    writer,
+                    "{}\t{}\t{}\tID:{};NS:{};NB:{}",
                     graph.paths[i].name,
                     max(0, position_nodesize[i][i2][0] as i128 - length),
                     position_nodesize[i][i2][0] as i128 + length,
                     to_string1(*y, &feature),
                     position_nodesize[i][i2][1],
                     position_nodesize[i][i2][0],
-
-                ).expect("Error writing to file")
+                )
+                .expect("Error writing to file")
             }
         }
     }
 }
 
-
 // Size of each node
 pub fn node_size(graph: &NCGfa<()>) -> Vec<usize> {
-    let mut res = graph
+    let res = graph
         .nodes
         .iter()
         .map(|x| x.seq.len())

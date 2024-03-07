@@ -1,6 +1,6 @@
 use crate::core::helper::{merge_u32_to_u64, Feature};
 
-use std::fs::{read, File};
+use std::fs::{File};
 use std::io::{BufRead, BufReader};
 
 pub struct FileData {
@@ -84,5 +84,5 @@ pub fn read_paths(filename: &str) -> Vec<String> {
     for x in reader.lines() {
         paths.push(x.unwrap());
     }
-    return paths;
+    paths
 }

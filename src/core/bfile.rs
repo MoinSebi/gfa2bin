@@ -48,7 +48,7 @@ impl MatrixWrapper {
             let mut bv: BitVec<u8, Lsb0> = BitVec::from_slice(chunk);
             bv.truncate(self.sample_names.len() * 2);
 
-            self.matrix_bin.push(bv);
+            self.matrix_bit.push(bv);
         }
     }
 
@@ -86,7 +86,7 @@ impl MatrixWrapper {
 
         let file = BufReader::new(File::open(filename).expect("Unable to open file"));
 
-        for (i, x) in file.lines().enumerate() {
+        for (_i, x) in file.lines().enumerate() {
             let data = x.unwrap();
             let a = from_string(data.split_whitespace().nth(3).unwrap(), ff);
             self.geno_names.push(a);

@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{node2index, split_u64_to_u32s};
+use crate::core::helper::{node2index};
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use packing_lib::core::core::PackCompact;
@@ -12,21 +12,21 @@ pub fn matrix_pack_wrapper(
     let first_entry = &input[0];
 
     if first_entry.is_binary {
-        matrix_w.matrix_bin =
+        matrix_w.matrix_bit =
             vec![BitVec::<u8, Lsb0>::repeat(false, input.len() * 2); first_entry.length as usize];
         for (i2, x) in input.iter().enumerate() {
             matrix_w.sample_names.push(x.name.clone());
             for (i, y) in x.bin_coverage.iter().enumerate() {
                 if y == &true {
-                    matrix_w.matrix_bin[i].get_mut(i2 * 2).unwrap().set(true);
-                    matrix_w.matrix_bin[i]
+                    matrix_w.matrix_bit[i].get_mut(i2 * 2).unwrap().set(true);
+                    matrix_w.matrix_bit[i]
                         .get_mut(i2 * 2 + 1)
                         .unwrap()
                         .set(true);
                 }
             }
         }
-        matrix_w.shape = (matrix_w.matrix_bin.len(), matrix_w.matrix_bin[0].len());
+        matrix_w.shape = (matrix_w.matrix_bit.len(), matrix_w.matrix_bit[0].len());
         matrix_w.sample_names = input.iter().map(|x| x.name.clone()).collect();
         if first_entry.is_sequence {
             matrix_w.geno_names = node2index(index);
@@ -35,7 +35,7 @@ pub fn matrix_pack_wrapper(
         }
     } else {
         let ll = first_entry.length as usize;
-        matrix_w.matrix_core = vec![vec![0; input.len()]; ll];
+        matrix_w.matrix_u16 = vec![vec![0; input.len()]; ll];
         for (i, x) in input.iter().enumerate() {
             let d;
             if x.is_sequence {
@@ -45,10 +45,10 @@ pub fn matrix_pack_wrapper(
             }
             matrix_w.sample_names.push(x.name.clone());
             for (i2, y) in d.iter().enumerate() {
-                matrix_w.matrix_core[i2][i] = *y as u32;
+                matrix_w.matrix_u16[i2][i] = *y
             }
         }
-        matrix_w.shape = (matrix_w.matrix_core.len(), matrix_w.matrix_core[0].len());
+        matrix_w.shape = (matrix_w.matrix_u16.len(), matrix_w.matrix_u16[0].len());
         matrix_w.sample_names = input.iter().map(|x| x.name.clone()).collect();
         if first_entry.is_sequence {
             matrix_w.geno_names = node2index(index);

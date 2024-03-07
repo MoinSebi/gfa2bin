@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::Feature;
+
 use crate::r#mod::input_data::{read_paths, FileData};
 use clap::ArgMatches;
 use log::info;
@@ -14,6 +14,12 @@ pub fn mod_main(matches: &ArgMatches) {
         .unwrap();
     let mut mw = MatrixWrapper::new();
     mw.bfile_wrapper(plink_file);
+    println!("Feature: {:?}", mw.feature);
+    println!("Paths: {:?}", mw.bim_entries.len());
+    println!("mlen: {:?}", mw.matrix_bit.len());
+
+    println!("Paths: {:?}", mw.sample_names.len());
+
     if matches.is_present("feature") || matches.is_present("paths") {
         info!("All good");
     }
@@ -21,22 +27,24 @@ pub fn mod_main(matches: &ArgMatches) {
     if matches.is_present("features") {
         let feature_file = matches.value_of("features").unwrap();
         let data = FileData::from_file(feature_file);
-
         if mw.feature != data.feature {
             panic!("Feature is not the same");
         }
+        println!("Data: {:?}", data.data);
+        println!("Data: {:?}", mw.matrix_bit.len());
         mw.remove_feature(&data);
+        println!("Data: {:?}", mw.matrix_bit.len());
     }
     if matches.is_present("paths") {
         let paths = matches.value_of("paths").unwrap();
         let paths = read_paths(paths);
-        mw.remove_paths(&paths);
+        mw.remove_samples(&paths);
     }
     let feature = mw.feature;
     info!("Writing the output");
 
-    let chunk_size = (mw.matrix_bin.len() / split) + 1;
-    let chunks = mw.matrix_bin.chunks(chunk_size);
+    let chunk_size = (mw.matrix_bit.len() / split) + 1;
+    let chunks = mw.matrix_bit.chunks(chunk_size);
 
     let len = chunks.len();
     for (index, _y) in chunks.enumerate() {

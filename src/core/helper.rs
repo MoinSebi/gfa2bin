@@ -84,7 +84,7 @@ pub fn split_u64_to_u32s(value: u64) -> (u32, u32) {
     (high, low)
 }
 
-pub fn node2index(vector: &Vec<u32>) -> Vec<u64> {
+pub fn node2index(vector: &[u32]) -> Vec<u64> {
     let mut result = Vec::new();
     let mut node_id = vector[0];
     let mut seq_count = 1;

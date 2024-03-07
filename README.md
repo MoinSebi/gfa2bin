@@ -2,6 +2,7 @@
 
 Convert a gfa to a plink file. This tool can also use a compressed coverage file from packing.  
 
+
 ## Subcommands
 ### graph - Converting from graphs directly
 
