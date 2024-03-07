@@ -66,7 +66,7 @@ pub fn find_main(matches: &ArgMatches) {
                     "{}\t{}\t{}\tID:{};NS:{};NB:{}",
                     graph.paths[i].name,
                     max(0, position_nodesize[i][i2][0] as i128 - length),
-                    position_nodesize[i][i2][0] as i128 + length,
+                    position_nodesize[i][i2][0] as i128 + position_nodesize[i][i2][1] as i128+ length,
                     to_string1(*y, &feature),
                     position_nodesize[i][i2][1],
                     position_nodesize[i][i2][0],
