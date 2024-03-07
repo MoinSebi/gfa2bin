@@ -8,7 +8,7 @@ use std::process::Command;
 /// Test for plink subcommand
 /// -g (gfa)
 /// -t e (type edge)
-fn mod1() -> Result<(), Box<dyn std::error::Error>> {
+fn mod_feature() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("mod")
         .arg("-p")
@@ -23,6 +23,32 @@ fn mod1() -> Result<(), Box<dyn std::error::Error>> {
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + ((9-2) * 2));
+    assert_eq!(buffer[3], 127);
+
+    Ok(())
+}
+
+
+#[test]
+/// Test for plink subcommand
+/// -g (gfa)
+/// -t e (type edge)
+fn mod_path1() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gfa2bin")?;
+    cmd.arg("mod")
+        .arg("-p")
+        .arg("data/output/tt2.node")
+        .arg("-o")
+        .arg("data/output/tt10.node")
+        .arg("--paths")
+        .arg("data/example_data/mod_path.txt");
+    cmd.assert().success();
+
+    let mut b = File::open("data/output/tt10.node.bed").unwrap();
+    let mut buffer = Vec::new();
+    b.read_to_end(&mut buffer).unwrap();
+    assert_eq!(buffer.len(), 3 + 9);
+    assert_eq!(buffer[3], 31);
 
     Ok(())
 }

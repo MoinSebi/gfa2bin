@@ -42,6 +42,7 @@ pub fn mod_main(matches: &ArgMatches) {
     }
     let feature = mw.feature;
     info!("Writing the output");
+    println!("{}", mw.bim_entries.len());
 
     let chunk_size = (mw.matrix_bit.len() / split) + 1;
     let chunks = mw.matrix_bit.chunks(chunk_size);

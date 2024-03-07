@@ -271,16 +271,14 @@ impl MatrixWrapper {
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
-        eprintln!(
-            "Feature: {:?}",
-            self.geno_names
-                .iter()
-                .map(|x| to_string1(*x, feature))
-                .collect::<Vec<String>>()
-        );
         if !self.matrix_u16.is_empty() {
             for x in self.geno_names.iter() {
                 writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, to_string1(*x, feature))
+                    .expect("Can not write file");
+            }
+        } else {
+            for x in self.bim_entries.iter() {
+                writeln!(f, "{}", x)
                     .expect("Can not write file");
             }
         }
