@@ -54,7 +54,8 @@ fn main() {
                 .arg(
                     Arg::new("paths")
                         .long("paths")
-                        .about("Ignore these paths (one per line)"),
+                        .about("Ignore these paths (one per line)")
+                        .takes_value(true),
                 )
                 .help_heading("Thresholds")
                 .arg(

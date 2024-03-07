@@ -91,6 +91,32 @@ fn gfa_dir_node() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[test]
+/// Test for plink subcommand
+/// -g (gfa)
+/// -f dirnode
+fn gfa_dir_node_paths_remove() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gfa2bin")?;
+    cmd.arg("graph")
+        .arg("-g")
+        .arg("/home/svorbrugg/code/gfa2bin/data/example_data/testGraph2.gfa")
+        .arg("-o")
+        .arg("data/output/graph.dirnode.paths")
+        .arg("-f")
+        .arg("dirnode")
+        .arg("--paths")
+        .arg("/home/svorbrugg/code/gfa2bin/data/example_data/paths_paths.txt");
+    cmd.assert().success();
+    let mut b = File::open("data/output/graph.dirnode.paths.bed").unwrap();
+    let mut buffer = Vec::new();
+    b.read_to_end(&mut buffer).unwrap();
+    assert_eq!(buffer.len(), 3 + 8);
+    assert_eq!(buffer[3], 31);
+    assert_eq!(buffer[4], 16);
+    Ok(())
+}
+
+
 
 #[test]
 /// Test for plink subcommand
