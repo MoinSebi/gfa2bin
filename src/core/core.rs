@@ -265,6 +265,7 @@ impl MatrixWrapper {
     /// Allele 2 (corresponding to set bits in .bed; usually major)
     /// Representation here: [graph, ., 1, 0, A, T]
     pub fn write_bim(&self, number: usize, out_prefix: &str, feature: &Feature, len: usize) {
+        println!("{:?}", self.geno_names.len());
         let mut output = [out_prefix, &number.to_string(), "bim"].join(".");
         if len == 1 {
             output = [out_prefix, "bim"].join(".");

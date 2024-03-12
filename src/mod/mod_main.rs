@@ -14,15 +14,11 @@ pub fn mod_main(matches: &ArgMatches) {
         .unwrap();
     let mut mw = MatrixWrapper::new();
     mw.bfile_wrapper(plink_file);
-    println!("Feature: {:?}", mw.feature);
-    println!("Paths: {:?}", mw.bim_entries.len());
-    println!("mlen: {:?}", mw.matrix_bit.len());
-
-    println!("Paths: {:?}", mw.sample_names.len());
-
     if matches.is_present("feature") || matches.is_present("paths") {
         info!("All good");
     }
+
+
 
     if matches.is_present("features") {
         let feature_file = matches.value_of("features").unwrap();
@@ -40,6 +36,13 @@ pub fn mod_main(matches: &ArgMatches) {
         let paths = read_paths(paths);
         mw.remove_samples(&paths);
     }
+
+
+    if matches.is_present("non-info") {
+        mw.remove_non_info();
+    }
+
+
     let feature = mw.feature;
     info!("Writing the output");
     println!("{}", mw.bim_entries.len());

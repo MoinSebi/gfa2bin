@@ -169,6 +169,15 @@ fn main() {
                         .about("Path to remove (one per line)")
                         .takes_value(true),
                 )
+                .help_heading("Intrinsic Modification")
+                .arg(
+                    Arg::new("non-info")
+                        .long("non-info")
+                        .about("Remove all entries which hold no information (all true or all false)")
+                        .takes_value(true),
+                )
+
+
                 .help_heading("Output parameter")
                 .arg(
                     Arg::new("output")

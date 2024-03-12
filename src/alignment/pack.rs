@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{node2index};
+use crate::core::helper::{index2node_seq};
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use packing_lib::core::core::PackCompact;
@@ -29,9 +29,9 @@ pub fn matrix_pack_wrapper(
         matrix_w.shape = (matrix_w.matrix_bit.len(), matrix_w.matrix_bit[0].len());
         matrix_w.sample_names = input.iter().map(|x| x.name.clone()).collect();
         if first_entry.is_sequence {
-            matrix_w.geno_names = node2index(index);
+            matrix_w.geno_names = index2node_seq(index);
         } else {
-            matrix_w.geno_names = node2index(&remove_duplicates(index));
+            matrix_w.geno_names = remove_duplicates(index);
         }
     } else {
         let ll = first_entry.length as usize;
@@ -50,15 +50,16 @@ pub fn matrix_pack_wrapper(
         }
         matrix_w.shape = (matrix_w.matrix_u16.len(), matrix_w.matrix_u16[0].len());
         matrix_w.sample_names = input.iter().map(|x| x.name.clone()).collect();
+
         if first_entry.is_sequence {
-            matrix_w.geno_names = node2index(index);
+            matrix_w.geno_names = index2node_seq(index);
         } else {
-            matrix_w.geno_names = node2index(&remove_duplicates(index));
+            matrix_w.geno_names = remove_duplicates(index);
         }
     }
 }
 
-fn remove_duplicates(sorted_vec: &Vec<u32>) -> Vec<u32> {
+fn remove_duplicates(sorted_vec: &Vec<u32>) -> Vec<u64> {
     let mut unique_vec = Vec::new();
 
     // If the input vector is empty, return an empty vector
@@ -67,13 +68,13 @@ fn remove_duplicates(sorted_vec: &Vec<u32>) -> Vec<u32> {
     }
 
     // Add the first element of the sorted vector
-    unique_vec.push(sorted_vec[0]);
+    unique_vec.push(sorted_vec[0] as u64);
 
     // Iterate through the sorted vector and add only distinct elements
     for i in 1..sorted_vec.len() {
         // If the current element is different from the previous one, add it to the unique vector
         if sorted_vec[i] != sorted_vec[i - 1] {
-            unique_vec.push(sorted_vec[i]);
+            unique_vec.push(sorted_vec[i] as u64);
         }
     }
 

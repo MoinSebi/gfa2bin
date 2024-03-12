@@ -28,6 +28,13 @@ pub fn align_main(matches: &ArgMatches) {
     let pack_list = matches.value_of("pack");
     let cpack = matches.value_of("pack compressed");
     let cpacklist = matches.value_of("bpacklist");
+    let output_prefix = matches.value_of("output").unwrap();
+    let bimbam = matches.is_present("bimbam");
+    let split = matches
+        .value_of("split")
+        .unwrap_or("1")
+        .parse::<usize>()
+        .unwrap();
 
     // Initialize the matrix wrapper
     let mut mw = MatrixWrapper::new();
@@ -73,25 +80,33 @@ pub fn align_main(matches: &ArgMatches) {
             matrix_pack_wrapper(&mut mw, &pc_vec, &index);
         }
     }
-    info!(
-        "Shape (after remove) is {:?} - {}",
-        mw.matrix_bit.len(),
-        mw.matrix_bit[0].len()
-    );
+
     //mw.remove_non_info();
 
     let feature_enum = Feature::Alignment;
-    let output_prefix = "out.ppp";
-    info!("Writing the output");
-    let chunk_size = mw.matrix_bit.len() + 1;
-    let chunks = mw.matrix_bit.chunks(chunk_size);
+    if bimbam {
+        info!("Writing the bimbam");
+        let chunk_size = (mw.matrix_u16.len() / split) + 1;
+        let chunks = mw.matrix_u16.chunks(chunk_size);
+        let len = chunks.len();
 
-    let len = chunks.len();
-    for (index, _y) in chunks.enumerate() {
-        //write_bed2(y, output_prefix, feature, index, len);
-        mw.write_fam(index, output_prefix, feature_enum, len);
-        mw.write_bed(index, output_prefix, feature_enum, len);
-        mw.write_bim(index, output_prefix, &feature_enum, len);
+        for (index, _y) in chunks.enumerate() {
+            mw.write_bimbam(index, output_prefix, &feature_enum, len, 1);
+            mw.write_phenotype_bimbam(index, output_prefix, len);
+        }
+    } else {
+        // Output
+        info!("Writing the output");
+        let chunk_size = (mw.matrix_bit.len() / split) + 1;
+        let chunks = mw.matrix_bit.chunks(chunk_size);
+
+        let len = chunks.len();
+        for (index, _y) in chunks.enumerate() {
+            //write_bed2(y, output_prefix, feature, index, len);
+            mw.write_fam(index, output_prefix, feature_enum, len);
+            mw.write_bed(index, output_prefix, feature_enum, len);
+            mw.write_bim(index, output_prefix, &feature_enum, len);
+        }
     }
 }
 

@@ -84,18 +84,21 @@ pub fn split_u64_to_u32s(value: u64) -> (u32, u32) {
     (high, low)
 }
 
-pub fn node2index(vector: &[u32]) -> Vec<u64> {
+pub fn index2node_seq(vector: &[u32]) -> Vec<u64> {
     let mut result = Vec::new();
     let mut node_id = vector[0];
-    let mut seq_count = 1;
+    let mut seq_count = 0;
+    result.push(merge_u32_to_u64(node_id, seq_count));
 
     for &value in vector.iter().skip(1) {
         if value == node_id {
             seq_count += 1;
+            result.push(merge_u32_to_u64(node_id, seq_count))
         } else {
-            result.push(merge_u32_to_u64(node_id, seq_count));
             node_id = value;
-            seq_count = 1;
+            seq_count = 0;
+            result.push(merge_u32_to_u64(node_id, seq_count))
+
         }
     }
     result.push(merge_u32_to_u64(node_id, seq_count));
