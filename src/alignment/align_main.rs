@@ -91,7 +91,7 @@ pub fn align_main(matches: &ArgMatches) {
         let len = chunks.len();
 
         for (index, _y) in chunks.enumerate() {
-            mw.write_bimbam(index, output_prefix, &feature_enum, len, 1);
+            mw.write_bimbam(index, output_prefix, &feature_enum, len, &vec![0.0; 0]);
             mw.write_phenotype_bimbam(index, output_prefix, len);
         }
     } else {

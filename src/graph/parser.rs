@@ -116,8 +116,6 @@ pub fn gfa_reader(
             } else {
                 panic!("Not implemented");
             }
-            println!("{} {}", nn.name, c);
-            println!("CCCC {} {}", graph_wrapper.get_haplo_path().len(), c);
 
             for x in nn.haplotypes.iter() {
                 for ncpath in x.paths.iter() {

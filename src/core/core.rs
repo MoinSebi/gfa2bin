@@ -1,4 +1,4 @@
-use crate::core::helper::{is_all_ones, is_all_zeros, merge_u32_to_u64, to_string1, Feature};
+use crate::core::helper::{is_all_ones, is_all_zeros, merge_u32_to_u64, to_string1, Feature, average_vec_u16, wrapper_stats, median, percentile};
 
 
 use crate::r#mod::input_data::FileData;
@@ -8,6 +8,9 @@ use hashbrown::HashSet;
 use std::fmt::Debug;
 use std::fs::{File};
 use std::io::{BufWriter, Write};
+use packing_lib::convert::convert_helper::Method;
+use packing_lib::convert::helper::median_vec_u16_16;
+use crate::alignment::pack::matrix_pack_wrapper;
 
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -95,6 +98,60 @@ impl MatrixWrapper {
         // Sort it, otherwise does not work
         geno_names.sort();
         self.geno_names = geno_names;
+    }
+
+    pub fn make_thresh(&self, absolute: u32, relative: u16, method: Method) -> Vec<f32>{
+        if absolute != 0 {
+            return vec![absolute as f32; self.matrix_u16.len()]
+        }
+        match method {
+            Method::Mean => {
+                let mut aa = Vec::new();
+                for x in self.matrix_u16.iter() {
+                    aa.push(average_vec_u16(x, relative) as f32);
+                }
+                aa
+            }
+            Method::Median => {
+                let mut aa = Vec::new();
+                for x in self.matrix_u16.iter() {
+                    aa.push(median(x, relative) as f32);
+                }
+                aa            }
+            Method::Percentile => {
+                let mut aa = Vec::new();
+                for x in self.matrix_u16.iter() {
+                    aa.push(percentile(x, relative as f64) as f32);
+                }
+                aa
+            }
+
+            _ => {
+                let mut aa = Vec::new();
+                for x in self.matrix_u16.iter() {
+                    aa.push(*x.iter().max().unwrap() as f32);
+                }
+                aa
+            }
+        }
+    }
+
+
+    pub fn make_bin_row(&mut self, relative: &Vec<f32>){
+        let mut matrix_bin = Vec::new();
+        for (val, re) in self.matrix_u16.iter().zip(relative.iter()) {
+            let mut biit = BitVec::with_capacity(val.len());
+            for y in val.iter(){
+                if *y as f64 >= *re as f64 {
+                    biit.push(true);
+                } else {
+                    biit.push(false);
+                }
+            }
+            matrix_bin.push(biit);
+        }
+
+        self.matrix_bit = matrix_bin;
     }
 
     /// Remove those entries which hold no information (all zero or all one)
@@ -236,6 +293,7 @@ impl MatrixWrapper {
         let mut buff: Vec<u8> = vec![108, 27, 1];
         // Make SNP Vector
 
+
         for sel in self.matrix_bit.iter() {
             buff.extend(sel.as_raw_slice());
         }
@@ -265,7 +323,6 @@ impl MatrixWrapper {
     /// Allele 2 (corresponding to set bits in .bed; usually major)
     /// Representation here: [graph, ., 1, 0, A, T]
     pub fn write_bim(&self, number: usize, out_prefix: &str, feature: &Feature, len: usize) {
-        println!("{:?}", self.geno_names.len());
         let mut output = [out_prefix, &number.to_string(), "bim"].join(".");
         if len == 1 {
             output = [out_prefix, "bim"].join(".");
@@ -292,7 +349,7 @@ impl MatrixWrapper {
         out_prefix: &str,
         feature: &Feature,
         len: usize,
-        val: u16,
+        val: &Vec<f32>,
     ) {
         let mut output = [out_prefix, &number.to_string(), "bimbam"].join(".");
         if len == 1 {
@@ -300,12 +357,10 @@ impl MatrixWrapper {
         }
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
-        println!("{:?}", self.sample_names);
-        println!("{:?}", self.sample_index_u16);
 
         if self.bim_entries.is_empty() {
-            for (i, x) in self.geno_names.iter().enumerate() {
-                let p = normalize_vector(&self.matrix_u16[i], val);
+            for ((i, x), thresh) in self.geno_names.iter().enumerate().zip(val.iter()) {
+                let p = normalize_vector(&self.matrix_u16[i], *thresh);
                 let mut p2 = Vec::new();
                 for x in self.sample_index_u16.iter() {
                     if x[0] == x[1] {
@@ -345,7 +400,7 @@ impl MatrixWrapper {
 }
 
 /// Normalize the vector for bimbam
-fn normalize_vector(vector: &Vec<u16>, value: u16) -> Vec<f64> {
+fn normalize_vector(vector: &Vec<u16>, value: f32) -> Vec<f64> {
     let mut a = Vec::new();
     for element in vector.iter() {
         let result = (*element as f64 / value as f64).min(1.0);

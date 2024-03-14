@@ -59,11 +59,23 @@ fn main() {
                 )
                 .help_heading("Thresholds")
                 .arg(
-                    Arg::new("threshold")
-                        .short('t')
-                        .long("threshold")
+                    Arg::new("absolute-threshold")
+                        .short('a')
+                        .long("absolute-threshold")
                         .about("Set a absolute threshold")
                         .takes_value(true),
+                )
+                .arg(Arg::new("method")
+                    .short('m')
+                    .long("method")
+                    .about("Method to use")
+                    .takes_value(true)
+                )
+                .arg(Arg::new("relative-threshold")
+                    .short('r')
+                    .long("relative-threshold")
+                    .about("Set a relative threshold")
+                    .takes_value(true)
                 )
                 .help_heading("Output parameter")
                 .arg(
@@ -78,10 +90,15 @@ fn main() {
                         .short('o')
                         .long("output")
                         .takes_value(true)
-                        .about("Output prefix for all files"),
+                        .about("Output prefix for all files")
+                        .required(true),
                 )
                 .arg(Arg::new("bimbam").long("bimbam").about("Output in bimbam")),
         )
+
+
+
+
         .subcommand(
             App::new("align")
                 .about("Convert from a alignment (pack or bpack)")

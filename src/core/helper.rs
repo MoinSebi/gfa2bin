@@ -121,3 +121,58 @@ pub fn is_all_zeros(bitvector: &BitVec<u8, Lsb0>) -> bool {
 pub fn is_all_ones(bitvector: &BitVec<u8, Lsb0>) -> bool {
     return bitvector.iter().all(|byte| *byte);
 }
+
+
+pub fn wrapper_stats(vector: &[u16], method: &str, rval: u16) -> f64 {
+    match method {
+        "mean" => average_vec_u16(vector, rval),
+        "median" => median(vector, rval),
+        "percentile" => percentile(vector, rval as f64),
+        _ => panic!("Method not implemented"),
+    }
+}
+
+
+
+pub fn average_vec_u16(vector: &[u16], rval: u16) -> f64 {
+    let sum: u16 = vector.iter().sum();
+    let len = vector.len() as f64;
+    (sum as f64 / len ) * rval as f64 / 100 as f64
+}
+
+pub fn percentile(data: &[u16], u: f64) -> f64 {
+
+    let mut data2 = data.to_vec();
+    data2.sort();
+
+    let n = data.len() as f64;
+    let p: usize = ((u / 100.0) * (n - 1.0)).floor() as usize;
+
+    return data2[p] as f64;
+}
+
+pub fn median(data: &[u16], rval: u16) -> f64 {
+
+
+    // Create a mutable copy of the data and sort it
+    let mut sorted_data = data.to_vec();
+    sorted_data.sort();
+
+    let n = sorted_data.len();
+
+    // Check if the number of elements is odd or even
+    if n % 2 == 0 {
+        // If even, return the average of the middle two elements
+        let middle_index_1 = (n / 2) - 1;
+        let middle_index_2 = n / 2;
+        let median = (sorted_data[middle_index_1] as f64 + sorted_data[middle_index_2] as f64) / 2.0;
+        median * rval as f64 / 100 as f64
+    } else {
+        // If odd, return the middle element
+        let middle_index = n / 2;
+        sorted_data[middle_index] as f64 * rval as f64 / 100 as f64
+    }
+}
+
+
+
