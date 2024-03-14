@@ -68,7 +68,7 @@ fn main() {
                 .arg(Arg::new("method")
                     .short('m')
                     .long("method")
-                    .about("Method to use")
+                    .about("Method to use [mean, median, percentile]")
                     .takes_value(true)
                 )
                 .arg(Arg::new("relative-threshold")

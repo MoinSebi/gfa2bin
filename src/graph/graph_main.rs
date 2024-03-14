@@ -48,7 +48,7 @@ pub fn graph_main(matches: &ArgMatches) {
     let need_edges = feature != "node";
     let mut absolute_thresh = matches.value_of("absolute-threshold").unwrap_or("0").parse::<u32>().unwrap();
     let mut relative_thresh = matches.value_of("relative-threshold").unwrap_or("0").parse::<u32>().unwrap();
-    let method = Method::from_str(matches.value_of("method").unwrap_or("nothing"));
+    let mut method = Method::from_str(matches.value_of("method").unwrap_or("nothing"));
 
     let mut bin = false;
     if matches.is_present("absolute-threshold"){
@@ -60,6 +60,10 @@ pub fn graph_main(matches: &ArgMatches) {
         if !bimbam_output{
             bin = true;
             absolute_thresh = 1;
+        }
+        if bimbam_output{
+            method = Method::Percentile;
+            relative_thresh = 100;
         }
     }
 
