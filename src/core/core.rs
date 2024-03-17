@@ -26,6 +26,8 @@ pub struct MatrixWrapper {
     // Check if node, edges, dirnode, or alignment
     pub feature: Feature,                  // Feature
     pub geno_names: Vec<u64>,              // Name of all
+    pub window_number: Vec<u32>,
+    pub window_size: usize, // Window number
     pub sample_names: Vec<String>,         // Sample names (same order as in the matrix)
     pub sample_index_u16: Vec<[usize; 2]>, // Sample index
 
@@ -45,6 +47,8 @@ impl MatrixWrapper {
 
             // SNP
             geno_names: Vec::new(),
+            window_number: Vec::new(),
+            window_size: 0,
             bim_entries: Vec::new(),
 
             // Fam
@@ -175,6 +179,7 @@ impl MatrixWrapper {
         self.geno_names.truncate(write_index);
     }
 
+
     /// Remove samples from the dataset
     pub fn remove_samples(&mut self, to_be_removed: &Vec<String>) {
         let mut remove_index: Vec<usize> = Vec::new();
@@ -216,14 +221,13 @@ impl MatrixWrapper {
         let mut i = 0;
         let mut j = 0;
         while i < self.geno_names.len() && j < d.data.len() {
-            println!("aa {} {}", self.geno_names[i], d.data[j]);
             if self.geno_names[i] != d.data[j] {
-                println!("wi {}", write_index);
                 if write_index != i {
                     // Move the elements to their new positions
                     self.matrix_bit.swap(write_index, i);
                     self.geno_names.swap(write_index, i);
                     self.bim_entries.swap(write_index, i);
+                    self.window_number.swap(write_index, i);
                 }
                 write_index += 1;
                 if self.geno_names[i] < d.data[j] {
@@ -243,6 +247,7 @@ impl MatrixWrapper {
                     self.matrix_bit.swap(write_index, x);
                     self.geno_names.swap(write_index, x);
                     self.bim_entries.swap(write_index, x);
+                    self.window_number.swap(write_index, x);
                 }
                 write_index += 1;
             }
@@ -252,6 +257,8 @@ impl MatrixWrapper {
         self.matrix_bit.truncate(write_index);
         self.geno_names.truncate(write_index);
         self.bim_entries.truncate(write_index);
+        self.window_number.truncate(write_index);
+
     }
 
     //----------------------------------------------------------------------------------
@@ -331,9 +338,25 @@ impl MatrixWrapper {
         let mut f = BufWriter::new(f);
 
         if self.bim_entries.is_empty() {
-            for x in self.geno_names.iter() {
-                writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, to_string1(*x, feature))
-                    .expect("Can not write file");
+            if self.feature == Feature::MWindow{
+                for (x, w) in self.geno_names.iter().zip(self.window_number.iter()) {
+
+                    writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, "M:".to_string() + &to_string1(*x, feature) + "_" + &self.window_size.to_string() + "_" + &w.to_string())
+                        .expect("Can not write file");
+
+                }
+            } else if self.feature == Feature::PWindow {
+                for (x, w) in self.geno_names.iter().zip(self.window_number.iter()) {
+
+                    writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, "P:".to_string() + &to_string1(*x, feature) + "_" + &self.window_size.to_string() + "_" + &w.to_string())
+                        .expect("Can not write file");
+
+                }
+            } else {
+                for x in self.geno_names.iter() {
+                    writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, to_string1(*x, feature))
+                        .expect("Can not write file");
+                }
             }
         } else {
             for x in self.bim_entries.iter() {

@@ -130,12 +130,15 @@ pub fn graph_main(matches: &ArgMatches) {
     gfa_reader(&mut mw, &wrapper, bin, feature_enum);
 
     let thresh = mw.make_thresh(absolute_thresh, relative_thresh as u16, method);
-    if !bimbam_output{
-        mw.make_bin_row(&thresh);
-        info!("Number of entries: {}", mw.matrix_bit.len());
-    } else {
-        info!("Number of entries: {}", mw.matrix_u16.len());
 
+
+    if !bin {
+        if !bimbam_output {
+            mw.make_bin_row(&thresh);
+            info!("Number of entries: {}", mw.matrix_bit.len());
+        } else {
+            info!("Number of entries: {}", mw.matrix_u16.len());
+        }
     }
 
 

@@ -8,6 +8,8 @@ pub enum Feature {
     DirNode,
     Edge,
     Alignment,
+    MWindow,
+    PWindow,
 }
 
 impl Feature {
@@ -16,6 +18,9 @@ impl Feature {
             "node" => Feature::Node,
             "dirnode" => Feature::DirNode,
             "edge" => Feature::Edge,
+            "alignment" => Feature::Alignment,
+            "mwindow" => Feature::MWindow,
+            "pwindow" => Feature::PWindow,
             _ => panic!("Not implemented"),
         }
     }
@@ -26,6 +31,8 @@ impl Feature {
             Feature::DirNode => "dirnode".to_string(),
             Feature::Edge => "edge".to_string(),
             Feature::Alignment => "alignment".to_string(),
+            Feature::MWindow => "mwindow".to_string(),
+            Feature::PWindow => "pwindow".to_string(),
         }
     }
 }

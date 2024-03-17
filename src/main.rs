@@ -5,6 +5,7 @@ mod graph;
 mod helper;
 mod logging;
 mod r#mod;
+mod window;
 
 use crate::alignment::align_main::align_main;
 use crate::find::find_main::find_main;
@@ -12,6 +13,7 @@ use crate::graph::graph_main::graph_main;
 use crate::logging::newbuilder;
 use crate::r#mod::mod_main::mod_main;
 use clap::{App, Arg};
+use crate::window::window_main::window_main;
 
 fn main() {
     let matches = App::new("gfa2bin")
@@ -249,6 +251,34 @@ fn main() {
                         .default_value("200"),
                 ),
         )
+        .subcommand(
+            App::new("window")
+                .version("1.0.1")
+                .about("Find features in the graph and return a BED file for further analysis")
+                .arg(Arg::new("plink")
+                    .short('p')
+                    .long("plink")
+                    .about("Plink input file")
+                    .takes_value(true)
+                    .required(true),
+                )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("length")
+                        .short('l')
+                        .long("length")
+                        .about("Length of the feature")
+                        .takes_value(true)
+                        .default_value("200"),
+                ),
+        )
         .get_matches();
 
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
@@ -264,5 +294,7 @@ fn main() {
         mod_main(matches);
     } else if let Some(matches) = matches.subcommand_matches("find") {
         find_main(matches);
+    } else if let Some(matches) = matches.subcommand_matches("window") {
+        window_main(matches);
     }
 }

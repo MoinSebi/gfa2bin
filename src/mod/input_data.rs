@@ -38,7 +38,14 @@ impl FileData {
                 let s = line.ends_with('+');
                 let s2 = line[..line.len() - 1].parse::<u64>().unwrap() * 2 + s as u64;
                 data.push(s2)
-            } else {
+            } else if feature == Feature::MWindow{
+
+            }
+            else if feature == Feature::PWindow{
+
+            }
+                else
+             {
                 data.push(line.parse::<u64>().unwrap());
             }
         }
