@@ -1,6 +1,6 @@
 use crate::core::helper::{merge_u32_to_u64, Feature};
 
-use std::fs::{File};
+use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 pub struct FileData {
@@ -38,14 +38,9 @@ impl FileData {
                 let s = line.ends_with('+');
                 let s2 = line[..line.len() - 1].parse::<u64>().unwrap() * 2 + s as u64;
                 data.push(s2)
-            } else if feature == Feature::MWindow{
-
-            }
-            else if feature == Feature::PWindow{
-
-            }
-                else
-             {
+            } else if feature == Feature::MWindow {
+            } else if feature == Feature::PWindow {
+            } else {
                 data.push(line.parse::<u64>().unwrap());
             }
         }
@@ -67,7 +62,9 @@ pub fn get_type(file_path: &str) -> Feature {
 
     // Read the first line of the file
     let first_line = reader.lines().next().unwrap().unwrap();
-    let parts: Vec<&str> = first_line.split(|c| c == '+' || c == '-').filter(|s| !s.is_empty()) // Filter out empty strings
+    let parts: Vec<&str> = first_line
+        .split(|c| c == '+' || c == '-')
+        .filter(|s| !s.is_empty()) // Filter out empty strings
         .collect();
     let last_letter = first_line.chars().last().unwrap();
     if last_letter == '+' || last_letter == '-' {

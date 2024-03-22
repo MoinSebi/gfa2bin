@@ -5,6 +5,7 @@ mod graph;
 mod helper;
 mod logging;
 mod r#mod;
+mod subpath;
 mod window;
 
 use crate::alignment::align_main::align_main;
@@ -12,8 +13,9 @@ use crate::find::find_main::find_main;
 use crate::graph::graph_main::graph_main;
 use crate::logging::newbuilder;
 use crate::r#mod::mod_main::mod_main;
-use clap::{App, Arg};
+use crate::subpath::subpath_main::subpath_main;
 use crate::window::window_main::window_main;
+use clap::{App, Arg};
 
 fn main() {
     let matches = App::new("gfa2bin")
@@ -67,17 +69,19 @@ fn main() {
                         .about("Set a absolute threshold")
                         .takes_value(true),
                 )
-                .arg(Arg::new("method")
-                    .short('m')
-                    .long("method")
-                    .about("Method to use [mean, median, percentile]")
-                    .takes_value(true)
+                .arg(
+                    Arg::new("method")
+                        .short('m')
+                        .long("method")
+                        .about("Method to use [mean, median, percentile]")
+                        .takes_value(true),
                 )
-                .arg(Arg::new("relative-threshold")
-                    .short('r')
-                    .long("relative-threshold")
-                    .about("Set a relative threshold")
-                    .takes_value(true)
+                .arg(
+                    Arg::new("relative-threshold")
+                        .short('r')
+                        .long("relative-threshold")
+                        .about("Set a relative threshold")
+                        .takes_value(true),
                 )
                 .help_heading("Output parameter")
                 .arg(
@@ -97,10 +101,6 @@ fn main() {
                 )
                 .arg(Arg::new("bimbam").long("bimbam").about("Output in bimbam")),
         )
-
-
-
-
         .subcommand(
             App::new("align")
                 .about("Convert from a alignment (pack or bpack)")
@@ -192,11 +192,11 @@ fn main() {
                 .arg(
                     Arg::new("non-info")
                         .long("non-info")
-                        .about("Remove all entries which hold no information (all true or all false)")
+                        .about(
+                            "Remove all entries which hold no information (all true or all false)",
+                        )
                         .takes_value(true),
                 )
-
-
                 .help_heading("Output parameter")
                 .arg(
                     Arg::new("output")
@@ -255,12 +255,42 @@ fn main() {
             App::new("window")
                 .version("1.0.1")
                 .about("Find features in the graph and return a BED file for further analysis")
-                .arg(Arg::new("plink")
-                    .short('p')
-                    .long("plink")
-                    .about("Plink input file")
-                    .takes_value(true)
-                    .required(true),
+                .arg(
+                    Arg::new("plink")
+                        .short('p')
+                        .long("plink")
+                        .about("Plink input file")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("length")
+                        .short('l')
+                        .long("length")
+                        .about("Length of the feature")
+                        .takes_value(true)
+                        .default_value("200"),
+                ),
+        )
+        .subcommand(
+            App::new("subpath")
+                .version("1.0.1")
+                .about("Find features in the graph and return a BED file for further analysis")
+                .arg(
+                    Arg::new("gfa")
+                        .short('g')
+                        .long("graph")
+                        .about("GFA input file")
+                        .takes_value(true)
+                        .required(true),
                 )
                 .arg(
                     Arg::new("output")
@@ -296,5 +326,7 @@ fn main() {
         find_main(matches);
     } else if let Some(matches) = matches.subcommand_matches("window") {
         window_main(matches);
+    } else if let Some(matches) = matches.subcommand_matches("subpath") {
+        subpath_main(matches);
     }
 }

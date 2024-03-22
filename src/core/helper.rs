@@ -35,6 +35,29 @@ impl Feature {
             Feature::PWindow => "pwindow".to_string(),
         }
     }
+
+    pub fn to_string_u64(&self, input: u64) -> String {
+        if *self == Feature::PWindow{
+            let (left, right) = split_u64_to_u32s(input);
+
+            return "P".to_string() + &format_unsigned_as_string(left) + &format_unsigned_as_string(right);
+        } else if *self == Feature::MWindow {
+            let (left, right) = split_u64_to_u32s(input);
+            return "M".to_string() + &format_unsigned_as_string(left) + &format_unsigned_as_string(right);
+        } else if Feature::Node == *self {
+            input.to_owned().to_string()
+        } else if *self == Feature::DirNode {
+            return format_unsigned_as_string(input);
+        } else if *self == Feature::Edge {
+            let (left, right) = split_u64_to_u32s(input);
+
+            return format_unsigned_as_string(left) + &format_unsigned_as_string(right);
+        } else {
+            let (left, right) = split_u64_to_u32s(input);
+            return left.to_string() + "_" + right.to_string().as_str();
+        }
+    }
+
 }
 
 pub fn from_string(name_input: &str, ftype: Feature) -> u64 {
@@ -105,7 +128,6 @@ pub fn index2node_seq(vector: &[u32]) -> Vec<u64> {
             node_id = value;
             seq_count = 0;
             result.push(merge_u32_to_u64(node_id, seq_count))
-
         }
     }
     result.push(merge_u32_to_u64(node_id, seq_count));
@@ -129,7 +151,6 @@ pub fn is_all_ones(bitvector: &BitVec<u8, Lsb0>) -> bool {
     return bitvector.iter().all(|byte| *byte);
 }
 
-
 pub fn wrapper_stats(vector: &[u16], method: &str, rval: u16) -> f64 {
     match method {
         "mean" => average_vec_u16(vector, rval),
@@ -139,16 +160,13 @@ pub fn wrapper_stats(vector: &[u16], method: &str, rval: u16) -> f64 {
     }
 }
 
-
-
 pub fn average_vec_u16(vector: &[u16], rval: u16) -> f64 {
     let sum: u16 = vector.iter().sum();
     let len = vector.len() as f64;
-    (sum as f64 / len ) * rval as f64 / 100 as f64
+    (sum as f64 / len) * rval as f64 / 100 as f64
 }
 
 pub fn percentile(data: &[u16], u: f64) -> f64 {
-
     let mut data2 = data.to_vec();
     data2.sort();
 
@@ -159,8 +177,6 @@ pub fn percentile(data: &[u16], u: f64) -> f64 {
 }
 
 pub fn median(data: &[u16], rval: u16) -> f64 {
-
-
     // Create a mutable copy of the data and sort it
     let mut sorted_data = data.to_vec();
     sorted_data.sort();
@@ -172,7 +188,8 @@ pub fn median(data: &[u16], rval: u16) -> f64 {
         // If even, return the average of the middle two elements
         let middle_index_1 = (n / 2) - 1;
         let middle_index_2 = n / 2;
-        let median = (sorted_data[middle_index_1] as f64 + sorted_data[middle_index_2] as f64) / 2.0;
+        let median =
+            (sorted_data[middle_index_1] as f64 + sorted_data[middle_index_2] as f64) / 2.0;
         median * rval as f64 / 100 as f64
     } else {
         // If odd, return the middle element
@@ -180,6 +197,3 @@ pub fn median(data: &[u16], rval: u16) -> f64 {
         sorted_data[middle_index] as f64 * rval as f64 / 100 as f64
     }
 }
-
-
-

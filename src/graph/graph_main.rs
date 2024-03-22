@@ -8,9 +8,9 @@ use crate::graph::parser::gfa_reader;
 use clap::ArgMatches;
 use gfa_reader::{NCGfa, NCPath, Pansn};
 use log::{info, warn};
+use packing_lib::convert::convert_helper::Method;
 use std::path::Path;
 use std::process;
-use packing_lib::convert::convert_helper::Method;
 
 pub fn graph_main(matches: &ArgMatches) {
     // Check graph file
@@ -26,7 +26,6 @@ pub fn graph_main(matches: &ArgMatches) {
     let feature1 = matches.value_of("feature").unwrap_or("node");
     let sep = matches.value_of("pansn").unwrap_or(" ");
 
-
     // Output
     let split = matches
         .value_of("split")
@@ -36,8 +35,6 @@ pub fn graph_main(matches: &ArgMatches) {
     let bimbam_output = matches.is_present("bimbam");
     let output_prefix = matches.value_of("output").unwrap();
 
-
-
     // Modifications
     let feature = if ["node", "dirnode", "edge"].contains(&feature1) {
         feature1
@@ -46,22 +43,33 @@ pub fn graph_main(matches: &ArgMatches) {
     };
     let feature_enum = Feature::from_str(feature);
     let need_edges = feature != "node";
-    let mut absolute_thresh = matches.value_of("absolute-threshold").unwrap_or("0").parse::<u32>().unwrap();
-    let mut relative_thresh = matches.value_of("relative-threshold").unwrap_or("0").parse::<u32>().unwrap();
+    let mut absolute_thresh = matches
+        .value_of("absolute-threshold")
+        .unwrap_or("0")
+        .parse::<u32>()
+        .unwrap();
+    let mut relative_thresh = matches
+        .value_of("relative-threshold")
+        .unwrap_or("0")
+        .parse::<u32>()
+        .unwrap();
     let mut method = Method::from_str(matches.value_of("method").unwrap_or("nothing"));
 
     let mut bin = false;
-    if matches.is_present("absolute-threshold"){
-        if absolute_thresh == 1  && !bimbam_output{
+    if matches.is_present("absolute-threshold") {
+        if absolute_thresh == 1 && !bimbam_output {
             bin = true;
         }
     }
-    if !matches.is_present("absolute-threshold") && !matches.is_present("relative-threshold") && !matches.is_present("method"){
-        if !bimbam_output{
+    if !matches.is_present("absolute-threshold")
+        && !matches.is_present("relative-threshold")
+        && !matches.is_present("method")
+    {
+        if !bimbam_output {
             bin = true;
             absolute_thresh = 1;
         }
-        if bimbam_output{
+        if bimbam_output {
             method = Method::Percentile;
             relative_thresh = 100;
         }
@@ -70,7 +78,6 @@ pub fn graph_main(matches: &ArgMatches) {
     if matches.is_present("method") && !matches.is_present("relative-threshold") {
         relative_thresh = 100;
     }
-
 
     info!("Input parameters");
     info!("Graph file: {}", graph_file);
@@ -86,9 +93,6 @@ pub fn graph_main(matches: &ArgMatches) {
         if bimbam_output { "bimbam" } else { "plink" }
     );
     info!("Output prefix: {}", output_prefix);
-
-
-
 
     info!("Reading the graph");
     // Read the graph and wrapper
@@ -124,13 +128,10 @@ pub fn graph_main(matches: &ArgMatches) {
     info!("Create the index");
     mw.make_index(&graph, feature_enum);
 
-
-
     info!("Create matrix");
     gfa_reader(&mut mw, &wrapper, bin, feature_enum);
 
     let thresh = mw.make_thresh(absolute_thresh, relative_thresh as u16, method);
-
 
     if !bin {
         if !bimbam_output {
@@ -141,11 +142,9 @@ pub fn graph_main(matches: &ArgMatches) {
         }
     }
 
-
     if !mw.matrix_bit.is_empty() {
         mw.remove_non_info();
         info!("Number of entries (after remove): {}", mw.matrix_bit.len());
-
     }
 
     if bimbam_output {

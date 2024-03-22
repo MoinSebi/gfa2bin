@@ -1,17 +1,18 @@
-use crate::core::helper::{is_all_ones, is_all_zeros, merge_u32_to_u64, to_string1, Feature, average_vec_u16, wrapper_stats, median, percentile};
+use crate::core::helper::{
+    average_vec_u16, is_all_ones, is_all_zeros, median, merge_u32_to_u64, percentile, to_string1,
+    wrapper_stats, Feature,
+};
 
-
+use crate::alignment::pack::matrix_pack_wrapper;
 use crate::r#mod::input_data::FileData;
 use bitvec::prelude::*;
 use gfa_reader::NCGfa;
 use hashbrown::HashSet;
-use std::fmt::Debug;
-use std::fs::{File};
-use std::io::{BufWriter, Write};
 use packing_lib::convert::convert_helper::Method;
 use packing_lib::convert::helper::median_vec_u16_16;
-use crate::alignment::pack::matrix_pack_wrapper;
-
+use std::fmt::Debug;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 /// Core data structure
@@ -24,10 +25,10 @@ pub struct MatrixWrapper {
     pub matrix_bit: Vec<BitVec<u8, Lsb0>>, //Vec<Vec<bool>>
 
     // Check if node, edges, dirnode, or alignment
-    pub feature: Feature,                  // Feature
-    pub geno_names: Vec<u64>,              // Name of all
+    pub feature: Feature,     // Feature
+    pub geno_names: Vec<u64>, // Name of all
     pub window_number: Vec<u32>,
-    pub window_size: usize, // Window number
+    pub window_size: usize,                // Window number
     pub sample_names: Vec<String>,         // Sample names (same order as in the matrix)
     pub sample_index_u16: Vec<[usize; 2]>, // Sample index
 
@@ -104,9 +105,9 @@ impl MatrixWrapper {
         self.geno_names = geno_names;
     }
 
-    pub fn make_thresh(&self, absolute: u32, relative: u16, method: Method) -> Vec<f32>{
+    pub fn make_thresh(&self, absolute: u32, relative: u16, method: Method) -> Vec<f32> {
         if absolute != 0 {
-            return vec![absolute as f32; self.matrix_u16.len()]
+            return vec![absolute as f32; self.matrix_u16.len()];
         }
         match method {
             Method::Mean => {
@@ -121,7 +122,8 @@ impl MatrixWrapper {
                 for x in self.matrix_u16.iter() {
                     aa.push(median(x, relative) as f32);
                 }
-                aa            }
+                aa
+            }
             Method::Percentile => {
                 let mut aa = Vec::new();
                 for x in self.matrix_u16.iter() {
@@ -140,12 +142,11 @@ impl MatrixWrapper {
         }
     }
 
-
-    pub fn make_bin_row(&mut self, relative: &Vec<f32>){
+    pub fn make_bin_row(&mut self, relative: &Vec<f32>) {
         let mut matrix_bin = Vec::new();
         for (val, re) in self.matrix_u16.iter().zip(relative.iter()) {
             let mut biit = BitVec::with_capacity(val.len());
-            for y in val.iter(){
+            for y in val.iter() {
                 if *y as f64 >= *re as f64 {
                     biit.push(true);
                 } else {
@@ -178,7 +179,6 @@ impl MatrixWrapper {
         self.matrix_bit.truncate(write_index);
         self.geno_names.truncate(write_index);
     }
-
 
     /// Remove samples from the dataset
     pub fn remove_samples(&mut self, to_be_removed: &Vec<String>) {
@@ -258,7 +258,6 @@ impl MatrixWrapper {
         self.geno_names.truncate(write_index);
         self.bim_entries.truncate(write_index);
         self.window_number.truncate(write_index);
-
     }
 
     //----------------------------------------------------------------------------------
@@ -266,12 +265,7 @@ impl MatrixWrapper {
     ///
     /// Contains the names of the samples in the same order as plink bed file
     pub fn write_fam(&self, number: usize, out_prefix: &str, _feature: Feature, len: usize) {
-        let mut output = [
-            out_prefix,
-            &number.to_string(),
-            "fam",
-        ]
-        .join(".");
+        let mut output = [out_prefix, &number.to_string(), "fam"].join(".");
         if len == 1 {
             output = [out_prefix, "fam"].join(".");
         }
@@ -300,17 +294,11 @@ impl MatrixWrapper {
         let mut buff: Vec<u8> = vec![108, 27, 1];
         // Make SNP Vector
 
-
         for sel in self.matrix_bit.iter() {
             buff.extend(sel.as_raw_slice());
         }
 
-        let mut output = [
-            out_prefix,
-            &number.to_string(),
-            "bed",
-        ]
-        .join(".");
+        let mut output = [out_prefix, &number.to_string(), "bed"].join(".");
         if len == 1 {
             output = [out_prefix, "bed"].join(".");
         }
@@ -338,30 +326,14 @@ impl MatrixWrapper {
         let mut f = BufWriter::new(f);
 
         if self.bim_entries.is_empty() {
-            if self.feature == Feature::MWindow{
-                for (x, w) in self.geno_names.iter().zip(self.window_number.iter()) {
-
-                    writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, "M:".to_string() + &to_string1(*x, feature) + "_" + &self.window_size.to_string() + "_" + &w.to_string())
-                        .expect("Can not write file");
-
-                }
-            } else if self.feature == Feature::PWindow {
-                for (x, w) in self.geno_names.iter().zip(self.window_number.iter()) {
-
-                    writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, "P:".to_string() + &to_string1(*x, feature) + "_" + &self.window_size.to_string() + "_" + &w.to_string())
-                        .expect("Can not write file");
-
-                }
-            } else {
-                for x in self.geno_names.iter() {
-                    writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, to_string1(*x, feature))
-                        .expect("Can not write file");
-                }
+            for x in self.geno_names.iter() {
+                writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, self.feature.to_string_u64(*x))
+                    .expect("Can not write file");
             }
+
         } else {
             for x in self.bim_entries.iter() {
-                writeln!(f, "{}", x)
-                    .expect("Can not write file");
+                writeln!(f, "{}", x).expect("Can not write file");
             }
         }
     }
@@ -395,7 +367,7 @@ impl MatrixWrapper {
                 writeln!(
                     f,
                     "{}, A, T, {}",
-                    to_string1(*x, feature),
+                    self.feature.to_string_u64(*x),
                     p2.iter()
                         .map(|n| n.to_string())
                         .collect::<Vec<String>>()

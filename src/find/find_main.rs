@@ -1,8 +1,7 @@
-
 use crate::core::helper::{merge_u32_to_u64, to_string1, Feature};
-use crate::r#mod::input_data::{FileData};
+use crate::r#mod::input_data::FileData;
 use clap::ArgMatches;
-use gfa_reader::{NCGfa};
+use gfa_reader::NCGfa;
 use hashbrown::HashSet;
 
 use std::cmp::max;
@@ -34,8 +33,8 @@ pub fn find_main(matches: &ArgMatches) {
         let mut index = Vec::new();
         let mut pos = 0;
         for i in 0..path.nodes.len() - 1 {
-            index.push([pos, node_size[path.nodes[i] as usize -1 ]]);
-            pos += node_size[path.nodes[i] as usize-1];
+            index.push([pos, node_size[path.nodes[i] as usize - 1]]);
+            pos += node_size[path.nodes[i] as usize - 1];
             let v1 = path.nodes[i];
             let v2 = path.dir[i];
             let v3 = path.nodes[i + 1];
@@ -66,7 +65,10 @@ pub fn find_main(matches: &ArgMatches) {
                     "{}\t{}\t{}\tID:{};NS:{};NB:{}",
                     graph.paths[i].name,
                     max(0, position_nodesize[i][i2][0] as i128 - length),
-                    position_nodesize[i][i2][0] as i128 + position_nodesize[i][i2][1] as i128 + 1 + length,
+                    position_nodesize[i][i2][0] as i128
+                        + position_nodesize[i][i2][1] as i128
+                        + 1
+                        + length,
                     to_string1(*y, &feature),
                     position_nodesize[i][i2][1],
                     position_nodesize[i][i2][0],

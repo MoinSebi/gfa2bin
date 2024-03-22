@@ -11,7 +11,6 @@ use packing_lib::core::reader::{
 use std::fs::File;
 use std::io::{self, BufRead};
 
-
 pub fn align_main(matches: &ArgMatches) {
     // You have either a pack or a compressed pack (cat or list), but you need to provide a index
     if matches.is_present("pack")

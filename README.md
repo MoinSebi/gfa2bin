@@ -2,6 +2,14 @@
 
 Convert a gfa to a plink file. This tool can also use a compressed coverage file from packing.  
 
+## Installation
+```
+git clone https://github.com/MoinSebi/gfa2bin
+cd gfa2bin
+cargo build --release
+./target/release/gfa2bin -h 
+```
+
 
 ## Subcommands
 ### graph - Converting from graphs directly
@@ -26,7 +34,7 @@ gfa2bin graph -g input.gfa -o output -f dirnode -m mean -r 50 --pansn '#'
 
 ````
 
-### align 
+### align - Using graph alignment
 
 
 ### mod

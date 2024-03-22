@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{index2node_seq};
+use crate::core::helper::index2node_seq;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use packing_lib::core::core::PackCompact;

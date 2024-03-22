@@ -1,5 +1,5 @@
-use std::fs;
-use assert_cmd::prelude::*; // Add methods on commands
+use assert_cmd::prelude::*;
+use std::fs; // Add methods on commands
 
 use std::fs::File;
 use std::io::Read;
@@ -54,7 +54,6 @@ fn find_2() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
 #[test]
 /// Test for plink subcommand
 /// -g (gfa)
@@ -103,4 +102,3 @@ fn find_4() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-

@@ -18,8 +18,6 @@ pub fn mod_main(matches: &ArgMatches) {
         info!("All good");
     }
 
-
-
     if matches.is_present("features") {
         let feature_file = matches.value_of("features").unwrap();
         let data = FileData::from_file(feature_file);
@@ -37,11 +35,9 @@ pub fn mod_main(matches: &ArgMatches) {
         mw.remove_samples(&paths);
     }
 
-
     if matches.is_present("non-info") {
         mw.remove_non_info();
     }
-
 
     let feature = mw.feature;
     info!("Writing the output");

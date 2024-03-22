@@ -1,5 +1,5 @@
-use std::fs;
 use assert_cmd::prelude::*; // Add methods on commands
+use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::process::Command;
@@ -29,7 +29,6 @@ fn gfa_edges() -> Result<(), Box<dyn std::error::Error>> {
     fs::remove_file("data/output/graph.edge.bed")?;
     fs::remove_file("data/output/graph.edge.bim")?;
     fs::remove_file("data/output/graph.edge.fam")?;
-
 
     Ok(())
 }
@@ -116,8 +115,6 @@ fn gfa_dir_node_paths_remove() -> Result<(), Box<dyn std::error::Error>> {
     fs::remove_file("data/output/graph.dirnode.paths.fam")?;
     Ok(())
 }
-
-
 
 #[test]
 /// Test for plink subcommand

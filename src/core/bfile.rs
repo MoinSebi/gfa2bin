@@ -104,11 +104,14 @@ pub fn get_type_bim(file_path: &str) -> Feature {
     // Read the first line of the file
     let first_line = reader.lines().next().unwrap().unwrap();
     let pp = first_line.split_whitespace().nth(3).unwrap();
-    let parts: Vec<&str> = pp.split(|c| c == '+' || c == '-').filter(|s| !s.is_empty()).collect();
+    let parts: Vec<&str> = pp
+        .split(|c| c == '+' || c == '-')
+        .filter(|s| !s.is_empty())
+        .collect();
     let last_letter = pp.chars().last().unwrap();
-    if first_line.starts_with("P"){
+    if first_line.starts_with("P") {
         Feature::PWindow
-    } else if first_line.starts_with("M"){
+    } else if first_line.starts_with("M") {
         Feature::MWindow
     } else {
         if last_letter == '+' || last_letter == '-' {
@@ -119,7 +122,6 @@ pub fn get_type_bim(file_path: &str) -> Feature {
             }
         } else {
             Feature::Node
-
         }
     }
 }
