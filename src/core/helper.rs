@@ -10,6 +10,7 @@ pub enum Feature {
     Alignment,
     MWindow,
     PWindow,
+    Block,
 }
 
 impl Feature {
@@ -21,6 +22,7 @@ impl Feature {
             "alignment" => Feature::Alignment,
             "mwindow" => Feature::MWindow,
             "pwindow" => Feature::PWindow,
+            "block" => Feature::Block ,
             _ => panic!("Not implemented"),
         }
     }
@@ -33,9 +35,12 @@ impl Feature {
             Feature::Alignment => "alignment".to_string(),
             Feature::MWindow => "mwindow".to_string(),
             Feature::PWindow => "pwindow".to_string(),
+            Feature::Block => "block".to_string(),
         }
     }
 
+
+    /// Convert the "index"-u64 to a String
     pub fn to_string_u64(&self, input: u64) -> String {
         if *self == Feature::PWindow{
             let (left, right) = split_u64_to_u32s(input);
@@ -44,6 +49,9 @@ impl Feature {
         } else if *self == Feature::MWindow {
             let (left, right) = split_u64_to_u32s(input);
             return "M".to_string() + &format_unsigned_as_string(left) + &format_unsigned_as_string(right);
+        } else if *self == Feature::Block{
+            let (left, right) = split_u64_to_u32s(input);
+            return "B".to_string() + &format_unsigned_as_string(left) + &format_unsigned_as_string(right);
         } else if Feature::Node == *self {
             input.to_owned().to_string()
         } else if *self == Feature::DirNode {

@@ -20,13 +20,17 @@ pub fn window_main(matches: &ArgMatches) {
         .unwrap_or("1")
         .parse::<usize>()
         .unwrap();
+
+    // Read the bed file
     let mut mw = MatrixWrapper::new();
     let feature = mw.feature;
     mw.bfile_wrapper(plink_file);
+
     let mut mw = iterate_test(&mw, window);
-    mw.feature = Feature::MWindow;
-    mw.window_size = window;
+
     mw.make_counter();
+
+
 
     let chunk_size = (mw.matrix_bit.len() / split) + 1;
     let chunks = mw.matrix_bit.chunks(chunk_size);
@@ -40,6 +44,8 @@ pub fn window_main(matches: &ArgMatches) {
 }
 
 /// Wrapper around the matrix in sliding window
+///
+/// Iterate over the matrix
 pub fn iterate_test(mw: &MatrixWrapper, window: usize) -> MatrixWrapper {
     let num_path = mw.matrix_bit[0].len() / 2;
     let mut mw_new = MatrixWrapper::new();
@@ -63,6 +69,8 @@ pub fn iterate_test(mw: &MatrixWrapper, window: usize) -> MatrixWrapper {
     }
     mw_new.shape = (mw_new.matrix_bit.len(), mw_new.matrix_bit[0].len());
     mw_new.fam_entries = mw.fam_entries.clone();
+    mw_new.feature = Feature::MWindow;
+    mw_new.window_size = window;
     return mw_new;
 }
 

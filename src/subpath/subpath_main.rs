@@ -97,9 +97,9 @@ pub fn wrapper_matrix(
                 for z in node2index.get(&x1.id).unwrap() {
                     if window <= *z &&  *z + window < ll + 1{
                         vecc.push((
-                            genome_id,
-                            haplotype_id,
-                            path_id,
+                            *genome_id,
+                            *haplotype_id,
+                            *path_id,
                             &graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id].nodes
                                 [*z - window..
                                 *z + window],
@@ -117,23 +117,24 @@ pub fn wrapper_matrix(
         mw.matrix_bit.extend(function1(vecc, difference));
     }
     mw.feature = Feature::PWindow;
+    mw.window_size = window;
     mw.shape = (mw.matrix_bit.len(), mw.matrix_bit[0].len());
-    mw.fam_entries = graph2.genomes.iter().map(|x| x.name.clone()).collect();
+    mw.sample_names = graph2.genomes.iter().map(|x| x.name.clone()).collect();
 
 
     return mw
 }
 
-pub fn function1(ii: Vec<(&usize, &usize, &usize, &[u32])>, difference: usize) -> Vec<BitVec<u8>>{
+pub fn function1(ii: Vec<(usize, usize, usize, &[u32])>, difference: usize) -> Vec<BitVec<u8>>{
     let mut pp = Vec::new();
     let mut last = ii[0].3;
-    pp.push(vec![*ii[0].0]);
+    pp.push(vec![ii[0].0]);
     for x in ii.iter().skip(1) {
         if x.3 != last {
             last = x.3;
-            pp.push(vec![*x.0]);
+            pp.push(vec![x.0]);
         } else {
-            pp.last_mut().unwrap().push(*x.0);
+            pp.last_mut().unwrap().push(x.0);
         }
     }
     getbv(&pp, difference)

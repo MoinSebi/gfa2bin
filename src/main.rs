@@ -7,6 +7,7 @@ mod logging;
 mod r#mod;
 mod subpath;
 mod window;
+mod block;
 
 use crate::alignment::align_main::align_main;
 use crate::find::find_main::find_main;
@@ -16,6 +17,7 @@ use crate::r#mod::mod_main::mod_main;
 use crate::subpath::subpath_main::subpath_main;
 use crate::window::window_main::window_main;
 use clap::{App, Arg};
+use crate::block::block_main::block_main;
 
 fn main() {
     let matches = App::new("gfa2bin")
@@ -309,6 +311,56 @@ fn main() {
                         .default_value("200"),
                 ),
         )
+        .subcommand(
+            App::new("block")
+                .version("1.0.1")
+                .about("Blocks")
+
+                .help_heading("Input parameters")
+                .arg(
+                    Arg::new("gfa")
+                        .short('g')
+                        .long("graph")
+                        .about("GFA input file")
+                        .takes_value(true)
+                        .required(true),
+                )
+
+                .help_heading("Parameter")
+                .arg(
+                    Arg::new("window")
+                        .short('w')
+                        .long("window")
+                        .about("Window size (in nodes)")
+                        .takes_value(true)
+                        .default_value("500"),
+                )
+                .arg(
+                    Arg::new("step")
+                        .short('s')
+                        .long("step")
+                        .about("Step")
+                        .takes_value(true)
+                        .default_value("100")
+                )
+
+                .help_heading("Output parameter")
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("split")
+                        .long("split")
+                        .takes_value(true)
+                        .about("Split output in multiple files"),
+                )
+
+        )
         .get_matches();
 
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
@@ -328,5 +380,9 @@ fn main() {
         window_main(matches);
     } else if let Some(matches) = matches.subcommand_matches("subpath") {
         subpath_main(matches);
+    } else if let Some(matches) = matches.subcommand_matches("block") {
+        block_main(matches);
+    } else {
+        println!("No subcommand was used");
     }
 }
