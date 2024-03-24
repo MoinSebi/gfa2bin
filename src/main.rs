@@ -8,6 +8,7 @@ mod r#mod;
 mod subpath;
 mod window;
 mod block;
+mod view;
 
 use crate::alignment::align_main::align_main;
 use crate::find::find_main::find_main;
@@ -18,6 +19,7 @@ use crate::subpath::subpath_main::subpath_main;
 use crate::window::window_main::window_main;
 use clap::{App, Arg};
 use crate::block::block_main::block_main;
+use crate::view::view_main::view_main;
 
 fn main() {
     let matches = App::new("gfa2bin")
@@ -361,6 +363,27 @@ fn main() {
                 )
 
         )
+        .subcommand(
+            App::new("view")
+                .version("1.0.0")
+                .about("Convert BED to VCF")
+                .arg(
+                    Arg::new("plink")
+                        .short('p')
+                        .long("plink")
+                        .about("Plink input file")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
+                )
+        )
         .get_matches();
 
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
@@ -382,6 +405,8 @@ fn main() {
         subpath_main(matches);
     } else if let Some(matches) = matches.subcommand_matches("block") {
         block_main(matches);
+    } else if let Some(matches) = matches.subcommand_matches("view") {
+        view_main(matches);
     } else {
         println!("No subcommand was used");
     }
