@@ -1,11 +1,8 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{Feature, merge_u32_to_u64};
-use crate::r#mod::input_data::{read_paths, FileData};
 use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
 use clap::ArgMatches;
-use log::info;
-use std::net::UdpSocket;
 
 /// Window function
 ///
@@ -46,6 +43,7 @@ pub fn window_main(matches: &ArgMatches) {
 /// Wrapper around the matrix in sliding window
 ///
 /// Iterate over the matrix
+/// No bim entries
 pub fn iterate_test(mw: &MatrixWrapper, window: usize) -> MatrixWrapper {
     let num_path = mw.matrix_bit[0].len() / 2;
     let mut mw_new = MatrixWrapper::new();
@@ -59,13 +57,14 @@ pub fn iterate_test(mw: &MatrixWrapper, window: usize) -> MatrixWrapper {
             }
             bv2.push((y, bv));
         }
+        // sort by the bitvec
         bv2.sort_by(|a, b| a.1.cmp(&b.1));
         let f = get_index(&bv2);
         let flen = f.len();
         mw_new.matrix_bit.extend(f);
         mw_new
             .geno_names
-            .extend((0..flen).map(|_| merge_u32_to_u64(x as u32, flen as u32)));
+            .extend((0..flen).map(|_| mw.geno_names[x]));
     }
     mw_new.shape = (mw_new.matrix_bit.len(), mw_new.matrix_bit[0].len());
     mw_new.fam_entries = mw.fam_entries.clone();
@@ -74,6 +73,8 @@ pub fn iterate_test(mw: &MatrixWrapper, window: usize) -> MatrixWrapper {
     return mw_new;
 }
 
+
+///
 pub fn get_index(vv: &Vec<(usize, Vec<[bool; 2]>)>) -> Vec<BitVec<u8>> {
     let mut pp = Vec::new();
     let mut last = &vv[0].1;
@@ -89,6 +90,9 @@ pub fn get_index(vv: &Vec<(usize, Vec<[bool; 2]>)>) -> Vec<BitVec<u8>> {
     getbv(&pp, vv.len())
 }
 
+
+
+/// Create a bitvector
 pub fn getbv(vv: &Vec<Vec<usize>>, len: usize) -> Vec<BitVec<u8>> {
     let mut gg = Vec::new();
     for x in vv {

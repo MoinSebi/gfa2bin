@@ -9,12 +9,6 @@ pub struct FileData {
 }
 
 impl FileData {
-    pub fn new() -> Self {
-        Self {
-            data: Vec::new(),
-            feature: Feature::Node,
-        }
-    }
 
     pub fn from_file(filename: &str) -> Self {
         let feature = get_type(filename);
@@ -25,6 +19,7 @@ impl FileData {
 
         for line in reader.lines() {
             let line = line.unwrap();
+
             if feature == Feature::Edge {
                 let ss = find_first_plus_minus(&line).unwrap();
                 let s1 = &line[..ss];
@@ -62,20 +57,7 @@ pub fn get_type(file_path: &str) -> Feature {
 
     // Read the first line of the file
     let first_line = reader.lines().next().unwrap().unwrap();
-    let parts: Vec<&str> = first_line
-        .split(|c| c == '+' || c == '-')
-        .filter(|s| !s.is_empty()) // Filter out empty strings
-        .collect();
-    let last_letter = first_line.chars().last().unwrap();
-    if last_letter == '+' || last_letter == '-' {
-        if parts.len() == 1 {
-            Feature::DirNode
-        } else {
-            Feature::Edge
-        }
-    } else {
-        Feature::Node
-    }
+    Feature::identify_feature(&first_line)
 }
 
 pub fn read_paths(filename: &str) -> Vec<String> {

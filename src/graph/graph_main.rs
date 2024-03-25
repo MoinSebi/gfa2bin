@@ -154,7 +154,7 @@ pub fn graph_main(matches: &ArgMatches) {
         let len = chunks.len();
 
         for (index, _y) in chunks.enumerate() {
-            mw.write_bimbam(index, output_prefix, &feature_enum, len, &thresh);
+            mw.write_bimbam(index, output_prefix, len, &thresh);
             mw.write_phenotype_bimbam(index, output_prefix, len);
         }
     } else {

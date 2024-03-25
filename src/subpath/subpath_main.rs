@@ -40,18 +40,9 @@ pub fn subpath_main(matches: &ArgMatches) {
 
     info!("Number of nodes: {}", graph.nodes.len());
     info!("Number of subpath: {}", mw.matrix_bit.len());
-    let feature = Feature::PWindow;
 
     info!("Writing output");
-    let chunk_size = (mw.matrix_bit.len() / split) + 1;
-    let chunks = mw.matrix_bit.chunks(chunk_size);
-
-    let len = chunks.len();
-    for (index, _y) in chunks.enumerate() {
-        mw.write_fam(index, output_prefix, feature, len);
-        mw.write_bed(index, output_prefix, feature, len);
-        mw.write_bim(index, output_prefix, &feature, len);
-    }
+    mw.write_chunks(split, output_prefix, Feature::PWindow);
 }
 
 /// Index the graph
@@ -59,7 +50,7 @@ pub fn subpath_main(matches: &ArgMatches) {
 /// For each path:
 ///     node -> index
 pub fn gfa_index(graph: &Pansn<NCPath>) -> Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)> {
-    let mut vv = Vec::new();
+    let mut index = Vec::new();
     for (genome_id, path) in graph.genomes.iter().enumerate() {
         for (haplotype_id, x) in path.haplotypes.iter().enumerate() {
             for (path_id, p) in x.paths.iter().enumerate() {
@@ -72,12 +63,12 @@ pub fn gfa_index(graph: &Pansn<NCPath>) -> Vec<(usize, usize, usize, HashMap<u32
                         node2index.insert(*y, vec![i]);
                     }
                 }
-                vv.push((genome_id, haplotype_id, path_id, node2index));
+                index.push((genome_id, haplotype_id, path_id, node2index));
             }
         }
     }
 
-    return vv;
+    return index;
 }
 
 /// Extract all subpath for each node
@@ -88,7 +79,7 @@ pub fn wrapper_matrix(
     vv: Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)>,
 ) -> MatrixWrapper{
     let mut mw = MatrixWrapper::new();
-    let difference = graph2.genomes.len();
+    let sample_size = graph2.genomes.len();
     for x1 in graph.nodes.iter() {
         let mut vecc = Vec::new();
         for (genome_id, haplotype_id, path_id, node2index) in vv.iter() {
@@ -112,9 +103,9 @@ pub fn wrapper_matrix(
         if vecc.is_empty() {
             continue;
         }
-        mw.geno_names.extend((0..vecc.len()).map(|_| merge_u32_to_u64(x1.id, vecc.len() as u32)));
+        mw.geno_names.extend((0..vecc.len()).map(|a| merge_u32_to_u64(x1.id, a as u32)));
 
-        mw.matrix_bit.extend(function1(vecc, difference));
+        mw.matrix_bit.extend(function1(vecc, sample_size));
     }
     mw.feature = Feature::PWindow;
     mw.window_size = window;
@@ -125,7 +116,7 @@ pub fn wrapper_matrix(
     return mw
 }
 
-pub fn function1(ii: Vec<(usize, usize, usize, &[u32])>, difference: usize) -> Vec<BitVec<u8>>{
+pub fn function1(ii: Vec<(usize, usize, usize, &[u32])>, number_of_samples: usize) -> Vec<BitVec<u8>>{
     let mut pp = Vec::new();
     let mut last = ii[0].3;
     pp.push(vec![ii[0].0]);
@@ -137,6 +128,6 @@ pub fn function1(ii: Vec<(usize, usize, usize, &[u32])>, difference: usize) -> V
             pp.last_mut().unwrap().push(x.0);
         }
     }
-    getbv(&pp, difference)
+    getbv(&pp, number_of_samples)
 }
 

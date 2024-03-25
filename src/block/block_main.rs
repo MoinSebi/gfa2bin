@@ -135,9 +135,10 @@ pub fn wrapper_blocks(graph2: &Pansn<NCPath>, nodesize: Vec<usize>, block: Vec<[
         }
 
 
+        let bb = all_b.len();
 
         mw.matrix_bit.extend(function1(all_b, 20));
-        //mw.geno_names.extend((0..all_b.len()).map(|_| merge_u32_to_u64(x[0], all_b.len() as u32));
+        mw.geno_names.extend((0..bb).map(|aa | merge_u32_to_u64(x[0] /2, aa as u32)));
     }
     mw.feature = Feature::Block;
     mw.window_size = (block[0][1] - block[0][0]) as usize;

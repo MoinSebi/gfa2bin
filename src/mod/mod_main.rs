@@ -14,8 +14,13 @@ pub fn mod_main(matches: &ArgMatches) {
         .unwrap();
     let mut mw = MatrixWrapper::new();
     mw.bfile_wrapper(plink_file);
-    if matches.is_present("feature") || matches.is_present("paths") {
+    if matches.is_present("feature") || matches.is_present("paths") || matches.is_present("index") {
         info!("All good");
+    }
+
+    if matches.is_present("index") {
+        let index = FileData::from_file(matches.value_of("index").unwrap());
+        mw.remove_feature_from_index(&index);
     }
 
     if matches.is_present("features") {
@@ -34,6 +39,8 @@ pub fn mod_main(matches: &ArgMatches) {
         let paths = read_paths(paths);
         mw.remove_samples(&paths);
     }
+
+
 
     if matches.is_present("non-info") {
         mw.remove_non_info();

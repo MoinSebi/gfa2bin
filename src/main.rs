@@ -215,7 +215,13 @@ fn main() {
                         .long("split")
                         .takes_value(true)
                         .about("Split output in multiple files"),
-                ),
+                )
+                .arg(Arg::new("index")
+                    .short('i')
+                    .long("index")
+                    .takes_value(true)
+                    .about("Remove the entries on this specific index")
+                )
         )
         // Will work on this later
         .subcommand(

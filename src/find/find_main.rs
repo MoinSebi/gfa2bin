@@ -1,18 +1,20 @@
 use crate::core::helper::{merge_u32_to_u64, to_string1, Feature};
 use crate::r#mod::input_data::FileData;
 use clap::ArgMatches;
-use gfa_reader::NCGfa;
+use gfa_reader::{NCGfa, NCPath};
 use hashbrown::HashSet;
 
 use std::cmp::max;
 use std::fs::File;
 use std::io::Write;
+use crate::core::core::MatrixWrapper;
 
 pub fn find_main(matches: &ArgMatches) {
     let graph_file = matches.value_of("gfa").unwrap();
     let feature_file = matches.value_of("features").unwrap();
     let output = matches.value_of("output").unwrap();
     let length = matches.value_of("length").unwrap().parse::<i128>().unwrap();
+
     let data = FileData::from_file(feature_file);
     let feature = data.feature;
 
@@ -77,6 +79,21 @@ pub fn find_main(matches: &ArgMatches) {
             }
         }
     }
+}
+
+
+
+
+pub fn find_test(paths: Vec<NCPath>, input: &FileData) -> Vec<Vec<usize>>{
+    let mut result = Vec::new();
+    let aa = input.feature;
+
+    if input.feature == Feature::Node || input.feature == Feature::Edge || input.feature == Feature::DirNode{
+
+    }
+
+
+    result
 }
 
 // Size of each node

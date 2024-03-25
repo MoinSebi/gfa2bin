@@ -27,6 +27,19 @@ impl Feature {
         }
     }
 
+    pub fn string2u64(s: &str, feature: Feature) -> u64 {
+        match feature {
+            Feature::Node => s.parse().unwrap(),
+            Feature::DirNode => {"dirnode".to_string()}
+
+            Feature::Edge => {"edge".to_string()}
+            Feature::Alignment => "alignment".to_string(),
+            Feature::MWindow => "mwindow".to_string(),
+            Feature::PWindow => "pwindow".to_string(),
+            Feature::Block => "block".to_string(),
+        }
+        1
+    }
     pub fn to_string1(&self) -> String {
         match self {
             Feature::Node => "node".to_string(),
@@ -66,8 +79,78 @@ impl Feature {
         }
     }
 
+    pub fn identify_feature(pp: &str) -> Feature {
+        let parts: Vec<&str> = pp
+            .split(|c| c == '+' || c == '-')
+            .filter(|s| !s.is_empty())
+            .collect();
+        let last_letter = pp.chars().last().unwrap();
+        if pp.starts_with("P") {
+            Feature::PWindow
+        } else if pp.starts_with("M") {
+            Feature::MWindow
+        } else if pp.starts_with("B"){
+            Feature::Block
+        } else {
+            if last_letter == '+' || last_letter == '-' {
+                if parts.len() == 1 {
+                    Feature::DirNode
+                } else {
+                    Feature::Edge
+                }
+            } else {
+                Feature::Node
+            }
+        }
+    }
+
+
+
 }
 
+
+pub fn read1(input: &str, f: Feature) -> (u64, u64) {
+    match f
+    {
+        Feature::Node => {(input.parse().unwrap(), 0)}
+        Feature::DirNode => {
+            let last_char = &input[input.len() - 1..];
+            let rest = &input[..input.len() - 1];
+
+            (rest.parse::<u64>().unwrap() * 2 + (last_char == "+") as u64, 0)
+        }
+        Feature::Edge => {
+            let ff = input.find(|c| c == '+' || c == '-').unwrap();
+            let dir1 = &input[ff..ff];
+            let dir2 = &input[input.len() - 1..input.len() - 1];
+
+            let number1 = &input[..ff];
+            let number2 = &input[ff + 1..];
+
+            let numb1: u32 = number1.parse::<u32>().unwrap() * 2 + (dir1 == "+") as u32;
+            let numb2: u32 = number2.parse::<u32>().unwrap() * 2 + (dir2 == "+") as u32;
+
+            (merge_u32_to_u64(numb1, numb2), 0)
+        }
+        Feature::Alignment => {
+            let ff: Vec<u32> = input.split("_").map(|a| a.parse()).collect();
+
+            (merge_u32_to_u64(ff[0].unwrap(), ff[1].unwrap()), 0)
+        }
+        Feature::MWindow => {
+            let ff: Vec<u32> = input.split("_").map(|a| a.parse()).collect();
+            (merge_u32_to_u64(ff[0].unwrap(), ff[2].unwrap()), 0)
+        }
+        Feature::PWindow => {
+            let ff: Vec<u32> = input.split("_").map(|a| a.parse()).collect();
+            (merge_u32_to_u64(ff[0].unwrap(), ff[2].unwrap()), 0)
+        }
+        Feature::Block => {
+            let ff: Vec<u32> = input.split("_").map(|a| a.parse()).collect();
+            (merge_u32_to_u64(ff[0].unwrap(), ff[2].unwrap()), 0)
+        }
+    }
+}
 pub fn from_string(name_input: &str, ftype: Feature) -> u64 {
     if ftype == Feature::Node {
         name_input.parse().unwrap()

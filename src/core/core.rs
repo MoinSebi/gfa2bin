@@ -260,10 +260,57 @@ impl MatrixWrapper {
         self.window_number.truncate(write_index);
     }
 
+
+
+    pub fn remove_feature_from_index(&mut self, d: &FileData) {
+        let mut write_index = 0;
+        let mut i = 0;
+        let mut j = 0;
+        while i < self.geno_names.len() && j < d.data.len() {
+            if i != d.data[j] as usize {
+                if write_index != i {
+                    // Move the elements to their new positions
+                    self.matrix_bit.swap(write_index, i);
+                    self.geno_names.swap(write_index, i);
+                    self.bim_entries.swap(write_index, i);
+                    self.window_number.swap(write_index, i);
+                }
+                write_index += 1;
+                if i < d.data[j] as usize{
+                    i += 1;
+                } else {
+                    j += 1;
+                }
+            } else {
+                i += 1;
+                j += 1;
+            }
+        }
+        if i != self.geno_names.len() {
+            for x in i..self.geno_names.len() {
+                if write_index != x {
+                    // Move the elements to their new positions
+                    self.matrix_bit.swap(write_index, x);
+                    self.geno_names.swap(write_index, x);
+                    self.bim_entries.swap(write_index, x);
+                    self.window_number.swap(write_index, x);
+                }
+                write_index += 1;
+            }
+        }
+
+        println!("Write index: {:?}", write_index);
+        self.matrix_bit.truncate(write_index);
+        self.geno_names.truncate(write_index);
+        self.bim_entries.truncate(write_index);
+        self.window_number.truncate(write_index);
+    }
+
     //----------------------------------------------------------------------------------
     /// Write "empty" fam with no phenotypes
     ///
     /// Contains the names of the samples in the same order as plink bed file
+    /// Stays the same for all runs
     pub fn write_fam(&self, number: usize, out_prefix: &str, _feature: Feature, len: usize) {
         let mut output = [out_prefix, &number.to_string(), "fam"].join(".");
         if len == 1 {
@@ -306,6 +353,19 @@ impl MatrixWrapper {
         file.write_all(&buff).expect("Not able to write ")
     }
 
+    pub fn write_chunks(&self, split: usize, output_prefix: &str, feature: Feature){
+        let chunk_size = (self.matrix_bit.len() / split) + 1;
+        let chunks = self.matrix_bit.chunks(chunk_size);
+
+        let len = chunks.len();
+        for (index, _y) in chunks.enumerate() {
+            self.write_fam(index, output_prefix, feature, len);
+            self.write_bed(index, output_prefix, feature, len);
+            self.write_bim(index, output_prefix, &feature, len);
+        }
+    }
+
+
     /// Write bim file
     ///
     ///
@@ -322,8 +382,8 @@ impl MatrixWrapper {
         if len == 1 {
             output = [out_prefix, "bim"].join(".");
         }
-        let f = File::create(output).expect("Unable to create file");
-        let mut f = BufWriter::new(f);
+        let file = File::create(output).expect("Unable to create file");
+        let mut f = BufWriter::new(file);
 
         if self.bim_entries.is_empty() {
             for x in self.geno_names.iter() {
@@ -342,7 +402,6 @@ impl MatrixWrapper {
         &self,
         number: usize,
         out_prefix: &str,
-        feature: &Feature,
         len: usize,
         val: &Vec<f32>,
     ) {
@@ -350,8 +409,8 @@ impl MatrixWrapper {
         if len == 1 {
             output = [out_prefix, "bimbam"].join(".");
         }
-        let f = File::create(output).expect("Unable to create file");
-        let mut f = BufWriter::new(f);
+        let file = File::create(output).expect("Unable to create file");
+        let mut f = BufWriter::new(file);
 
         if self.bim_entries.is_empty() {
             for ((i, x), thresh) in self.geno_names.iter().enumerate().zip(val.iter()) {
