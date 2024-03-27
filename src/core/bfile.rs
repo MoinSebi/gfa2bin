@@ -86,18 +86,21 @@ impl MatrixWrapper {
 
         let file = BufReader::new(File::open(filename).expect("Unable to open file"));
 
+        let mut bb = vec![];
         for (_i, x) in file.lines().enumerate() {
             let data = x.unwrap();
-            let a = from_string(data.split_whitespace().nth(3).unwrap(), ff);
-            self.geno_names.push(a);
+            let a = Feature::string2u64(data.split_whitespace().nth(3).unwrap(), ff.0, ff.1);
+            self.geno_names.push(a.0);
+            bb.push(a.1);
             self.bim_entries.push(data);
+        }
+        if ff.0 == Feature::MWindow || ff.0 == Feature::Block {
+            self.window_number = bb;
         }
     }
 }
 
-
-
-pub fn get_type_bim(file_path: &str) -> Feature {
+pub fn get_type_bim(file_path: &str) -> (Feature, Option<Feature>) {
     let file = File::open(file_path).expect("ERROR: CAN NOT READ FILE\n");
 
     // Parse plain text or gzipped file

@@ -20,7 +20,8 @@ pub fn mod_main(matches: &ArgMatches) {
 
     if matches.is_present("index") {
         let index = FileData::from_file(matches.value_of("index").unwrap());
-        mw.remove_feature_from_index(&index);
+        let aa = index.data.iter().map(|x| *x as usize).collect();
+        mw.remove_by_index(aa);
     }
 
     if matches.is_present("features") {
@@ -40,8 +41,6 @@ pub fn mod_main(matches: &ArgMatches) {
         mw.remove_samples(&paths);
     }
 
-
-
     if matches.is_present("non-info") {
         mw.remove_non_info();
     }
@@ -60,4 +59,35 @@ pub fn mod_main(matches: &ArgMatches) {
         mw.write_bed(index, output_prefix, feature, len);
         mw.write_bim(index, output_prefix, &feature, len);
     }
+}
+
+use std::cmp::Ord;
+
+pub fn remove_feature<T, U, V>(mut a: T, mut d: U) -> Vec<usize>
+where
+    T: Iterator<Item = V> + Clone,
+    U: Iterator<Item = V>,
+    V: Ord + Clone,
+{
+    let mut uu = Vec::new();
+    let mut a_idx = 0;
+
+    let mut a_next = a.next();
+    let mut d_next = d.next();
+
+    while let (Some(ai), Some(di)) = (a_next.clone(), d_next.clone()) {
+        if ai < di {
+            a_next = a.next();
+            a_idx += 1;
+        } else if ai > di {
+            d_next = d.next();
+        } else {
+            // Element found in both iterators
+            uu.push(a_idx);
+            a_next = a.next();
+            d_next = d.next();
+            a_idx += 1;
+        }
+    }
+    uu
 }

@@ -5,6 +5,7 @@ use crate::core::helper::{
 
 use crate::alignment::pack::matrix_pack_wrapper;
 use crate::r#mod::input_data::FileData;
+use crate::r#mod::mod_main::remove_feature;
 use bitvec::prelude::*;
 use gfa_reader::NCGfa;
 use hashbrown::HashSet;
@@ -159,6 +160,16 @@ impl MatrixWrapper {
         self.matrix_bit = matrix_bin;
     }
 
+    fn indices_where<F, T>(&self, condition: F, data: Vec<T>) -> Vec<usize>
+    where
+        F: Fn(&T) -> bool,
+    {
+        data.iter()
+            .enumerate()
+            .filter_map(|(index, item)| if condition(item) { Some(index) } else { None })
+            .collect()
+    }
+
     /// Remove those entries which hold no information (all zero or all one)
     pub fn remove_non_info(&mut self) {
         let mut write_index = 0;
@@ -212,6 +223,20 @@ impl MatrixWrapper {
         }
     }
 
+    pub fn remove_samples2(&mut self, to_be_removed: &Vec<usize>) {
+        let mut i = 0;
+        while i < self.matrix_bit.len() {
+            let a = &mut self.matrix_bit[i];
+            let mut f = 0;
+            for x in to_be_removed.iter() {
+                a.remove(*x * 2 - f * 2 + 1);
+                a.remove(*x * 2 - f * 2);
+                f += 1;
+            }
+            i += 1;
+        }
+    }
+
     /// Remove entries from a file
     ///
     /// Remove:
@@ -260,50 +285,41 @@ impl MatrixWrapper {
         self.window_number.truncate(write_index);
     }
 
+    pub fn remove_test1(&self, file_data: FileData) -> Vec<usize> {
+        if file_data.feature == Feature::MWindow || file_data.feature == Feature::Block {
+            let bb = self.geno_names.iter().zip(self.window_number.iter());
+            let cc = file_data.data.iter().zip(file_data.window.iter());
 
+            let a = remove_feature(bb, cc);
+            a
+        } else {
+            let bb = self.geno_names.iter();
+            let cc = file_data.data.iter();
 
-    pub fn remove_feature_from_index(&mut self, d: &FileData) {
-        let mut write_index = 0;
-        let mut i = 0;
-        let mut j = 0;
-        while i < self.geno_names.len() && j < d.data.len() {
-            if i != d.data[j] as usize {
-                if write_index != i {
-                    // Move the elements to their new positions
-                    self.matrix_bit.swap(write_index, i);
-                    self.geno_names.swap(write_index, i);
-                    self.bim_entries.swap(write_index, i);
-                    self.window_number.swap(write_index, i);
-                }
-                write_index += 1;
-                if i < d.data[j] as usize{
-                    i += 1;
-                } else {
-                    j += 1;
-                }
-            } else {
-                i += 1;
-                j += 1;
-            }
+            let a = remove_feature(bb, cc);
+            a
         }
-        if i != self.geno_names.len() {
-            for x in i..self.geno_names.len() {
-                if write_index != x {
-                    // Move the elements to their new positions
-                    self.matrix_bit.swap(write_index, x);
-                    self.geno_names.swap(write_index, x);
-                    self.bim_entries.swap(write_index, x);
-                    self.window_number.swap(write_index, x);
-                }
-                write_index += 1;
+    }
+
+    pub fn remove_by_index(&mut self, index: Vec<usize>) {
+        let mut rmi = self.matrix_bit.len() - 1;
+        for x in index.iter().rev() {
+            self.matrix_bit.swap(rmi, *x);
+            self.geno_names.swap(rmi, *x);
+            self.bim_entries.swap(rmi, *x);
+            rmi -= 1;
+        }
+        if !self.window_number.is_empty() {
+            for x in index.iter().rev() {
+                self.window_number.swap(*x, rmi);
+                rmi -= 1;
             }
         }
 
-        println!("Write index: {:?}", write_index);
-        self.matrix_bit.truncate(write_index);
-        self.geno_names.truncate(write_index);
-        self.bim_entries.truncate(write_index);
-        self.window_number.truncate(write_index);
+        self.matrix_bit.truncate(rmi);
+        self.geno_names.truncate(rmi);
+        self.window_number.truncate(rmi);
+        self.bim_entries.truncate(rmi);
     }
 
     //----------------------------------------------------------------------------------
@@ -353,7 +369,7 @@ impl MatrixWrapper {
         file.write_all(&buff).expect("Not able to write ")
     }
 
-    pub fn write_chunks(&self, split: usize, output_prefix: &str, feature: Feature){
+    pub fn write_chunks(&self, split: usize, output_prefix: &str, feature: Feature) {
         let chunk_size = (self.matrix_bit.len() / split) + 1;
         let chunks = self.matrix_bit.chunks(chunk_size);
 
@@ -364,7 +380,6 @@ impl MatrixWrapper {
             self.write_bim(index, output_prefix, &feature, len);
         }
     }
-
 
     /// Write bim file
     ///
@@ -387,10 +402,14 @@ impl MatrixWrapper {
 
         if self.bim_entries.is_empty() {
             for x in self.geno_names.iter() {
-                writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, self.feature.to_string_u64(*x))
-                    .expect("Can not write file");
+                writeln!(
+                    f,
+                    "graph\t.\t{}\t{}\tA\tT",
+                    0,
+                    self.feature.to_string_u64(*x)
+                )
+                .expect("Can not write file");
             }
-
         } else {
             for x in self.bim_entries.iter() {
                 writeln!(f, "{}", x).expect("Can not write file");
@@ -398,13 +417,7 @@ impl MatrixWrapper {
         }
     }
 
-    pub fn write_bimbam(
-        &self,
-        number: usize,
-        out_prefix: &str,
-        len: usize,
-        val: &Vec<f32>,
-    ) {
+    pub fn write_bimbam(&self, number: usize, out_prefix: &str, len: usize, val: &Vec<f32>) {
         let mut output = [out_prefix, &number.to_string(), "bimbam"].join(".");
         if len == 1 {
             output = [out_prefix, "bimbam"].join(".");

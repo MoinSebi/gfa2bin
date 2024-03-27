@@ -1,3 +1,4 @@
+use crate::r#mod::input_data::find_first_plus_minus;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use std::fmt::Display;
@@ -22,24 +23,52 @@ impl Feature {
             "alignment" => Feature::Alignment,
             "mwindow" => Feature::MWindow,
             "pwindow" => Feature::PWindow,
-            "block" => Feature::Block ,
+            "block" => Feature::Block,
             _ => panic!("Not implemented"),
         }
     }
 
-    pub fn string2u64(s: &str, feature: Feature) -> u64 {
+    pub fn string2u64(s: &str, feature: Feature, feature2: Option<Feature>) -> (u64, u32) {
         match feature {
-            Feature::Node => s.parse().unwrap(),
-            Feature::DirNode => {"dirnode".to_string()}
+            Feature::Node => (s.parse().unwrap(), 0),
+            Feature::DirNode => {
+                let s1 = s.ends_with('+');
+                let s2 = s[..s.len() - 1].parse::<u64>().unwrap() * 2 + s1 as u64;
+                (s2, 0)
+            }
+            Feature::Edge => {
+                let ss = find_first_plus_minus(&s).unwrap();
+                let s1 = &s[..ss];
+                let s2 = &s[ss..ss + 1];
+                let s3 = &s[ss + 1..s.len() - 1];
+                let s4 = &s.chars().last().unwrap();
+                let ss1 = s1.parse::<u64>().unwrap() * 2 + (s2 == "+") as u64;
+                let ss2 = s3.parse::<u64>().unwrap() * 2 + (*s4 == '+') as u64;
+                (merge_u32_to_u64(ss1 as u32, ss2 as u32), 0)
+            }
+            Feature::Alignment => {
+                let ff: Vec<u32> = s.split("_").map(|a| a.parse().unwrap()).collect();
+                (merge_u32_to_u64(ff[0], ff[1]), 0)
+            }
+            Feature::MWindow => {
+                let ff: Vec<&str> = s.split("_").map(|a| a).collect();
 
-            Feature::Edge => {"edge".to_string()}
-            Feature::Alignment => "alignment".to_string(),
-            Feature::MWindow => "mwindow".to_string(),
-            Feature::PWindow => "pwindow".to_string(),
-            Feature::Block => "block".to_string(),
+                (
+                    Self::string2u64(ff[0], feature2.unwrap(), feature2).0,
+                    ff[2].parse().unwrap(),
+                )
+            }
+            Feature::PWindow => {
+                let ff: Vec<u32> = s.split("_").map(|a| a.parse().unwrap()).collect();
+                (merge_u32_to_u64(ff[0], ff[2]), 0)
+            }
+            Feature::Block => {
+                let ff: Vec<u32> = s.split("_").map(|a| a.parse().unwrap()).collect();
+                (merge_u32_to_u64(ff[0], ff[1]), ff[2])
+            }
         }
-        1
     }
+
     pub fn to_string1(&self) -> String {
         match self {
             Feature::Node => "node".to_string(),
@@ -52,19 +81,24 @@ impl Feature {
         }
     }
 
-
     /// Convert the "index"-u64 to a String
     pub fn to_string_u64(&self, input: u64) -> String {
-        if *self == Feature::PWindow{
+        if *self == Feature::PWindow {
             let (left, right) = split_u64_to_u32s(input);
 
-            return "P".to_string() + &format_unsigned_as_string(left) + &format_unsigned_as_string(right);
+            return "P".to_string()
+                + &format_unsigned_as_string(left)
+                + &format_unsigned_as_string(right);
         } else if *self == Feature::MWindow {
             let (left, right) = split_u64_to_u32s(input);
-            return "M".to_string() + &format_unsigned_as_string(left) + &format_unsigned_as_string(right);
-        } else if *self == Feature::Block{
+            return "M".to_string()
+                + &format_unsigned_as_string(left)
+                + &format_unsigned_as_string(right);
+        } else if *self == Feature::Block {
             let (left, right) = split_u64_to_u32s(input);
-            return "B".to_string() + &format_unsigned_as_string(left) + &format_unsigned_as_string(right);
+            return "B".to_string()
+                + &format_unsigned_as_string(left)
+                + &format_unsigned_as_string(right);
         } else if Feature::Node == *self {
             input.to_owned().to_string()
         } else if *self == Feature::DirNode {
@@ -79,45 +113,49 @@ impl Feature {
         }
     }
 
-    pub fn identify_feature(pp: &str) -> Feature {
+    pub fn identify_feature(pp: &str) -> (Feature, Option<Feature>) {
         let parts: Vec<&str> = pp
             .split(|c| c == '+' || c == '-')
             .filter(|s| !s.is_empty())
             .collect();
         let last_letter = pp.chars().last().unwrap();
+        let parts2 = pp.split("_").collect::<Vec<&str>>();
         if pp.starts_with("P") {
-            Feature::PWindow
+            (Feature::PWindow, None)
         } else if pp.starts_with("M") {
-            Feature::MWindow
-        } else if pp.starts_with("B"){
-            Feature::Block
+            (
+                Feature::MWindow,
+                Some(Feature::identify_feature(pp[1..].split("_").next().unwrap()).0),
+            )
+        } else if pp.starts_with("B") {
+            (Feature::Block, None)
+        } else if parts2.len() == 2 {
+            (Feature::Alignment, None)
         } else {
             if last_letter == '+' || last_letter == '-' {
                 if parts.len() == 1 {
-                    Feature::DirNode
+                    (Feature::DirNode, None)
                 } else {
-                    Feature::Edge
+                    (Feature::Edge, None)
                 }
             } else {
-                Feature::Node
+                (Feature::Node, None)
             }
         }
     }
-
-
-
 }
 
-
 pub fn read1(input: &str, f: Feature) -> (u64, u64) {
-    match f
-    {
-        Feature::Node => {(input.parse().unwrap(), 0)}
+    match f {
+        Feature::Node => (input.parse().unwrap(), 0),
         Feature::DirNode => {
             let last_char = &input[input.len() - 1..];
             let rest = &input[..input.len() - 1];
 
-            (rest.parse::<u64>().unwrap() * 2 + (last_char == "+") as u64, 0)
+            (
+                rest.parse::<u64>().unwrap() * 2 + (last_char == "+") as u64,
+                0,
+            )
         }
         Feature::Edge => {
             let ff = input.find(|c| c == '+' || c == '-').unwrap();
@@ -133,21 +171,21 @@ pub fn read1(input: &str, f: Feature) -> (u64, u64) {
             (merge_u32_to_u64(numb1, numb2), 0)
         }
         Feature::Alignment => {
-            let ff: Vec<u32> = input.split("_").map(|a| a.parse()).collect();
+            let ff: Vec<u32> = input.split("_").map(|a| a.parse().unwrap()).collect();
 
-            (merge_u32_to_u64(ff[0].unwrap(), ff[1].unwrap()), 0)
+            (merge_u32_to_u64(ff[0], ff[1]), 0)
         }
         Feature::MWindow => {
-            let ff: Vec<u32> = input.split("_").map(|a| a.parse()).collect();
-            (merge_u32_to_u64(ff[0].unwrap(), ff[2].unwrap()), 0)
+            let ff: Vec<u32> = input.split("_").map(|a| a.parse().unwrap()).collect();
+            (merge_u32_to_u64(ff[0], ff[2]), 0)
         }
         Feature::PWindow => {
-            let ff: Vec<u32> = input.split("_").map(|a| a.parse()).collect();
-            (merge_u32_to_u64(ff[0].unwrap(), ff[2].unwrap()), 0)
+            let ff: Vec<u32> = input.split("_").map(|a| a.parse().unwrap()).collect();
+            (merge_u32_to_u64(ff[0], ff[2]), 0)
         }
         Feature::Block => {
-            let ff: Vec<u32> = input.split("_").map(|a| a.parse()).collect();
-            (merge_u32_to_u64(ff[0].unwrap(), ff[2].unwrap()), 0)
+            let ff: Vec<u32> = input.split("_").map(|a| a.parse().unwrap()).collect();
+            (merge_u32_to_u64(ff[0], ff[2]), 0)
         }
     }
 }

@@ -1,18 +1,19 @@
+use crate::core::core::MatrixWrapper;
+use crate::core::helper::{merge_u32_to_u64, Feature};
+use crate::window::window_main::getbv;
+use bitvec::order::Lsb0;
+use bitvec::prelude::BitVec;
 use clap::ArgMatches;
 use gfa_reader::{NCGfa, NCPath, Pansn};
 use hashbrown::HashMap;
-use bitvec::order::Lsb0;
-use bitvec::prelude::BitVec;
 use log::info;
-use crate::core::core::MatrixWrapper;
-use crate::core::helper::{Feature, merge_u32_to_u64};
-use crate::window::window_main::getbv;
-
 
 /// Subpath main function
 ///
 /// Extract the subpath from a graph for each node
 pub fn subpath_main(matches: &ArgMatches) {
+
+    // Read the arguments from the command line
     let graph_file = matches.value_of("gfa").unwrap();
     let output_prefix = matches.value_of("output").unwrap();
     let window: usize = matches.value_of("length").unwrap().parse().unwrap();
@@ -22,6 +23,7 @@ pub fn subpath_main(matches: &ArgMatches) {
         .parse::<usize>()
         .unwrap();
 
+    /// Check the arguments
     info!("Subpath subcommand");
     info!("Graph file: {}", graph_file);
     info!("Output prefix: {}", output_prefix);
@@ -36,7 +38,7 @@ pub fn subpath_main(matches: &ArgMatches) {
     let a = gfa_index(&wrapper);
 
     info!("Extracting subpath");
-    let mw = wrapper_matrix(&wrapper, &graph, window, a);
+    let mw = subpath_wrapper(&wrapper, &graph, window, a);
 
     info!("Number of nodes: {}", graph.nodes.len());
     info!("Number of subpath: {}", mw.matrix_bit.len());
@@ -48,11 +50,11 @@ pub fn subpath_main(matches: &ArgMatches) {
 /// Index the graph
 ///
 /// For each path:
-///     node -> index
+///     node -> Vec<index>
 pub fn gfa_index(graph: &Pansn<NCPath>) -> Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)> {
     let mut index = Vec::new();
     for (genome_id, path) in graph.genomes.iter().enumerate() {
-        for (haplotype_id, x) in path.haplotypes.iter().enumerate() {
+        for (haplo_id, x) in path.haplotypes.iter().enumerate() {
             for (path_id, p) in x.paths.iter().enumerate() {
                 let mut node2index: HashMap<u32, Vec<usize>> = HashMap::new();
 
@@ -63,7 +65,7 @@ pub fn gfa_index(graph: &Pansn<NCPath>) -> Vec<(usize, usize, usize, HashMap<u32
                         node2index.insert(*y, vec![i]);
                     }
                 }
-                index.push((genome_id, haplotype_id, path_id, node2index));
+                index.push((genome_id, haplo_id, path_id, node2index));
             }
         }
     }
@@ -72,28 +74,29 @@ pub fn gfa_index(graph: &Pansn<NCPath>) -> Vec<(usize, usize, usize, HashMap<u32
 }
 
 /// Extract all subpath for each node
-pub fn wrapper_matrix(
+pub fn subpath_wrapper(
     graph2: &Pansn<NCPath>,
     graph: &NCGfa<()>,
     window: usize,
     vv: Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)>,
-) -> MatrixWrapper{
+) -> MatrixWrapper {
     let mut mw = MatrixWrapper::new();
     let sample_size = graph2.genomes.len();
     for x1 in graph.nodes.iter() {
         let mut vecc = Vec::new();
         for (genome_id, haplotype_id, path_id, node2index) in vv.iter() {
-            let ll = graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id].nodes.len();
+            let ll = graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id]
+                .nodes
+                .len();
             if node2index.contains_key(&x1.id) {
                 for z in node2index.get(&x1.id).unwrap() {
-                    if window <= *z &&  *z + window < ll + 1{
+                    if window <= *z && *z + window < ll + 1 {
                         vecc.push((
                             *genome_id,
                             *haplotype_id,
                             *path_id,
-                            &graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id].nodes
-                                [*z - window..
-                                *z + window],
+                            &graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id]
+                                .nodes[*z - window..*z + window],
                         ));
                     }
                 }
@@ -103,7 +106,8 @@ pub fn wrapper_matrix(
         if vecc.is_empty() {
             continue;
         }
-        mw.geno_names.extend((0..vecc.len()).map(|a| merge_u32_to_u64(x1.id, a as u32)));
+        mw.geno_names
+            .extend((0..vecc.len()).map(|a| merge_u32_to_u64(x1.id, a as u32)));
 
         mw.matrix_bit.extend(function1(vecc, sample_size));
     }
@@ -112,11 +116,13 @@ pub fn wrapper_matrix(
     mw.shape = (mw.matrix_bit.len(), mw.matrix_bit[0].len());
     mw.sample_names = graph2.genomes.iter().map(|x| x.name.clone()).collect();
 
-
-    return mw
+    return mw;
 }
 
-pub fn function1(ii: Vec<(usize, usize, usize, &[u32])>, number_of_samples: usize) -> Vec<BitVec<u8>>{
+pub fn function1(
+    ii: Vec<(usize, usize, usize, &[u32])>,
+    number_of_samples: usize,
+) -> Vec<BitVec<u8>> {
     let mut pp = Vec::new();
     let mut last = ii[0].3;
     pp.push(vec![ii[0].0]);
@@ -130,4 +136,3 @@ pub fn function1(ii: Vec<(usize, usize, usize, &[u32])>, number_of_samples: usiz
     }
     getbv(&pp, number_of_samples)
 }
-

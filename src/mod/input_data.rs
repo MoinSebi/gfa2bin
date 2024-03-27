@@ -5,51 +5,49 @@ use std::io::{BufRead, BufReader};
 
 pub struct FileData {
     pub data: Vec<u64>,
+    pub window: Vec<u32>,
     pub feature: Feature,
 }
 
 impl FileData {
-
     pub fn from_file(filename: &str) -> Self {
         let feature = get_type(filename);
 
         let mut data = Vec::new();
+        let mut data3 = Vec::new();
+        let mut data2 = Vec::new();
         let file = File::open(filename).expect("ERROR: CAN NOT READ FILE\n");
         let reader = BufReader::new(file);
 
         for line in reader.lines() {
-            let line = line.unwrap();
-
-            if feature == Feature::Edge {
-                let ss = find_first_plus_minus(&line).unwrap();
-                let s1 = &line[..ss];
-                let s2 = &line[ss..ss + 1];
-                let s3 = &line[ss + 1..line.len() - 1];
-                let s4 = &line.chars().last().unwrap();
-                let ss1 = s1.parse::<u64>().unwrap() * 2 + (s2 == "+") as u64;
-                let ss2 = s3.parse::<u64>().unwrap() * 2 + (*s4 == '+') as u64;
-                data.push(merge_u32_to_u64(ss1 as u32, ss2 as u32));
-            } else if feature == Feature::DirNode {
-                let s = line.ends_with('+');
-                let s2 = line[..line.len() - 1].parse::<u64>().unwrap() * 2 + s as u64;
-                data.push(s2)
-            } else if feature == Feature::MWindow {
-            } else if feature == Feature::PWindow {
-            } else {
-                data.push(line.parse::<u64>().unwrap());
-            }
+            let a = Feature::string2u64(&line.unwrap(), feature.0, feature.1);
+            data.push((a.0, a.1));
         }
+
         // Sort very important
         data.sort();
-        Self { data, feature }
+
+        if feature.0 == Feature::MWindow || feature.0 == Feature::Block {
+            for x in data.iter() {
+                data2.push(x.1);
+                data3.push(x.0);
+            }
+        } else {
+            data3 = data.into_iter().map(|x| x.0).collect();
+        }
+        Self {
+            data: data3,
+            window: data2,
+            feature: feature.0,
+        }
     }
 }
 
-fn find_first_plus_minus(input: &str) -> Option<usize> {
+pub fn find_first_plus_minus(input: &str) -> Option<usize> {
     input.chars().position(|c| c == '+' || c == '-')
 }
 
-pub fn get_type(file_path: &str) -> Feature {
+pub fn get_type(file_path: &str) -> (Feature, Option<Feature>) {
     let file = File::open(file_path).expect("ERROR: CAN NOT READ FILE\n");
 
     // Parse plain text or gzipped file

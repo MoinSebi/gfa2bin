@@ -1,25 +1,27 @@
 mod alignment;
+mod block;
 mod core;
+mod filter;
 mod find;
 mod graph;
 mod helper;
 mod logging;
 mod r#mod;
 mod subpath;
-mod window;
-mod block;
 mod view;
+mod window;
 
 use crate::alignment::align_main::align_main;
+use crate::block::block_main::block_main;
+use crate::filter::filter_main::filter_main;
 use crate::find::find_main::find_main;
 use crate::graph::graph_main::graph_main;
 use crate::logging::newbuilder;
 use crate::r#mod::mod_main::mod_main;
 use crate::subpath::subpath_main::subpath_main;
+use crate::view::view_main::view_main;
 use crate::window::window_main::window_main;
 use clap::{App, Arg};
-use crate::block::block_main::block_main;
-use crate::view::view_main::view_main;
 
 fn main() {
     let matches = App::new("gfa2bin")
@@ -216,12 +218,13 @@ fn main() {
                         .takes_value(true)
                         .about("Split output in multiple files"),
                 )
-                .arg(Arg::new("index")
-                    .short('i')
-                    .long("index")
-                    .takes_value(true)
-                    .about("Remove the entries on this specific index")
-                )
+                .arg(
+                    Arg::new("index")
+                        .short('i')
+                        .long("index")
+                        .takes_value(true)
+                        .about("Remove the entries on this specific index (0-based)"),
+                ),
         )
         // Will work on this later
         .subcommand(
@@ -323,7 +326,6 @@ fn main() {
             App::new("block")
                 .version("1.0.1")
                 .about("Blocks")
-
                 .help_heading("Input parameters")
                 .arg(
                     Arg::new("gfa")
@@ -333,7 +335,6 @@ fn main() {
                         .takes_value(true)
                         .required(true),
                 )
-
                 .help_heading("Parameter")
                 .arg(
                     Arg::new("window")
@@ -349,9 +350,8 @@ fn main() {
                         .long("step")
                         .about("Step")
                         .takes_value(true)
-                        .default_value("100")
+                        .default_value("100"),
                 )
-
                 .help_heading("Output parameter")
                 .arg(
                     Arg::new("output")
@@ -366,8 +366,7 @@ fn main() {
                         .long("split")
                         .takes_value(true)
                         .about("Split output in multiple files"),
-                )
-
+                ),
         )
         .subcommand(
             App::new("view")
@@ -388,7 +387,64 @@ fn main() {
                         .about("Output prefix for the new plink file")
                         .takes_value(true)
                         .required(true),
+                ),
+        )
+        .subcommand(
+            App::new("filter")
+                .version("1.0.0")
+                .about("Filter a PLINK file")
+                .arg(
+                    Arg::new("plink")
+                        .short('p')
+                        .long("plink")
+                        .about("Plink input file")
+                        .takes_value(true)
+                        .required(true),
                 )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::new("maf")
+                        .short('m')
+                        .long("maf")
+                        .about("Major allele frequency")
+                        .takes_value(true)
+                        .default_value("0.05"),
+                )
+                .arg(
+                    Arg::new("MAF")
+                        .short('M')
+                        .long("MAF")
+                        .about("Minor allele frequency")
+                        .takes_value(true)
+                        .default_value("0.95"),
+                )
+                .arg(
+                    Arg::new("entry min")
+                        .short('e')
+                        .long("entries-min")
+                        .about("Minimum amount of entries")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::new("entry max")
+                        .short('E')
+                        .long("entries-max")
+                        .about("Maximum amount of entries")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::new("split")
+                        .long("split")
+                        .takes_value(true)
+                        .about("Split output in multiple files"),
+                ),
         )
         .get_matches();
 
@@ -413,6 +469,8 @@ fn main() {
         block_main(matches);
     } else if let Some(matches) = matches.subcommand_matches("view") {
         view_main(matches);
+    } else if let Some(matches) = matches.subcommand_matches("filter") {
+        filter_main(matches);
     } else {
         println!("No subcommand was used");
     }

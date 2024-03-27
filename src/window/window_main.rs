@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{Feature, merge_u32_to_u64};
+use crate::core::helper::{merge_u32_to_u64, Feature};
 use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
 use clap::ArgMatches;
@@ -26,8 +26,6 @@ pub fn window_main(matches: &ArgMatches) {
     let mut mw = iterate_test(&mw, window);
 
     mw.make_counter();
-
-
 
     let chunk_size = (mw.matrix_bit.len() / split) + 1;
     let chunks = mw.matrix_bit.chunks(chunk_size);
@@ -73,7 +71,6 @@ pub fn iterate_test(mw: &MatrixWrapper, window: usize) -> MatrixWrapper {
     return mw_new;
 }
 
-
 ///
 pub fn get_index(vv: &Vec<(usize, Vec<[bool; 2]>)>) -> Vec<BitVec<u8>> {
     let mut pp = Vec::new();
@@ -89,8 +86,6 @@ pub fn get_index(vv: &Vec<(usize, Vec<[bool; 2]>)>) -> Vec<BitVec<u8>> {
     }
     getbv(&pp, vv.len())
 }
-
-
 
 /// Create a bitvector
 pub fn getbv(vv: &Vec<Vec<usize>>, len: usize) -> Vec<BitVec<u8>> {
