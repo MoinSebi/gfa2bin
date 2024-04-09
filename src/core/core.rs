@@ -1,34 +1,33 @@
 use crate::core::helper::{
-    average_vec_u16, is_all_ones, is_all_zeros, median, merge_u32_to_u64, percentile, to_string1,
-    wrapper_stats, Feature,
+    average_vec_u16, is_all_ones, is_all_zeros, median, merge_u32_to_u64, percentile, Feature,
 };
 
-use crate::alignment::pack::matrix_pack_wrapper;
 use crate::r#mod::input_data::FileData;
 use crate::r#mod::mod_main::remove_feature;
 use bitvec::prelude::*;
 use gfa_reader::NCGfa;
 use hashbrown::HashSet;
-use packing_lib::convert::convert_helper::Method;
-use packing_lib::convert::helper::median_vec_u16_16;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use log::info;
+use packing_lib::normalize::convert_helper::Method;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 /// Core data structure
 ///
 /// SNP-major representation of the genotypes (also in memory) - Reading data takes longer here
 /// Can represent two haplotypes (diploid) or one haplotype (haploid)
 pub struct MatrixWrapper {
-    pub shape: (usize, usize),
-    pub matrix_u16: Vec<Vec<u16>>,
+    pub shape: (usize, usize),             //Update
+    pub matrix_u16: Vec<Vec<u16>>,         // Raw values
+    pub matrix_f32: Vec<Vec<f32>>,         // Normalized values
     pub matrix_bit: Vec<BitVec<u8, Lsb0>>, //Vec<Vec<bool>>
 
     // Check if node, edges, dirnode, or alignment
-    pub feature: Feature,     // Feature
-    pub geno_names: Vec<u64>, // Name of all
-    pub window_number: Vec<u32>,
+    pub feature: Feature,                  // Feature
+    pub geno_names: Vec<u64>,              // Name of all
+    pub window_number: Vec<u32>,           // Which number of window
     pub window_size: usize,                // Window number
     pub sample_names: Vec<String>,         // Sample names (same order as in the matrix)
     pub sample_index_u16: Vec<[usize; 2]>, // Sample index
@@ -45,6 +44,7 @@ impl MatrixWrapper {
             shape: (0, 0),
             matrix_u16: Vec::new(),
             matrix_bit: Vec::new(),
+            matrix_f32: Vec::new(),
             feature: Feature::Node,
 
             // SNP
@@ -104,43 +104,6 @@ impl MatrixWrapper {
         // Sort it, otherwise does not work
         geno_names.sort();
         self.geno_names = geno_names;
-    }
-
-    pub fn make_thresh(&self, absolute: u32, relative: u16, method: Method) -> Vec<f32> {
-        if absolute != 0 {
-            return vec![absolute as f32; self.matrix_u16.len()];
-        }
-        match method {
-            Method::Mean => {
-                let mut aa = Vec::new();
-                for x in self.matrix_u16.iter() {
-                    aa.push(average_vec_u16(x, relative) as f32);
-                }
-                aa
-            }
-            Method::Median => {
-                let mut aa = Vec::new();
-                for x in self.matrix_u16.iter() {
-                    aa.push(median(x, relative) as f32);
-                }
-                aa
-            }
-            Method::Percentile => {
-                let mut aa = Vec::new();
-                for x in self.matrix_u16.iter() {
-                    aa.push(percentile(x, relative as f64) as f32);
-                }
-                aa
-            }
-
-            _ => {
-                let mut aa = Vec::new();
-                for x in self.matrix_u16.iter() {
-                    aa.push(*x.iter().max().unwrap() as f32);
-                }
-                aa
-            }
-        }
     }
 
     pub fn make_bin_row(&mut self, relative: &Vec<f32>) {
@@ -323,6 +286,36 @@ impl MatrixWrapper {
     }
 
     //----------------------------------------------------------------------------------
+    /// Write wrapper
+    pub fn g(&self, b: bool, split: usize, output_prefix: &str, thresh: Vec<f32>, feature_enum: Feature){
+        if b {
+            info!("Writing the bimbam");
+            let chunk_size = (self.matrix_u16.len() / split) + 1;
+            let chunks = self.matrix_u16.chunks(chunk_size);
+            let len = chunks.len();
+
+            for (index, _y) in chunks.enumerate() {
+                self.write_bimbam(index, output_prefix, len, &thresh);
+                self.write_phenotype_bimbam(index, output_prefix, len);
+            }
+        } else {
+            // Output
+            info!("Writing the output");
+            let chunk_size = (self.matrix_bit.len() / split) + 1;
+            let chunks = self.matrix_bit.chunks(chunk_size);
+
+            let len = chunks.len();
+            for (index, _y) in chunks.enumerate() {
+                //write_bed2(y, output_prefix, feature, index, len);
+                self.write_fam(index, output_prefix, feature_enum, len);
+                self.write_bed(index, output_prefix, feature_enum, len);
+                self.write_bim(index, output_prefix, &feature_enum, len);
+            }
+        }
+    }
+
+
+
     /// Write "empty" fam with no phenotypes
     ///
     /// Contains the names of the samples in the same order as plink bed file

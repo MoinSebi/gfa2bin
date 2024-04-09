@@ -2,7 +2,7 @@ use crate::core::core::MatrixWrapper;
 use crate::core::helper::index2node_seq;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-use packing_lib::core::core::PackCompact;
+use packing_lib::core::core::{DataType, PackCompact};
 
 pub fn matrix_pack_wrapper(
     matrix_w: &mut MatrixWrapper,
@@ -11,7 +11,7 @@ pub fn matrix_pack_wrapper(
 ) {
     let first_entry = &input[0];
 
-    if first_entry.is_binary {
+    if first_entry.data_type == DataType::TypeBit {
         matrix_w.matrix_bit =
             vec![BitVec::<u8, Lsb0>::repeat(false, input.len() * 2); first_entry.length as usize];
         for (i2, x) in input.iter().enumerate() {
@@ -33,16 +33,29 @@ pub fn matrix_pack_wrapper(
         } else {
             matrix_w.geno_names = remove_duplicates(index);
         }
+    } else if first_entry.data_type == DataType::TypeU16{
+        let ll = first_entry.length as usize;
+        matrix_w.matrix_u16 = vec![vec![0; input.len()]; ll];
+        for (i, x) in input.iter().enumerate() {
+            let d = &x.coverage;
+            matrix_w.sample_names.push(x.name.clone());
+            for (i2, y) in d.iter().enumerate() {
+                matrix_w.matrix_u16[i2][i] = *y
+            }
+        }
+        matrix_w.shape = (matrix_w.matrix_u16.len(), matrix_w.matrix_u16[0].len());
+        matrix_w.sample_names = input.iter().map(|x| x.name.clone()).collect();
+
+        if first_entry.is_sequence {
+            matrix_w.geno_names = index2node_seq(index);
+        } else {
+            matrix_w.geno_names = remove_duplicates(index);
+        }
     } else {
         let ll = first_entry.length as usize;
         matrix_w.matrix_u16 = vec![vec![0; input.len()]; ll];
         for (i, x) in input.iter().enumerate() {
-            let d;
-            if x.is_sequence {
-                d = &x.coverage;
-            } else {
-                d = &x.node_coverage;
-            }
+            let d = &x.coverage;
             matrix_w.sample_names.push(x.name.clone());
             for (i2, y) in d.iter().enumerate() {
                 matrix_w.matrix_u16[i2][i] = *y

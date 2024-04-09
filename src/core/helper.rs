@@ -2,6 +2,7 @@ use crate::r#mod::input_data::find_first_plus_minus;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use std::fmt::Display;
+use packing_lib::normalize::helper::mean;
 
 #[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub enum Feature {
@@ -280,19 +281,10 @@ pub fn is_all_ones(bitvector: &BitVec<u8, Lsb0>) -> bool {
     return bitvector.iter().all(|byte| *byte);
 }
 
-pub fn wrapper_stats(vector: &[u16], method: &str, rval: u16) -> f64 {
-    match method {
-        "mean" => average_vec_u16(vector, rval),
-        "median" => median(vector, rval),
-        "percentile" => percentile(vector, rval as f64),
-        _ => panic!("Method not implemented"),
-    }
-}
-
-pub fn average_vec_u16(vector: &[u16], rval: u16) -> f64 {
+pub fn average_vec_u16(vector: &[u16], rval: f32) -> f64 {
     let sum: u16 = vector.iter().sum();
     let len = vector.len() as f64;
-    (sum as f64 / len) * rval as f64 / 100 as f64
+    (sum as f64 / len) * rval as f64
 }
 
 pub fn percentile(data: &[u16], u: f64) -> f64 {

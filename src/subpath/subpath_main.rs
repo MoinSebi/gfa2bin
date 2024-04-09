@@ -12,7 +12,6 @@ use log::info;
 ///
 /// Extract the subpath from a graph for each node
 pub fn subpath_main(matches: &ArgMatches) {
-
     // Read the arguments from the command line
     let graph_file = matches.value_of("gfa").unwrap();
     let output_prefix = matches.value_of("output").unwrap();

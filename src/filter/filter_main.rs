@@ -49,11 +49,19 @@ pub fn filter_main(matches: &ArgMatches) {
 
     let mut a1 = 1;
     let mut a2 = usize::MAX;
-    if matches.is_present("entry-max"){
-        a2 = matches.value_of("entry-max").unwrap().parse::<usize>().unwrap();
+    if matches.is_present("entry-max") {
+        a2 = matches
+            .value_of("entry-max")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap();
     }
-    if matches.is_present("entry-min"){
-        a1 = matches.value_of("entry-min").unwrap().parse::<usize>().unwrap();
+    if matches.is_present("entry-min") {
+        a1 = matches
+            .value_of("entry-min")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap();
     }
     mw.filter_path(a1, a2);
     println!("Matrix size: {}", mw.matrix_bit[0].len());
@@ -86,7 +94,7 @@ impl MatrixWrapper {
 
     pub fn filter_path(&mut self, a1: usize, a2: usize) {
         let mut b = Vec::new();
-        for i in 0..self.matrix_bit[0].len()/2 {
+        for i in 0..self.matrix_bit[0].len() / 2 {
             let mut c = 0;
             for x in self.matrix_bit.iter() {
                 if x[i * 2] == true || x[i * 2 + 1] == false {
@@ -97,7 +105,6 @@ impl MatrixWrapper {
                 b.push(i);
             }
         }
-
 
         self.remove_samples2(&b);
     }

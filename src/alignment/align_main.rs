@@ -4,15 +4,16 @@ use crate::core::helper::Feature;
 use clap::ArgMatches;
 use log::info;
 
-use packing_lib::core::core::PackCompact;
+use packing_lib::core::core::{DataType, PackCompact};
 use packing_lib::core::reader::{
-    get_meta, read_index, unpack_zstd_to_byte, wrapper_bool, wrapper_u16,
+    read_index, unpack_zstd_to_byte, wrapper_bool, wrapper_u16,
 };
 use std::fs::File;
 use std::io::{self, BufRead};
+use std::path::Path;
 
 pub fn align_main(matches: &ArgMatches) {
-    // You have either a pack or a compressed pack (cat or list), but you need to provide a index
+    // You have either a pack or a compressed pack (cat or list), but you need to provide an index
     if matches.is_present("pack")
         | (matches.is_present("pack compressed") && matches.is_present("index"))
         | (matches.is_present("bfile") && matches.is_present("index"))
@@ -28,12 +29,28 @@ pub fn align_main(matches: &ArgMatches) {
     let cpack = matches.value_of("pack compressed");
     let cpacklist = matches.value_of("bpacklist");
     let output_prefix = matches.value_of("output").unwrap();
+
+    // Threshold
+    // Normalization columns
+    let sabsolute = matches.is_present("sabsolute");
+    let smethod = matches.is_present("smethod");
+    let srelative = matches.is_present("srelative");
+    let sstd = matches.is_present("sstd");
+
+    // Normalize the rows
+    let rabsolute = matches.is_present("rabsolute");
+    let rmethod = matches.is_present("rmethod");
+    let rrelative = matches.is_present("rrelative");
+    let rstd = matches.is_present("rstd");
+
+    // Output modification
     let bimbam = matches.is_present("bimbam");
     let split = matches
         .value_of("split")
         .unwrap_or("1")
         .parse::<usize>()
         .unwrap();
+
 
     // Initialize the matrix wrapper
     let mut mw = MatrixWrapper::new();
@@ -46,7 +63,7 @@ pub fn align_main(matches: &ArgMatches) {
             let pc = PackCompact::parse_pack(&file);
             pcs.push(pc);
         }
-        matrix_pack_wrapper(&mut mw, &pcs, &pcs[0].node);
+        matrix_pack_wrapper(&mut mw, &pcs, &pcs[0].node_index);
 
         // Compressed back (bin/u16, seq/node)
     } else {
@@ -57,11 +74,14 @@ pub fn align_main(matches: &ArgMatches) {
         if matches.is_present("pack compressed") {
             let file_pack = cpack.unwrap();
             let bytes = unpack_zstd_to_byte(file_pack);
-            let meta_data = get_meta(&bytes);
+            let meta_data = PackCompact::get_meta(&bytes);
             let pc_vec;
-            if meta_data.1 {
+            if meta_data.1 == DataType::TypeBit{
                 info!("Reading bool pack");
                 pc_vec = wrapper_bool(&bytes);
+            } else if meta_data.1 == DataType::TypeU16{
+                info!("Reading u16 pack");
+                pc_vec = wrapper_u16(&bytes);
             } else {
                 info!("Reading u16 pack");
                 pc_vec = wrapper_u16(&bytes);
@@ -73,7 +93,7 @@ pub fn align_main(matches: &ArgMatches) {
             let cpack_list = read_file_lines(cpacklist.unwrap()).unwrap();
             let mut pc_vec = Vec::new();
             for x in cpack_list {
-                let bytes = PackCompact::wrapp(&x);
+                let bytes = PackCompact::read_wrapper(&x);
                 pc_vec.push(bytes);
             }
             matrix_pack_wrapper(&mut mw, &pc_vec, &index);
@@ -109,6 +129,11 @@ pub fn align_main(matches: &ArgMatches) {
     }
 }
 
+
+
+/// Read a file and return a vector of lines
+///
+/// They contains files
 fn read_file_lines(file_path: &str) -> io::Result<Vec<String>> {
     // Open the file
     let file = File::open(file_path)?;
@@ -121,7 +146,14 @@ fn read_file_lines(file_path: &str) -> io::Result<Vec<String>> {
     for line in reader.lines() {
         // Add the line to the vector
         if let Ok(entry) = line {
-            entries.push(entry);
+            if Path::is_file(Path::new(&entry)) {
+                entries.push(entry);
+            } else {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("{} is not a file", entry),
+                ));
+            }
         }
     }
 

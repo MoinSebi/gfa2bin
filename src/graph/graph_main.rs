@@ -8,13 +8,13 @@ use crate::graph::parser::gfa_reader;
 use clap::ArgMatches;
 use gfa_reader::{NCGfa, NCPath, Pansn};
 use log::{info, warn};
-use packing_lib::convert::convert_helper::Method;
 use std::path::Path;
 use std::process;
+use packing_lib::core::core::PackCompact;
+use packing_lib::normalize::convert_helper::Method;
 
 pub fn graph_main(matches: &ArgMatches) {
     // Check graph file
-    let _graph_file: &str;
     let graph_file: &str = if Path::new(matches.value_of("gfa").unwrap()).exists() {
         matches.value_of("gfa").unwrap()
     } else {
@@ -24,7 +24,15 @@ pub fn graph_main(matches: &ArgMatches) {
 
     // Input parameters
     let feature1 = matches.value_of("feature").unwrap_or("node");
+    let feature = if ["node", "dirnode", "edge"].contains(&feature1) {
+        feature1
+    } else {
+        "node"
+    };
+    let feature_enum = Feature::from_str(feature);
     let sep = matches.value_of("pansn").unwrap_or(" ");
+    let need_edges = feature != "node";                             // If you something else than a node, you need to parse the edges
+
 
     // Output
     let split = matches
@@ -35,56 +43,50 @@ pub fn graph_main(matches: &ArgMatches) {
     let bimbam_output = matches.is_present("bimbam");
     let output_prefix = matches.value_of("output").unwrap();
 
-    // Modifications
-    let feature = if ["node", "dirnode", "edge"].contains(&feature1) {
-        feature1
-    } else {
-        "node"
-    };
-    let feature_enum = Feature::from_str(feature);
-    let need_edges = feature != "node";
+
+
+    // Threshold
     let mut absolute_thresh = matches
         .value_of("absolute-threshold")
         .unwrap_or("0")
         .parse::<u32>()
         .unwrap();
-    let mut relative_thresh = matches
-        .value_of("relative-threshold")
-        .unwrap_or("0")
-        .parse::<u32>()
+    let mut fraction = matches
+        .value_of("fraction")
+        .unwrap_or("1.0")
+        .parse::<f32>()
         .unwrap();
     let mut method = Method::from_str(matches.value_of("method").unwrap_or("nothing"));
+    let mut std = matches.value_of("std").unwrap_or("0.0").parse::<f32>().unwrap();
 
+
+    // Bin is for faster computation
     let mut bin = false;
     if matches.is_present("absolute-threshold") {
         if absolute_thresh == 1 && !bimbam_output {
             bin = true;
         }
     }
+
     if !matches.is_present("absolute-threshold")
-        && !matches.is_present("relative-threshold")
         && !matches.is_present("method")
     {
         if !bimbam_output {
             bin = true;
             absolute_thresh = 1;
         }
-        if bimbam_output {
-            method = Method::Percentile;
-            relative_thresh = 100;
-        }
     }
 
-    if matches.is_present("method") && !matches.is_present("relative-threshold") {
-        relative_thresh = 100;
-    }
+
+
+
 
     info!("Input parameters");
     info!("Graph file: {}", graph_file);
     info!("Feature: {} -> {}", feature1, feature);
     info!("Absolute threshold: {}", absolute_thresh);
     info!("Method: {:?}", method.to_string());
-    info!("Relative threshold: {:?}", relative_thresh);
+    info!("Relative threshold: {:?}", fraction);
     info!("Separator: {:?}", sep);
     info!("Binary: {}", bin);
     info!("Split: {}", split);
@@ -94,6 +96,8 @@ pub fn graph_main(matches: &ArgMatches) {
     );
     info!("Output prefix: {}", output_prefix);
 
+
+
     info!("Reading the graph");
     // Read the graph and wrapper
     let mut graph: NCGfa<()> = NCGfa::new();
@@ -102,11 +106,14 @@ pub fn graph_main(matches: &ArgMatches) {
         let mut file = File::open(matches.value_of("paths").unwrap()).unwrap();
         let mut contents = String::new();
         file.read_to_string(&mut contents).unwrap();
+        // Remove paths
         graph.paths.retain(|x| !contents.contains(&x.name));
     }
 
+    // Wrapper on PanSN
     let wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, sep);
 
+    // Check diploid
     let mut is_diploid = false;
     for x in wrapper.genomes.iter() {
         if x.haplotypes.len() == 2 {
@@ -131,7 +138,11 @@ pub fn graph_main(matches: &ArgMatches) {
     info!("Create matrix");
     gfa_reader(&mut mw, &wrapper, bin, feature_enum);
 
-    let thresh = mw.make_thresh(absolute_thresh, relative_thresh as u16, method);
+    let mut thresh = Vec::new();
+    for x in mw.matrix_u16.iter(){
+        let mut b = x.clone();
+        thresh.push(PackCompact::threshold(&mut b, false, fraction, std, method));
+    }
 
     if !bin {
         if !bimbam_output {
@@ -147,28 +158,5 @@ pub fn graph_main(matches: &ArgMatches) {
         info!("Number of entries (after remove): {}", mw.matrix_bit.len());
     }
 
-    if bimbam_output {
-        info!("Writing the bimbam");
-        let chunk_size = (mw.matrix_u16.len() / split) + 1;
-        let chunks = mw.matrix_u16.chunks(chunk_size);
-        let len = chunks.len();
-
-        for (index, _y) in chunks.enumerate() {
-            mw.write_bimbam(index, output_prefix, len, &thresh);
-            mw.write_phenotype_bimbam(index, output_prefix, len);
-        }
-    } else {
-        // Output
-        info!("Writing the output");
-        let chunk_size = (mw.matrix_bit.len() / split) + 1;
-        let chunks = mw.matrix_bit.chunks(chunk_size);
-
-        let len = chunks.len();
-        for (index, _y) in chunks.enumerate() {
-            //write_bed2(y, output_prefix, feature, index, len);
-            mw.write_fam(index, output_prefix, feature_enum, len);
-            mw.write_bed(index, output_prefix, feature_enum, len);
-            mw.write_bim(index, output_prefix, &feature_enum, len);
-        }
-    }
+    mw.g(bimbam_output, split, output_prefix, thresh, feature_enum);
 }
