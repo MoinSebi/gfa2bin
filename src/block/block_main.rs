@@ -13,14 +13,22 @@ use std::ffi::c_ushort;
 /// Easy block function
 /// Extract the subpath from a graph for each node
 pub fn block_main(matches: &ArgMatches) {
+
+    // Input
     let graph_file = matches.value_of("gfa").unwrap();
-    let output_prefix = matches.value_of("output").unwrap();
+    let sep = matches.value_of("PanSN").unwrap_or(" ");
+
+    // Block param,eters
     let window: usize = matches
         .value_of("window")
         .unwrap()
         .parse::<usize>()
         .unwrap();
     let steps: usize = matches.value_of("step").unwrap().parse().unwrap();
+    let distance: usize = matches.value_of("distance").unwrap().parse().unwrap();
+
+    // Output
+    let output_prefix = matches.value_of("output").unwrap();
     let split = matches
         .value_of("split")
         .unwrap_or("1")
@@ -29,16 +37,18 @@ pub fn block_main(matches: &ArgMatches) {
 
     info!("Block subcommand");
     info!("Graph file: {}", graph_file);
-    info!("Output prefix: {}", output_prefix);
+    info!("Separator: {}", sep);
     info!("Window size: {}", window);
+    info!("Distance: {}", distance);
     info!("Step size: {}", steps);
     info!("Split size: {}", split);
-    info!("Reading graph file");
+    info!("Output prefix: {}\n", output_prefix);
 
+    info!("Reading graph file");
     let window = window / 2;
     let mut graph: NCGfa<()> = NCGfa::new();
     graph.parse_gfa_file(graph_file, false);
-    let wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, "#");
+    let wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, sep);
 
     info!("Indexing graph");
     let a = blocks_node(&graph, steps, window);
@@ -47,7 +57,8 @@ pub fn block_main(matches: &ArgMatches) {
     let b = node_size(&graph);
 
     info!("Extracting blocks");
-    let mw = wrapper_blocks(&wrapper, b, a);
+    let mw = wrapper_blocks(&wrapper, b, a, distance);
+
 
     info!("Writing blocks");
     let chunk_size = (mw.matrix_bit.len() / split) + 1;
@@ -63,7 +74,8 @@ pub fn block_main(matches: &ArgMatches) {
 
 /// Make blocks
 ///
-/// Returns start and end nodes of a block
+///  - A block starts at a node and end at a node
+///  - Returns start and end nodes of a block
 pub fn blocks_node(graph: &NCGfa<()>, step: usize, wsize: usize) -> Vec<[u32; 2]> {
     let glen = graph.nodes.len();
     let mut gg = Vec::new();
@@ -93,64 +105,72 @@ pub fn node_size(graph: &NCGfa<()>) -> Vec<usize> {
 /// else: add distance
 pub fn wrapper_blocks(
     graph2: &Pansn<NCPath>,
-    nodesize: Vec<usize>,
+    node_size: Vec<usize>,
     block: Vec<[u32; 2]>,
+    max_distance: usize,
 ) -> MatrixWrapper {
+    // this is the output
     let mut mw = MatrixWrapper::new();
+
+    // Iterate over the blocks
     for x in block.iter() {
-        let hs = (x[0]..x[1]).collect::<HashSet<u32>>();
-        let mut all_b = Vec::new();
+        let block_hashset = (x[0]..x[1]).collect::<HashSet<u32>>();
+        let mut all_blocks = Vec::new();
+
+        // Iterate over each
         for (genome_id, path) in graph2.genomes.iter().enumerate() {
-            for (haplotype_id, x1) in path.haplotypes.iter().enumerate() {
+            for (haplo_id, x1) in path.haplotypes.iter().enumerate() {
                 for (path_id, x) in x1.paths.iter().enumerate() {
-                    let mut block1M: [usize; 3] = [0; 3];
+                    let mut block_array: [usize; 3] = [0; 3];       // Triple 0
                     let mut distance = 0;
                     for (i, node) in x.nodes.iter().enumerate() {
-                        if hs.contains(node) {
-                            if block1M[2] == 0 {
-                                block1M[0] = i;
-                                block1M[1] = i;
-                                block1M[2] = nodesize[*node as usize - 1];
+                        if block_hashset.contains(node) {
+                            if block_array[2] == 0 {
+                                block_array[0] = i;
+                                block_array[1] = i;
+                                block_array[2] = node_size[*node as usize - 1];
                                 distance = 0;
                             } else {
-                                block1M[1] = i;
-                                block1M[2] += nodesize[*node as usize - 1];
+                                block_array[1] = i;
+                                block_array[2] += node_size[*node as usize - 1];
                                 distance = 0;
                             }
                         } else {
-                            distance += nodesize[*node as usize - 1];
-                            if distance > 1000 {
-                                if block1M[2] != 0 {
-                                    all_b.push((
+                            distance += node_size[*node as usize - 1];
+                            if distance > max_distance {
+                                if block_array[2] != 0 {
+                                    all_blocks.push((
                                         genome_id,
-                                        haplotype_id,
+                                        haplo_id,
                                         path_id,
-                                        &x.nodes[block1M[0]..block1M[1]],
+                                        &x.nodes[block_array[0]..block_array[1]],
                                     ));
-                                    block1M = [0; 3];
+                                    block_array = [0; 3];
                                 }
                             }
                         }
                     }
-                    if block1M[2] != 0 {
-                        all_b.push((
+                    if block_array[2] != 0 {
+                        all_blocks.push((
                             genome_id,
-                            haplotype_id,
+                            haplo_id,
                             path_id,
-                            &x.nodes[block1M[0]..block1M[1]],
+                            &x.nodes[block_array[0]..block_array[1]],
                         ));
                     }
                 }
             }
         }
-        all_b.sort();
-        if all_b.is_empty() {
+
+        //
+        all_blocks.sort();
+        if all_blocks.is_empty() {
             continue;
         }
 
-        let bb = all_b.len();
+        let bb = all_blocks.len();
 
-        mw.matrix_bit.extend(function1(all_b, 20));
+        mw.matrix_bit.extend(function1(all_blocks, 20));
         mw.geno_names
             .extend((0..bb).map(|aa| merge_u32_to_u64(x[0] / 2, aa as u32)));
     }

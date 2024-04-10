@@ -131,8 +131,11 @@ fn main() {
         )
         .subcommand(
             App::new("align")
-                .about("Convert from a alignment (pack or bpack)")
+                .about("Conversion from a alignment (pack or bpack)")
                 .version("0.1.0")
+                .setting(AppSettings::ArgRequiredElseHelp)
+
+
                 .help_heading("Input parameters")
                 .arg(
                     Arg::new("pack")
@@ -161,51 +164,75 @@ fn main() {
                         .about("Index file")
                         .takes_value(true),
                 )
-                .help_heading("Sample normalization")
-                .help_heading("Thresholds")
-                .arg(
-                    Arg::new("sample absolute threshold")
-                        .short('a')
-                        .long("s-absolute-threshold")
-                        .about("Set a absolute threshold")
-                        .takes_value(true),
+
+
+                .help_heading("Sample thresholds")
+                .arg(Arg::new("sabsolute-threshold")
+                    .long("absolute-threshold")
+                    .about("Set a absolute threshold")
+                    .takes_value(true)
+                    .display_order(0))
+                // Modification
+                .arg(Arg::new("smethod")
+                    .long("smethod")
+                    .about("Normalization method (mean|median|percentile|nothing) [default: nothing]")
+                    .takes_value(true)
+                    .display_order(1)
                 )
-                .arg(
-                    Arg::new("Sample relative threshold")
-                        .short('r')
-                        .long("s-relative-threshold")
-                        .about("Set a relative threshold")
-                        .takes_value(true),
+
+                .arg(Arg::new("sfraction")
+                    .long("sfraction")
+                    .about("Fraction")
+                    .takes_value(true)
+                    .display_order(2)
                 )
-                .arg(
-                    Arg::new("sample method")
-                        .short('m')
-                        .long("method")
-                        .about("Method to use [mean, median, percentile]")
-                        .takes_value(true),
+                .arg(Arg::new("sstandard-deviation")
+                    .long("sstd")
+                    .about("Adjust your threshold by decreasing if by X * standard deviation")
+                    .takes_value(true)
+                    .display_order(2))
+                .arg(Arg::new("snon-covered")
+                    .long("snon-covered")
+                    .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean)")
+                    .display_order(4)
                 )
-                .help_heading("Entry normalization")
-                .arg(
-                    Arg::new("entry absolute threshold")
-                        .short('A')
-                        .long("s-absolute-threshold")
-                        .about("Set a absolute threshold")
-                        .takes_value(true),
+
+
+                .help_heading("Entry thresholds")
+                .arg(Arg::new("absolute-threshold")
+                    .long("eabsolute-threshold")
+                    .about("Set a absolute threshold")
+                    .takes_value(true)
+                    .display_order(0))
+                // Modification
+                .arg(Arg::new("emethod")
+                    .long("emethod")
+                    .about("Normalization method (mean|median|percentile|nothing) [default: nothing]")
+                    .takes_value(true)
+                    .display_order(1)
                 )
-                .arg(
-                    Arg::new("entry relative threshold")
-                        .short('R')
-                        .long("s-relative-threshold")
-                        .about("Set a relative threshold")
-                        .takes_value(true),
+
+                .arg(Arg::new("efraction")
+                    .long("efraction")
+                    .about("Fraction")
+                    .takes_value(true)
+                    .display_order(2)
                 )
-                .arg(
-                    Arg::new("entry method")
-                        .short('M')
-                        .long("method")
-                        .about("Method to use [mean, median, percentile]")
-                        .takes_value(true),
+                .arg(Arg::new("estandard-deviation")
+                    .long("estd")
+                    .about("Adjust your threshold by decreasing if by X * standard deviation")
+                    .takes_value(true)
+                    .display_order(2))
+                .arg(Arg::new("enon-covered")
+                    .long("enon-covered")
+                    .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean)")
+                    .display_order(4)
                 )
+
+
+
+
+
                 .help_heading("Output parameter")
                 .arg(
                     Arg::new("output")
@@ -227,6 +254,10 @@ fn main() {
                         .about("Output bimbam format [default: plink]"),
                 ),
         )
+
+
+
+
         .subcommand(
             App::new("mod")
                 .about("Remove samples from you graph/alignment-based plink file")
@@ -381,10 +412,14 @@ fn main() {
                         .default_value("200"),
                 ),
         )
+
+
+
         .subcommand(
             App::new("block")
                 .version("1.0.1")
-                .about("Blocks")
+                .about("Genotyping by pan-genomic blocks")
+
                 .help_heading("Input parameters")
                 .arg(
                     Arg::new("gfa")
@@ -394,6 +429,14 @@ fn main() {
                         .takes_value(true)
                         .required(true),
                 )
+                .arg(
+                    Arg::new("PanSN")
+                        .long("PanSN")
+                        .about("PanSN-spec separator")
+                        .takes_value(true),
+                )
+
+
                 .help_heading("Parameter")
                 .arg(
                     Arg::new("window")
@@ -411,6 +454,14 @@ fn main() {
                         .takes_value(true)
                         .default_value("100"),
                 )
+                .arg(Arg::new("distance")
+                    .short('d')
+                    .long("distance")
+                    .about("Distance till breaking the block")
+                    .takes_value(true)
+                    .default_value("10000"))
+
+
                 .help_heading("Output parameter")
                 .arg(
                     Arg::new("output")
@@ -427,6 +478,8 @@ fn main() {
                         .about("Split output in multiple files"),
                 ),
         )
+
+        // This is fine
         .subcommand(
             App::new("view")
                 .version("1.0.0")
@@ -435,7 +488,7 @@ fn main() {
                     Arg::new("plink")
                         .short('p')
                         .long("plink")
-                        .about("Plink input file")
+                        .about("PLINK input file")
                         .takes_value(true)
                         .required(true),
                 )
@@ -448,6 +501,8 @@ fn main() {
                         .required(true),
                 ),
         )
+
+
         .subcommand(
             App::new("filter")
                 .version("1.0.0")

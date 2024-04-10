@@ -11,9 +11,10 @@ use packing_lib::core::reader::{
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use packing_lib::normalize::convert_helper::Method;
 
 pub fn align_main(matches: &ArgMatches) {
-    // You have either a pack or a compressed pack (cat or list), but you need to provide an index
+    // You have either a list of packs (plain-text) or a compressed pack (cat or list), but you need to provide an index
     if matches.is_present("pack")
         | (matches.is_present("pack compressed") && matches.is_present("index"))
         | (matches.is_present("bfile") && matches.is_present("index"))
@@ -32,16 +33,41 @@ pub fn align_main(matches: &ArgMatches) {
 
     // Threshold
     // Normalization columns
-    let sabsolute = matches.is_present("sabsolute");
-    let smethod = matches.is_present("smethod");
-    let srelative = matches.is_present("srelative");
-    let sstd = matches.is_present("sstd");
+    let mut sabsolute_thresh = matches
+        .value_of("sabsolute-threshold")
+        .unwrap_or("0")
+        .parse::<u32>()
+        .unwrap();
+    let mut sfraction = matches
+        .value_of("sfraction")
+        .unwrap_or("1.0")
+        .parse::<f32>()
+        .unwrap();
+    let mut smethod = Method::from_str(matches.value_of("smethod").unwrap_or("nothing"));
+    let mut sstd = matches.value_of("sstd").unwrap_or("0.0").parse::<f32>().unwrap();
+
+    // If there is nothing
+    if matches.is_present("sabsolute-threshold") && matches.is_present("smethod") {
+        sabsolute_thresh = 1;
+    }
+
+
 
     // Normalize the rows
-    let rabsolute = matches.is_present("rabsolute");
-    let rmethod = matches.is_present("rmethod");
-    let rrelative = matches.is_present("rrelative");
-    let rstd = matches.is_present("rstd");
+    let mut eabsolute_thresh = matches
+        .value_of("eabsolute-threshold")
+        .unwrap_or("0")
+        .parse::<u32>()
+        .unwrap();
+    let mut efraction = matches
+        .value_of("efraction")
+        .unwrap_or("1.0")
+        .parse::<f32>()
+        .unwrap();
+    let mut emethod = Method::from_str(matches.value_of("emethod").unwrap_or("nothing"));
+    let mut estd = matches.value_of("estd").unwrap_or("0.0").parse::<f32>().unwrap();
+
+
 
     // Output modification
     let bimbam = matches.is_present("bimbam");
@@ -62,6 +88,7 @@ pub fn align_main(matches: &ArgMatches) {
         for file in files_list {
             let pc = PackCompact::parse_pack(&file);
             pcs.push(pc);
+
         }
         matrix_pack_wrapper(&mut mw, &pcs, &pcs[0].node_index);
 
