@@ -166,38 +166,6 @@ fn main() {
                 )
 
 
-                .help_heading("Sample thresholds")
-                .arg(Arg::new("sabsolute-threshold")
-                    .long("absolute-threshold")
-                    .about("Set a absolute threshold")
-                    .takes_value(true)
-                    .display_order(0))
-                // Modification
-                .arg(Arg::new("smethod")
-                    .long("smethod")
-                    .about("Normalization method (mean|median|percentile|nothing) [default: nothing]")
-                    .takes_value(true)
-                    .display_order(1)
-                )
-
-                .arg(Arg::new("sfraction")
-                    .long("sfraction")
-                    .about("Fraction")
-                    .takes_value(true)
-                    .display_order(2)
-                )
-                .arg(Arg::new("sstandard-deviation")
-                    .long("sstd")
-                    .about("Adjust your threshold by decreasing if by X * standard deviation")
-                    .takes_value(true)
-                    .display_order(2))
-                .arg(Arg::new("snon-covered")
-                    .long("snon-covered")
-                    .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean)")
-                    .display_order(4)
-                )
-
-
                 .help_heading("Entry thresholds")
                 .arg(Arg::new("absolute-threshold")
                     .long("eabsolute-threshold")

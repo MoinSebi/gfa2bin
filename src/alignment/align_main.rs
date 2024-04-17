@@ -6,7 +6,7 @@ use log::info;
 
 use packing_lib::core::core::{DataType, PackCompact};
 use packing_lib::core::reader::{
-    read_index, unpack_zstd_to_byte, wrapper_bool, wrapper_u16,
+    read_index, unpack_zstd_to_byte, wrapper_bool,
 };
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -31,25 +31,6 @@ pub fn align_main(matches: &ArgMatches) {
     let cpacklist = matches.value_of("bpacklist");
     let output_prefix = matches.value_of("output").unwrap();
 
-    // Threshold
-    // Normalization columns
-    let mut sabsolute_thresh = matches
-        .value_of("sabsolute-threshold")
-        .unwrap_or("0")
-        .parse::<u32>()
-        .unwrap();
-    let mut sfraction = matches
-        .value_of("sfraction")
-        .unwrap_or("1.0")
-        .parse::<f32>()
-        .unwrap();
-    let mut smethod = Method::from_str(matches.value_of("smethod").unwrap_or("nothing"));
-    let mut sstd = matches.value_of("sstd").unwrap_or("0.0").parse::<f32>().unwrap();
-
-    // If there is nothing
-    if matches.is_present("sabsolute-threshold") && matches.is_present("smethod") {
-        sabsolute_thresh = 1;
-    }
 
 
 
@@ -101,18 +82,7 @@ pub fn align_main(matches: &ArgMatches) {
         if matches.is_present("pack compressed") {
             let file_pack = cpack.unwrap();
             let bytes = unpack_zstd_to_byte(file_pack);
-            let meta_data = PackCompact::get_meta(&bytes);
-            let pc_vec;
-            if meta_data.1 == DataType::TypeBit{
-                info!("Reading bool pack");
-                pc_vec = wrapper_bool(&bytes);
-            } else if meta_data.1 == DataType::TypeU16{
-                info!("Reading u16 pack");
-                pc_vec = wrapper_u16(&bytes);
-            } else {
-                info!("Reading u16 pack");
-                pc_vec = wrapper_u16(&bytes);
-            }
+            let pc_vec: Vec<PackCompact> = wrapper_bool(&bytes);
             matrix_pack_wrapper(&mut mw, &pc_vec, &index);
         }
         // Compressed pack list
