@@ -2,7 +2,7 @@ use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
 use crate::subpath::subpath_main::{function1, gfa_index, subpath_wrapper};
 use clap::ArgMatches;
-use gfa_reader::{NCGfa, NCPath, Pansn};
+use gfa_reader::{Gfa, Pansn};
 use hashbrown::HashMap;
 use log::info;
 use std::collections::HashSet;
@@ -46,9 +46,8 @@ pub fn block_main(matches: &ArgMatches) {
 
     info!("Reading graph file");
     let window = window / 2;
-    let mut graph: NCGfa<()> = NCGfa::new();
-    graph.parse_gfa_file(graph_file, false);
-    let wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, sep);
+    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
+    let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, sep);
 
     info!("Indexing graph");
     let a = blocks_node(&graph, steps, window);
@@ -76,8 +75,8 @@ pub fn block_main(matches: &ArgMatches) {
 ///
 ///  - A block starts at a node and end at a node
 ///  - Returns start and end nodes of a block
-pub fn blocks_node(graph: &NCGfa<()>, step: usize, wsize: usize) -> Vec<[u32; 2]> {
-    let glen = graph.nodes.len();
+pub fn blocks_node(graph: &Gfa<u32, (), ()>, step: usize, wsize: usize) -> Vec<[u32; 2]> {
+    let glen = graph.segments.len();
     let mut gg = Vec::new();
     for x in (wsize..glen - wsize).step_by(step) {
         gg.push([(x - wsize) as u32, (x + wsize) as u32]);
@@ -86,10 +85,10 @@ pub fn blocks_node(graph: &NCGfa<()>, step: usize, wsize: usize) -> Vec<[u32; 2]
 }
 
 /// Node size index
-pub fn node_size(graph: &NCGfa<()>) -> Vec<usize> {
+pub fn node_size(graph: &Gfa<u32, (), ()>) -> Vec<usize> {
     let mut node_size = Vec::new();
-    for node in graph.nodes.iter() {
-        node_size.push(node.seq.len());
+    for node in graph.segments.iter() {
+        node_size.push(node.sequence.get_len());
     }
     return node_size;
 }
@@ -104,7 +103,7 @@ pub fn node_size(graph: &NCGfa<()>) -> Vec<usize> {
 ///    else: create new block
 /// else: add distance
 pub fn wrapper_blocks(
-    graph2: &Pansn<NCPath>,
+    graph2: &Pansn<u32, (), ()>,
     node_size: Vec<usize>,
     block: Vec<[u32; 2]>,
     max_distance: usize,

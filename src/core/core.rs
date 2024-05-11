@@ -5,11 +5,11 @@ use crate::core::helper::{
 use crate::r#mod::input_data::FileData;
 use crate::r#mod::mod_main::remove_feature;
 use bitvec::prelude::*;
-use gfa_reader::NCGfa;
 use hashbrown::HashSet;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufWriter, Write};
+use gfa_reader::Gfa;
 use log::info;
 use packing_lib::normalize::convert_helper::Method;
 
@@ -61,19 +61,19 @@ impl MatrixWrapper {
     }
 
     /// Initialize the SNP index
-    pub fn make_index(&mut self, data: &NCGfa<()>, t: Feature) {
+    pub fn make_index(&mut self, data: &Gfa<u32, (), ()>, t: Feature) {
         //let mut bb = HashMap::with_hasher(BuildHasherDefault::<NoHashHasher<u32>>::default());
         let mut geno_names = Vec::new();
         match t {
             Feature::Node => {
-                for (_i, x) in data.nodes.iter().enumerate() {
+                for (_i, x) in data.segments.iter().enumerate() {
                     geno_names.push(x.id as u64);
                     //bb.insert(x.id as u64, i);
                 }
             }
             Feature::DirNode => {
-                if data.edges.is_some() {
-                    let value = data.edges.as_ref().unwrap();
+                if !data.links.is_empty() {
+                    let value = &data.links;
                     let mut edd = HashSet::new();
                     for x in value.iter() {
                         edd.insert(x.from as u64 * 2 + x.from_dir as u64);
@@ -88,8 +88,8 @@ impl MatrixWrapper {
                 }
             }
             Feature::Edge => {
-                if data.edges.is_some() {
-                    let value = data.edges.as_ref().unwrap();
+                if !data.links.is_empty() {
+                    let value = &data.links;
                     for (_i, x) in value.iter().enumerate() {
                         let (v1, v2, v3, v4) = (x.from, x.from_dir, x.to, x.to_dir);
                         let u1 = v1 * 2 + v2 as u32;

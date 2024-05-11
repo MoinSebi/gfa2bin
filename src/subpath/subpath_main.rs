@@ -4,7 +4,7 @@ use crate::window::window_main::getbv;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use clap::ArgMatches;
-use gfa_reader::{NCGfa, NCPath, Pansn};
+use gfa_reader::{Gfa, Pansn};
 use hashbrown::HashMap;
 use log::info;
 
@@ -29,9 +29,8 @@ pub fn subpath_main(matches: &ArgMatches) {
     info!("Window length: {}", window);
 
     info!("Reading graph file");
-    let mut graph: NCGfa<()> = NCGfa::new();
-    graph.parse_gfa_file(graph_file, false);
-    let wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, "#");
+    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
+    let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, "#");
 
     info!("Indexing graph");
     let a = gfa_index(&wrapper);
@@ -39,7 +38,7 @@ pub fn subpath_main(matches: &ArgMatches) {
     info!("Extracting subpath");
     let mw = subpath_wrapper(&wrapper, &graph, window, a);
 
-    info!("Number of nodes: {}", graph.nodes.len());
+    info!("Number of nodes: {}", graph.segments.len());
     info!("Number of subpath: {}", mw.matrix_bit.len());
 
     info!("Writing output");
@@ -50,7 +49,7 @@ pub fn subpath_main(matches: &ArgMatches) {
 ///
 /// For each path:
 ///     node -> Vec<index>
-pub fn gfa_index(graph: &Pansn<NCPath>) -> Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)> {
+pub fn gfa_index(graph: &Pansn<u32, (), ()>) -> Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)> {
     let mut index = Vec::new();
     for (genome_id, path) in graph.genomes.iter().enumerate() {
         for (haplo_id, x) in path.haplotypes.iter().enumerate() {
@@ -74,14 +73,14 @@ pub fn gfa_index(graph: &Pansn<NCPath>) -> Vec<(usize, usize, usize, HashMap<u32
 
 /// Extract all subpath for each node
 pub fn subpath_wrapper(
-    graph2: &Pansn<NCPath>,
-    graph: &NCGfa<()>,
+    graph2: &Pansn<u32, (), ()>,
+    graph: &Gfa<u32, (), ()>,
     window: usize,
     vv: Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)>,
 ) -> MatrixWrapper {
     let mut mw = MatrixWrapper::new();
     let sample_size = graph2.genomes.len();
-    for x1 in graph.nodes.iter() {
+    for x1 in graph.segments.iter() {
         let mut vecc = Vec::new();
         for (genome_id, haplotype_id, path_id, node2index) in vv.iter() {
             let ll = graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id]

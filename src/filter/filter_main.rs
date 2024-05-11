@@ -5,7 +5,7 @@ use crate::r#mod::input_data::FileData;
 use crate::subpath::subpath_main::{function1, gfa_index, subpath_wrapper};
 use crate::window::window_main::iterate_test;
 use clap::ArgMatches;
-use gfa_reader::{NCGfa, NCPath, Pansn};
+use gfa_reader::{Pansn};
 use hashbrown::HashMap;
 use log::info;
 use std::collections::HashSet;

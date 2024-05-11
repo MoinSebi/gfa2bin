@@ -3,11 +3,11 @@ use crate::core::helper::{merge_u32_to_u64, Feature};
 
 use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
-use gfa_reader::{NCPath, Pansn};
+use gfa_reader::{Gfa, Pansn, Path};
 
 pub fn gfa_reader(
     matrix: &mut MatrixWrapper,
-    graph_wrapper: &Pansn<NCPath>,
+    graph_wrapper: &Pansn<u32, (), ()>,
     bin: bool,
     feature: Feature,
 ) {
@@ -149,7 +149,7 @@ pub fn gfa_reader(
 }
 
 /// Convert a path to a vector of u64 depending on the feature
-pub fn paths_to_u64vec(path: &NCPath, feature: Feature) -> Vec<u64> {
+pub fn paths_to_u64vec(path: &Path<u32, (), ()>, feature: Feature) -> Vec<u64> {
     let mut vec_u64 = Vec::new();
     for i in 0..path.nodes.len() - 1 {
         let v1 = path.nodes[i];

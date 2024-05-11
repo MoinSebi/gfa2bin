@@ -1,7 +1,7 @@
 use crate::core::helper::{merge_u32_to_u64, split_u64_to_u32s, to_string1, Feature};
 use crate::r#mod::input_data::FileData;
 use clap::ArgMatches;
-use gfa_reader::{Gfa, NCGfa, NCPath, Pansn};
+use gfa_reader::{Gfa, Pansn};
 use hashbrown::{HashMap, HashSet};
 
 use crate::block::block_main::node_size;
@@ -31,8 +31,7 @@ pub fn find_main(matches: &ArgMatches) {
         mw.bfile_wrapper(feature_file);
         //find_matrix(data, mw, length);
     } else {
-        let mut graph: NCGfa<()> = NCGfa::new();
-        graph.parse_gfa_file(graph_file, false);
+        let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
     }
 }
 

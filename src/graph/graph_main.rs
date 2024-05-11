@@ -6,7 +6,7 @@ use std::io::Read;
 use crate::graph::parser::gfa_reader;
 
 use clap::ArgMatches;
-use gfa_reader::{NCGfa, NCPath, Pansn};
+use gfa_reader::{Gfa, Pansn};
 use log::{info, warn};
 use std::path::Path;
 use std::process;
@@ -100,8 +100,7 @@ pub fn graph_main(matches: &ArgMatches) {
 
     info!("Reading the graph");
     // Read the graph and wrapper
-    let mut graph: NCGfa<()> = NCGfa::new();
-    graph.parse_gfa_file(graph_file, need_edges);
+    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
     if matches.is_present("paths") {
         let mut file = File::open(matches.value_of("paths").unwrap()).unwrap();
         let mut contents = String::new();
@@ -111,7 +110,7 @@ pub fn graph_main(matches: &ArgMatches) {
     }
 
     // Wrapper on PanSN
-    let wrapper: Pansn<NCPath> = Pansn::from_graph(&graph.paths, sep);
+    let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, sep);
 
     // Check diploid
     let mut is_diploid = false;
