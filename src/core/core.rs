@@ -25,10 +25,10 @@ pub struct MatrixWrapper {
     pub matrix_bit: Vec<BitVec<u8, Lsb0>>, //Vec<Vec<bool>>
 
     // Check if node, edges, dirnode, or alignment
-    pub feature: Feature,                  // Feature
-    pub geno_names: Vec<u64>,              // Name of all
-    pub window_number: Vec<u32>,           // Which number of window
-    pub window_size: usize,                // Window number
+    pub feature: Feature,                  // Feature - DIRNODE, NODE, EDGE or mode
+    pub geno_names: Vec<u64>,              // Name of all - "SNP" names
+    pub window_number: Vec<u32>,           // Number of window
+    pub window_size: usize,                // Size of windows
     pub sample_names: Vec<String>,         // Sample names (same order as in the matrix)
     pub sample_index_u16: Vec<[usize; 2]>, // Sample index
 
@@ -60,7 +60,8 @@ impl MatrixWrapper {
         }
     }
 
-    /// Initialize the SNP index
+    /// Initialize the "SNP" index
+    /// Index is used to
     pub fn make_index(&mut self, data: &Gfa<u32, (), ()>, t: Feature) {
         //let mut bb = HashMap::with_hasher(BuildHasherDefault::<NoHashHasher<u32>>::default());
         let mut geno_names = Vec::new();
@@ -150,8 +151,12 @@ impl MatrixWrapper {
                 write_index += 1;
             }
         }
+        println!("Write index: {:?}", write_index);
+        println!("Length: {:?}", self.matrix_bit.len());
         self.matrix_bit.truncate(write_index);
         self.geno_names.truncate(write_index);
+        println!("Length: {:?}", self.matrix_bit.len());
+
     }
 
     /// Remove samples from the dataset

@@ -10,10 +10,13 @@ use gfa_reader::{Gfa, Pansn};
 use log::{info, warn};
 use std::path::Path;
 use std::process;
+use std::thread::sleep;
 use packing_lib::core::core::PackCompact;
 use packing_lib::normalize::convert_helper::Method;
 
 pub fn graph_main(matches: &ArgMatches) {
+
+
     // Check graph file
     let graph_file: &str = if Path::new(matches.value_of("gfa").unwrap()).exists() {
         matches.value_of("gfa").unwrap()
@@ -58,7 +61,7 @@ pub fn graph_main(matches: &ArgMatches) {
         .unwrap();
     let mut method = Method::from_str(matches.value_of("method").unwrap_or("nothing"));
     let mut std = matches.value_of("std").unwrap_or("0.0").parse::<f32>().unwrap();
-
+    let include_all = matches.is_present("non-covered");
 
     // Bin is for faster computation
     let mut bin = false;
@@ -89,6 +92,7 @@ pub fn graph_main(matches: &ArgMatches) {
     info!("Relative threshold: {:?}", fraction);
     info!("Separator: {:?}", sep);
     info!("Binary: {}", bin);
+    info!("Exclude non-covered: {}", !include_all);
     info!("Split: {}", split);
     info!(
         "Output format: {}",
@@ -101,6 +105,7 @@ pub fn graph_main(matches: &ArgMatches) {
     info!("Reading the graph");
     // Read the graph and wrapper
     let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
+    graph.walk_to_path(sep);
     if matches.is_present("paths") {
         let mut file = File::open(matches.value_of("paths").unwrap()).unwrap();
         let mut contents = String::new();
@@ -120,27 +125,32 @@ pub fn graph_main(matches: &ArgMatches) {
         }
         if x.haplotypes.len() > 2 {
             warn!("More than 2 haplotypes");
-            process::exit(0x0100);
+            warn!("Haplotypes are {}", x.haplotypes.iter().map(|x| x.name.clone()).collect::<Vec<String>>().join(", "));
+            warn!("Will only take the first 2 haplotypes")
         }
     }
 
     info!("Diploid: {}", is_diploid);
-
     info!("Number of samples: {}", wrapper.genomes.len());
+    info!("Number of paths: {}", graph.paths.len());
 
     // This is the matrix
     let mut mw = MatrixWrapper::new();
 
     info!("Create the index");
+    sleep(std::time::Duration::from_secs(10));
     mw.make_index(&graph, feature_enum);
+    sleep(std::time::Duration::from_secs(10));
+    info!("Index size: {}", mw.geno_names.len());
+    info!("Index size: {}", mw.geno_names.capacity());
 
     info!("Create matrix");
     gfa_reader(&mut mw, &wrapper, bin, feature_enum);
-
+    info!("Matrix size: {}, {}", mw.matrix_bit.len(), mw.matrix_bit[0].len());
     let mut thresh = Vec::new();
     for x in mw.matrix_u16.iter(){
         let mut b = x.clone();
-        thresh.push(PackCompact::threshold(&mut b, false, fraction, std, method));
+        thresh.push(PackCompact::threshold(&mut b, include_all, fraction, std, method));
     }
 
     if !bin {

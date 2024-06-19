@@ -13,7 +13,7 @@ fn find_1() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("find")
         .arg("-g")
-        .arg("data/example_data/testGraph2.gfa")
+        .arg("data/example_data/testGraph.gfa")
         .arg("-o")
         .arg("data/output/find.nodes1.txt")
         .arg("-f")
@@ -36,7 +36,7 @@ fn find_2() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("find")
         .arg("-g")
-        .arg("data/example_data/testGraph2.gfa")
+        .arg("data/example_data/testGraph.gfa")
         .arg("-o")
         .arg("data/output/find.nodes2.txt")
         .arg("-f")
@@ -62,7 +62,7 @@ fn find_3() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("find")
         .arg("-g")
-        .arg("data/example_data/testGraph2.gfa")
+        .arg("data/example_data/testGraph.gfa")
         .arg("-o")
         .arg("data/output/find.edges1.txt")
         .arg("-f")
@@ -85,7 +85,7 @@ fn find_4() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("find")
         .arg("-g")
-        .arg("data/example_data/testGraph2.gfa")
+        .arg("data/example_data/testGraph.gfa")
         .arg("-o")
         .arg("data/output/find.edges2.txt")
         .arg("-f")

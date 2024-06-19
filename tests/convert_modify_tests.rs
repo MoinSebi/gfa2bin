@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::Read;
 use std::process::Command;
 
-// cargo run -- graph -g data/example_data/testGraph2.gfa -f node -o data/example_data/node.mod
+// cargo run -- graph -g data/example_data/testGraph.gfa -f node -o data/example_data/node.mod
 
 #[test]
 /// Test for plink subcommand

@@ -37,7 +37,7 @@ fn main() {
         )
         .subcommand(
             App::new("graph")
-                .about("Conversion from a graph directly (GFA1 format)")
+                .about("Convert GFA file (v1) to bed")
                 .version("0.1.0")
                 .setting(AppSettings::ArgRequiredElseHelp)
 
@@ -91,7 +91,7 @@ fn main() {
 
                 .arg(Arg::new("fraction")
                     .long("fraction")
-                    .about("Fraction")
+                    .about("Adjust your threshold by multiplying it by this value")
                     .takes_value(true)
                     .display_order(2)
                 )
@@ -103,7 +103,7 @@ fn main() {
                     .display_order(2))
                 .arg(Arg::new("non-covered")
                     .long("non-covered")
-                    .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean)")
+                    .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean) [default: false]")
                     .display_order(4)
                 )
 
@@ -127,8 +127,11 @@ fn main() {
                 .arg(
                     Arg::new("bimbam")
                         .long("bimbam")
-                        .about("Output in BIMBAM format")),
+                        .about("Output in BIMBAM format [default: plink]"),),
         )
+
+
+
         .subcommand(
             App::new("align")
                 .about("Conversion from a alignment (pack or bpack)")
@@ -474,7 +477,7 @@ fn main() {
         .subcommand(
             App::new("filter")
                 .version("1.0.0")
-                .about("Filter a PLINK file")
+                .about("Filter a PLINK file. (1) 'SNPs' by allele frequency or (2) path/samples by matrix coverage")
                 .arg(
                     Arg::new("plink")
                         .short('p')
