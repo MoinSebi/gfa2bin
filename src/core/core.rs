@@ -1,17 +1,18 @@
 use crate::core::helper::{
-    average_vec_u16, is_all_ones, is_all_zeros, median, merge_u32_to_u64, percentile, Feature,
+    is_all_ones, is_all_zeros, merge_u32_to_u64, Feature,
 };
 
 use crate::r#mod::input_data::FileData;
 use crate::r#mod::mod_main::remove_feature;
 use bitvec::prelude::*;
+use gfa_reader::Gfa;
 use hashbrown::HashSet;
+use log::info;
+
+
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use gfa_reader::Gfa;
-use log::info;
-use packing_lib::normalize::convert_helper::Method;
 
 #[derive(Debug, Clone, PartialEq)]
 /// Core data structure
@@ -25,11 +26,11 @@ pub struct MatrixWrapper {
     pub matrix_bit: Vec<BitVec<u8, Lsb0>>, //Vec<Vec<bool>>
 
     // Check if node, edges, dirnode, or alignment
-    pub feature: Feature,                  // Feature - DIRNODE, NODE, EDGE or mode
-    pub geno_names: Vec<u64>,              // Name of all - "SNP" names
-    pub window_number: Vec<u32>,           // Number of window
-    pub window_size: usize,                // Size of windows
-    pub sample_names: Vec<String>,         // Sample names (same order as in the matrix)
+    pub feature: Feature,          // Feature - DIRNODE, NODE, EDGE or mode
+    pub geno_names: Vec<u64>,      // Name of all - "SNP" names
+    pub window_number: Vec<u32>,   // Number of window
+    pub window_size: usize,        // Size of windows
+    pub sample_names: Vec<String>, // Sample names (same order as in the matrix)
     pub sample_index_u16: Vec<[usize; 2]>, // Sample index
 
     // Plink specific stuff
@@ -107,7 +108,8 @@ impl MatrixWrapper {
         self.geno_names = geno_names;
     }
 
-    pub fn make_bin_row(&mut self, relative: &Vec<f32>) {
+    /// Create a presence/absence matrix based on a threshold
+    pub fn matrix2bin(&mut self, relative: &Vec<f32>) {
         let mut matrix_bin = Vec::new();
         for (val, re) in self.matrix_u16.iter().zip(relative.iter()) {
             let mut biit = BitVec::with_capacity(val.len());
@@ -151,12 +153,8 @@ impl MatrixWrapper {
                 write_index += 1;
             }
         }
-        println!("Write index: {:?}", write_index);
-        println!("Length: {:?}", self.matrix_bit.len());
         self.matrix_bit.truncate(write_index);
         self.geno_names.truncate(write_index);
-        println!("Length: {:?}", self.matrix_bit.len());
-
     }
 
     /// Remove samples from the dataset
@@ -258,17 +256,24 @@ impl MatrixWrapper {
             let bb = self.geno_names.iter().zip(self.window_number.iter());
             let cc = file_data.data.iter().zip(file_data.window.iter());
 
-            let a = remove_feature(bb, cc);
-            a
+            
+            remove_feature(bb, cc)
         } else {
             let bb = self.geno_names.iter();
             let cc = file_data.data.iter();
 
-            let a = remove_feature(bb, cc);
-            a
+            
+            remove_feature(bb, cc)
         }
     }
 
+    /// Remove entries by index from the matrix
+    ///
+    /// Removed in:
+    /// - genome names
+    /// - matrix bit
+    /// - bim entries
+    ///
     pub fn remove_by_index(&mut self, index: Vec<usize>) {
         let mut rmi = self.matrix_bit.len() - 1;
         for x in index.iter().rev() {
@@ -292,7 +297,14 @@ impl MatrixWrapper {
 
     //----------------------------------------------------------------------------------
     /// Write wrapper
-    pub fn g(&self, b: bool, split: usize, output_prefix: &str, thresh: Vec<f32>, feature_enum: Feature){
+    pub fn write_wrapper(
+        &self,
+        b: bool,
+        split: usize,
+        output_prefix: &str,
+        thresh: Vec<f32>,
+        feature_enum: Feature,
+    ) {
         if b {
             info!("Writing the bimbam");
             let chunk_size = (self.matrix_u16.len() / split) + 1;
@@ -319,8 +331,6 @@ impl MatrixWrapper {
         }
     }
 
-
-
     /// Write "empty" fam with no phenotypes
     ///
     /// Contains the names of the samples in the same order as plink bed file
@@ -334,7 +344,7 @@ impl MatrixWrapper {
         let mut f = BufWriter::new(f);
         if self.fam_entries.is_empty() {
             for x in self.sample_names.iter() {
-                writeln!(f, "{}\t{}\t{}\t{}\t{}\t{}", x, x, 0, 0, 0, 0)
+                writeln!(f, "{}\t{}\t{}\t{}\t{}\t{}", x, x, 0, 0, 0, 1)
                     .expect("Can not write file");
             }
         } else {
@@ -345,6 +355,8 @@ impl MatrixWrapper {
     }
 
     /// Write bed file in SNP-major mode
+    ///
+    /// https://zzz.bwh.harvard.edu/plink/binary.shtml
     pub fn write_bed(&self, number: usize, out_prefix: &str, _feature: Feature, len: usize) {
         //hexdump -C test.bin
         // xxd -b file
@@ -367,6 +379,12 @@ impl MatrixWrapper {
         file.write_all(&buff).expect("Not able to write ")
     }
 
+    /// Write chunks (splits)
+    ///
+    /// Split the data into chunks and write them
+    /// - bed
+    /// - bim
+    /// - fam
     pub fn write_chunks(&self, split: usize, output_prefix: &str, feature: Feature) {
         let chunk_size = (self.matrix_bit.len() / split) + 1;
         let chunks = self.matrix_bit.chunks(chunk_size);
@@ -390,7 +408,7 @@ impl MatrixWrapper {
     /// Allele 1 (corresponding to clear bits in .bed; usually minor)
     /// Allele 2 (corresponding to set bits in .bed; usually major)
     /// Representation here: [graph, ., 1, 0, A, T]
-    pub fn write_bim(&self, number: usize, out_prefix: &str, feature: &Feature, len: usize) {
+    pub fn write_bim(&self, number: usize, out_prefix: &str, _feature: &Feature, len: usize) {
         let mut output = [out_prefix, &number.to_string(), "bim"].join(".");
         if len == 1 {
             output = [out_prefix, "bim"].join(".");
@@ -415,6 +433,10 @@ impl MatrixWrapper {
         }
     }
 
+    /// Write a bimbam file
+    ///
+    /// Based on real values (no presence/absence) and a threshold
+    /// Default genotype is A and T
     pub fn write_bimbam(&self, number: usize, out_prefix: &str, len: usize, val: &Vec<f32>) {
         let mut output = [out_prefix, &number.to_string(), "bimbam"].join(".");
         if len == 1 {
@@ -448,7 +470,10 @@ impl MatrixWrapper {
         }
     }
 
-    /// Write "empty" pheno file
+    /// Write "empty" pheno file for bimbam
+    ///
+    /// Format - simple list of sample names
+    /// - Sample name
     pub fn write_phenotype_bimbam(&self, number: usize, out_prefix: &str, len: usize) {
         let mut output = [out_prefix, &number.to_string(), "pheno"].join(".");
         if len == 1 {

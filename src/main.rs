@@ -37,7 +37,7 @@ fn main() {
         )
         .subcommand(
             App::new("graph")
-                .about("Convert GFA file (v1) to bed")
+                .about("Convert GFA file (v1) to plink (bed, bim, fam)")
                 .version("0.1.0")
                 .setting(AppSettings::ArgRequiredElseHelp)
 
@@ -47,7 +47,7 @@ fn main() {
                     Arg::new("gfa")
                         .short('g')
                         .long("gfa")
-                        .about("Sets the input file to use")
+                        .about("Input GFA file")
                         .takes_value(true)
                         .required(true),
                 )
@@ -80,7 +80,6 @@ fn main() {
                     .about("Set a absolute threshold")
                     .takes_value(true)
                     .display_order(0))
-                // Modification
                 .arg(Arg::new("method")
                     .short('m')
                     .long("method")
@@ -88,7 +87,6 @@ fn main() {
                     .takes_value(true)
                     .display_order(1)
                 )
-
                 .arg(Arg::new("fraction")
                     .long("fraction")
                     .about("Adjust your threshold by multiplying it by this value")
@@ -134,7 +132,7 @@ fn main() {
 
         .subcommand(
             App::new("align")
-                .about("Conversion from a alignment (pack or bpack)")
+                .about("Conversion from a alignment (pack or compressed pack)")
                 .version("0.1.0")
                 .setting(AppSettings::ArgRequiredElseHelp)
 
@@ -210,7 +208,8 @@ fn main() {
                         .short('o')
                         .long("output")
                         .about("Output prefix for the new plink file")
-                        .takes_value(true),
+                        .takes_value(true)
+                        .required(true),
                 )
                 .arg(
                     Arg::new("split")

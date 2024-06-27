@@ -23,7 +23,7 @@ fn find_1() -> Result<(), Box<dyn std::error::Error>> {
     let mut b = File::open("data/output/find.nodes1.txt").unwrap();
     let mut content = String::new();
     b.read_to_string(&mut content).unwrap();
-    assert_eq!(content.contains("a#1#Chr1"), true);
+    assert!(content.contains("a#1#Chr1"));
     fs::remove_file("data/output/find.nodes1.txt")?;
     Ok(())
 }
@@ -48,7 +48,7 @@ fn find_2() -> Result<(), Box<dyn std::error::Error>> {
     let mut b = File::open("data/output/find.nodes2.txt").unwrap();
     let mut content = String::new();
     b.read_to_string(&mut content).unwrap();
-    assert_eq!(content.contains("a#1#Chr1"), true);
+    assert!(content.contains("a#1#Chr1"));
     fs::remove_file("data/output/find.nodes2.txt")?;
 
     Ok(())
@@ -72,7 +72,7 @@ fn find_3() -> Result<(), Box<dyn std::error::Error>> {
     let mut b = File::open("data/output/find.edges1.txt").unwrap();
     let mut content = String::new();
     b.read_to_string(&mut content).unwrap();
-    assert_eq!(content.contains("b#1#Chr1"), true);
+    assert!(content.contains("b#1#Chr1"));
     fs::remove_file("data/output/find.edges1.txt")?;
     Ok(())
 }
@@ -97,7 +97,7 @@ fn find_4() -> Result<(), Box<dyn std::error::Error>> {
     let mut b = File::open("data/output/find.edges2.txt").unwrap();
     let mut content = String::new();
     b.read_to_string(&mut content).unwrap();
-    assert_eq!(content.contains("b#1#Chr1"), true);
+    assert!(content.contains("b#1#Chr1"));
     fs::remove_file("data/output/find.edges2.txt")?;
 
     Ok(())

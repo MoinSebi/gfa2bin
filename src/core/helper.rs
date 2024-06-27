@@ -1,8 +1,8 @@
 use crate::r#mod::input_data::find_first_plus_minus;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
+
 use std::fmt::Display;
-use packing_lib::normalize::helper::mean;
 
 #[derive(Debug, Clone, Eq, PartialEq, Copy)]
 pub enum Feature {
@@ -38,7 +38,7 @@ impl Feature {
                 (s2, 0)
             }
             Feature::Edge => {
-                let ss = find_first_plus_minus(&s).unwrap();
+                let ss = find_first_plus_minus(s).unwrap();
                 let s1 = &s[..ss];
                 let s2 = &s[ss..ss + 1];
                 let s3 = &s[ss + 1..s.len() - 1];
@@ -48,11 +48,11 @@ impl Feature {
                 (merge_u32_to_u64(ss1 as u32, ss2 as u32), 0)
             }
             Feature::Alignment => {
-                let ff: Vec<u32> = s.split("_").map(|a| a.parse().unwrap()).collect();
+                let ff: Vec<u32> = s.split('_').map(|a| a.parse().unwrap()).collect();
                 (merge_u32_to_u64(ff[0], ff[1]), 0)
             }
             Feature::MWindow => {
-                let ff: Vec<&str> = s.split("_").map(|a| a).collect();
+                let ff: Vec<&str> = s.split('_').collect();
 
                 (
                     Self::string2u64(ff[0], feature2.unwrap(), feature2).0,
@@ -60,11 +60,11 @@ impl Feature {
                 )
             }
             Feature::PWindow => {
-                let ff: Vec<u32> = s.split("_").map(|a| a.parse().unwrap()).collect();
+                let ff: Vec<u32> = s.split('_').map(|a| a.parse().unwrap()).collect();
                 (merge_u32_to_u64(ff[0], ff[2]), 0)
             }
             Feature::Block => {
-                let ff: Vec<u32> = s.split("_").map(|a| a.parse().unwrap()).collect();
+                let ff: Vec<u32> = s.split('_').map(|a| a.parse().unwrap()).collect();
                 (merge_u32_to_u64(ff[0], ff[1]), ff[2])
             }
         }
@@ -87,9 +87,9 @@ impl Feature {
         if *self == Feature::PWindow {
             let (left, right) = split_u64_to_u32s(input);
 
-            return "P".to_string()
+            "P".to_string()
                 + &format_unsigned_as_string(left)
-                + &format_unsigned_as_string(right);
+                + &format_unsigned_as_string(right)
         } else if *self == Feature::MWindow {
             let (left, right) = split_u64_to_u32s(input);
             return "M".to_string()
@@ -120,28 +120,26 @@ impl Feature {
             .filter(|s| !s.is_empty())
             .collect();
         let last_letter = pp.chars().last().unwrap();
-        let parts2 = pp.split("_").collect::<Vec<&str>>();
-        if pp.starts_with("P") {
+        let parts2 = pp.split('_').collect::<Vec<&str>>();
+        if pp.starts_with('P') {
             (Feature::PWindow, None)
-        } else if pp.starts_with("M") {
+        } else if pp.starts_with('M') {
             (
                 Feature::MWindow,
-                Some(Feature::identify_feature(pp[1..].split("_").next().unwrap()).0),
+                Some(Feature::identify_feature(pp[1..].split('_').next().unwrap()).0),
             )
-        } else if pp.starts_with("B") {
+        } else if pp.starts_with('B') {
             (Feature::Block, None)
         } else if parts2.len() == 2 {
             (Feature::Alignment, None)
-        } else {
-            if last_letter == '+' || last_letter == '-' {
-                if parts.len() == 1 {
-                    (Feature::DirNode, None)
-                } else {
-                    (Feature::Edge, None)
-                }
+        } else if last_letter == '+' || last_letter == '-' {
+            if parts.len() == 1 {
+                (Feature::DirNode, None)
             } else {
-                (Feature::Node, None)
+                (Feature::Edge, None)
             }
+        } else {
+            (Feature::Node, None)
         }
     }
 }
@@ -172,20 +170,20 @@ pub fn read1(input: &str, f: Feature) -> (u64, u64) {
             (merge_u32_to_u64(numb1, numb2), 0)
         }
         Feature::Alignment => {
-            let ff: Vec<u32> = input.split("_").map(|a| a.parse().unwrap()).collect();
+            let ff: Vec<u32> = input.split('_').map(|a| a.parse().unwrap()).collect();
 
             (merge_u32_to_u64(ff[0], ff[1]), 0)
         }
         Feature::MWindow => {
-            let ff: Vec<u32> = input.split("_").map(|a| a.parse().unwrap()).collect();
+            let ff: Vec<u32> = input.split('_').map(|a| a.parse().unwrap()).collect();
             (merge_u32_to_u64(ff[0], ff[2]), 0)
         }
         Feature::PWindow => {
-            let ff: Vec<u32> = input.split("_").map(|a| a.parse().unwrap()).collect();
+            let ff: Vec<u32> = input.split('_').map(|a| a.parse().unwrap()).collect();
             (merge_u32_to_u64(ff[0], ff[2]), 0)
         }
         Feature::Block => {
-            let ff: Vec<u32> = input.split("_").map(|a| a.parse().unwrap()).collect();
+            let ff: Vec<u32> = input.split('_').map(|a| a.parse().unwrap()).collect();
             (merge_u32_to_u64(ff[0], ff[2]), 0)
         }
     }
@@ -244,6 +242,7 @@ pub fn split_u64_to_u32s(value: u64) -> (u32, u32) {
     (high, low)
 }
 
+
 pub fn index2node_seq(vector: &[u32]) -> Vec<u64> {
     let mut result = Vec::new();
     let mut node_id = vector[0];
@@ -260,7 +259,7 @@ pub fn index2node_seq(vector: &[u32]) -> Vec<u64> {
             result.push(merge_u32_to_u64(node_id, seq_count))
         }
     }
-    result.push(merge_u32_to_u64(node_id, seq_count));
+
     result
 }
 
@@ -294,7 +293,7 @@ pub fn percentile(data: &[u16], u: f64) -> f64 {
     let n = data.len() as f64;
     let p: usize = ((u / 100.0) * (n - 1.0)).floor() as usize;
 
-    return data2[p] as f64;
+    data2[p] as f64
 }
 
 pub fn median(data: &[u16], rval: u16) -> f64 {
@@ -311,10 +310,10 @@ pub fn median(data: &[u16], rval: u16) -> f64 {
         let middle_index_2 = n / 2;
         let median =
             (sorted_data[middle_index_1] as f64 + sorted_data[middle_index_2] as f64) / 2.0;
-        median * rval as f64 / 100 as f64
+        median * rval as f64 / 100_f64
     } else {
         // If odd, return the middle element
         let middle_index = n / 2;
-        sorted_data[middle_index] as f64 * rval as f64 / 100 as f64
+        sorted_data[middle_index] as f64 * rval as f64 / 100_f64
     }
 }

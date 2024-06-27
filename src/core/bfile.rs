@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{from_string, Feature};
+use crate::core::helper::{Feature};
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use std::fs;
@@ -109,5 +109,5 @@ pub fn get_type_bim(file_path: &str) -> (Feature, Option<Feature>) {
     // Read the first line of the file
     let first_line = reader.lines().next().unwrap().unwrap();
     let first_line = first_line.split_whitespace().nth(3).unwrap();
-    Feature::identify_feature(&first_line)
+    Feature::identify_feature(first_line)
 }

@@ -2,16 +2,14 @@ use crate::alignment::pack::matrix_pack_wrapper;
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
 use clap::ArgMatches;
-use log::info;
+use log::{info, warn};
 
-use packing_lib::core::core::{DataType, PackCompact};
-use packing_lib::core::reader::{
-    read_index, unpack_zstd_to_byte, wrapper_bool,
-};
+use packing_lib::core::core::{PackCompact};
+use packing_lib::core::reader::{read_index, unpack_zstd_to_byte, wrapper_reader};
+use packing_lib::normalize::convert_helper::Method;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use packing_lib::normalize::convert_helper::Method;
 
 pub fn align_main(matches: &ArgMatches) {
     // You have either a list of packs (plain-text) or a compressed pack (cat or list), but you need to provide an index
@@ -21,8 +19,14 @@ pub fn align_main(matches: &ArgMatches) {
     {
         info!("Aligning");
     } else {
-        info!("No input file");
-        return;
+        if matches.is_present("pack compressed") {
+            panic!("You need to provide an index file");
+        }
+        if matches.is_present("bfile") {
+            panic!("You need to provide an index file");
+        } else {
+            panic!("You need to provide a pack file");
+        }
     }
 
     // Read input files
@@ -31,24 +35,23 @@ pub fn align_main(matches: &ArgMatches) {
     let cpacklist = matches.value_of("bpacklist");
     let output_prefix = matches.value_of("output").unwrap();
 
-
-
-
     // Normalize the rows
-    let mut eabsolute_thresh = matches
+    let _eabsolute_thresh = matches
         .value_of("eabsolute-threshold")
         .unwrap_or("0")
         .parse::<u32>()
         .unwrap();
-    let mut efraction = matches
+    let _efraction = matches
         .value_of("efraction")
         .unwrap_or("1.0")
         .parse::<f32>()
         .unwrap();
-    let mut emethod = Method::from_str(matches.value_of("emethod").unwrap_or("nothing"));
-    let mut estd = matches.value_of("estd").unwrap_or("0.0").parse::<f32>().unwrap();
-
-
+    let _emethod = Method::from_str(matches.value_of("emethod").unwrap_or("nothing"));
+    let _estd = matches
+        .value_of("estd")
+        .unwrap_or("0.0")
+        .parse::<f32>()
+        .unwrap();
 
     // Output modification
     let bimbam = matches.is_present("bimbam");
@@ -58,10 +61,9 @@ pub fn align_main(matches: &ArgMatches) {
         .parse::<usize>()
         .unwrap();
 
-
     // Initialize the matrix wrapper
     let mut mw = MatrixWrapper::new();
-
+    mw.feature = Feature::Alignment;
     // "Normal" pack file
     if matches.is_present("pack") {
         let files_list = read_file_lines(pack_list.unwrap()).unwrap();
@@ -69,7 +71,6 @@ pub fn align_main(matches: &ArgMatches) {
         for file in files_list {
             let pc = PackCompact::parse_pack(&file);
             pcs.push(pc);
-
         }
         matrix_pack_wrapper(&mut mw, &pcs, &pcs[0].node_index);
 
@@ -82,7 +83,7 @@ pub fn align_main(matches: &ArgMatches) {
         if matches.is_present("pack compressed") {
             let file_pack = cpack.unwrap();
             let bytes = unpack_zstd_to_byte(file_pack);
-            let pc_vec: Vec<PackCompact> = wrapper_bool(&bytes);
+            let pc_vec: Vec<PackCompact> = wrapper_reader(&bytes);
             matrix_pack_wrapper(&mut mw, &pc_vec, &index);
         }
         // Compressed pack list
@@ -125,8 +126,6 @@ pub fn align_main(matches: &ArgMatches) {
         }
     }
 }
-
-
 
 /// Read a file and return a vector of lines
 ///

@@ -33,7 +33,7 @@ pub fn matrix_pack_wrapper(
         } else {
             matrix_w.geno_names = remove_duplicates(index);
         }
-    } else if first_entry.data_type == DataType::TypeU16{
+    } else if first_entry.data_type == DataType::TypeU16 {
         let ll = first_entry.length as usize;
         matrix_w.matrix_u16 = vec![vec![0; input.len()]; ll];
         for (i, x) in input.iter().enumerate() {

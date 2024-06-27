@@ -1,7 +1,7 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
 use crate::window::window_main::getbv;
-use bitvec::order::Lsb0;
+
 use bitvec::prelude::BitVec;
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
@@ -29,7 +29,7 @@ pub fn subpath_main(matches: &ArgMatches) {
     info!("Window length: {}", window);
 
     info!("Reading graph file");
-    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
+    let graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
     let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, "#");
 
     info!("Indexing graph");
@@ -49,7 +49,9 @@ pub fn subpath_main(matches: &ArgMatches) {
 ///
 /// For each path:
 ///     node -> Vec<index>
-pub fn gfa_index(graph: &Pansn<u32, (), ()>) -> Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)> {
+pub fn gfa_index(
+    graph: &Pansn<u32, (), ()>,
+) -> Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)> {
     let mut index = Vec::new();
     for (genome_id, path) in graph.genomes.iter().enumerate() {
         for (haplo_id, x) in path.haplotypes.iter().enumerate() {
@@ -68,7 +70,7 @@ pub fn gfa_index(graph: &Pansn<u32, (), ()>) -> Vec<(usize, usize, usize, HashMa
         }
     }
 
-    return index;
+    index
 }
 
 /// Extract all subpath for each node
@@ -114,7 +116,7 @@ pub fn subpath_wrapper(
     mw.shape = (mw.matrix_bit.len(), mw.matrix_bit[0].len());
     mw.sample_names = graph2.genomes.iter().map(|x| x.name.clone()).collect();
 
-    return mw;
+    mw
 }
 
 pub fn function1(

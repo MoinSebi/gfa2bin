@@ -1,19 +1,18 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
-use crate::subpath::subpath_main::{function1, gfa_index, subpath_wrapper};
+use crate::subpath::subpath_main::{function1};
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
-use hashbrown::HashMap;
+
 use log::info;
 use std::collections::HashSet;
-use std::ffi::c_ushort;
+
 
 /// Block main function
 ///
 /// Easy block function
 /// Extract the subpath from a graph for each node
 pub fn block_main(matches: &ArgMatches) {
-
     // Input
     let graph_file = matches.value_of("gfa").unwrap();
     let sep = matches.value_of("PanSN").unwrap_or(" ");
@@ -46,7 +45,7 @@ pub fn block_main(matches: &ArgMatches) {
 
     info!("Reading graph file");
     let window = window / 2;
-    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
+    let graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
     let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, sep);
 
     info!("Indexing graph");
@@ -57,7 +56,6 @@ pub fn block_main(matches: &ArgMatches) {
 
     info!("Extracting blocks");
     let mw = wrapper_blocks(&wrapper, b, a, distance);
-
 
     info!("Writing blocks");
     let chunk_size = (mw.matrix_bit.len() / split) + 1;
@@ -81,7 +79,7 @@ pub fn blocks_node(graph: &Gfa<u32, (), ()>, step: usize, wsize: usize) -> Vec<[
     for x in (wsize..glen - wsize).step_by(step) {
         gg.push([(x - wsize) as u32, (x + wsize) as u32]);
     }
-    return gg;
+    gg
 }
 
 /// Node size index
@@ -90,7 +88,7 @@ pub fn node_size(graph: &Gfa<u32, (), ()>) -> Vec<usize> {
     for node in graph.segments.iter() {
         node_size.push(node.sequence.get_len());
     }
-    return node_size;
+    node_size
 }
 
 /// Wrapper function for blocks
@@ -120,7 +118,7 @@ pub fn wrapper_blocks(
         for (genome_id, path) in graph2.genomes.iter().enumerate() {
             for (haplo_id, x1) in path.haplotypes.iter().enumerate() {
                 for (path_id, x) in x1.paths.iter().enumerate() {
-                    let mut block_array: [usize; 3] = [0; 3];       // Triple 0
+                    let mut block_array: [usize; 3] = [0; 3]; // Triple 0
                     let mut distance = 0;
                     for (i, node) in x.nodes.iter().enumerate() {
                         if block_hashset.contains(node) {
@@ -136,16 +134,14 @@ pub fn wrapper_blocks(
                             }
                         } else {
                             distance += node_size[*node as usize - 1];
-                            if distance > max_distance {
-                                if block_array[2] != 0 {
-                                    all_blocks.push((
-                                        genome_id,
-                                        haplo_id,
-                                        path_id,
-                                        &x.nodes[block_array[0]..block_array[1]],
-                                    ));
-                                    block_array = [0; 3];
-                                }
+                            if distance > max_distance && block_array[2] != 0 {
+                                all_blocks.push((
+                                    genome_id,
+                                    haplo_id,
+                                    path_id,
+                                    &x.nodes[block_array[0]..block_array[1]],
+                                ));
+                                block_array = [0; 3];
                             }
                         }
                     }

@@ -1,4 +1,4 @@
-use crate::core::helper::{merge_u32_to_u64, Feature};
+use crate::core::helper::{Feature};
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};

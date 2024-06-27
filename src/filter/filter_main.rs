@@ -1,15 +1,15 @@
-use crate::block::block_main::{blocks_node, node_size, wrapper_blocks};
+
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{merge_u32_to_u64, percentile, Feature};
-use crate::r#mod::input_data::FileData;
-use crate::subpath::subpath_main::{function1, gfa_index, subpath_wrapper};
-use crate::window::window_main::iterate_test;
+
+
+
+
 use clap::ArgMatches;
-use gfa_reader::{Pansn};
-use hashbrown::HashMap;
+
+
 use log::info;
-use std::collections::HashSet;
-use std::ffi::c_ushort;
+
+
 
 /// Block main function
 ///
@@ -37,7 +37,7 @@ pub fn filter_main(matches: &ArgMatches) {
     info!("MAF: {}", maf);
     info!("MAF: {}", MAF);
     let mut mw = MatrixWrapper::new();
-    let feature = mw.feature;
+    let _feature = mw.feature;
     mw.bfile_wrapper(plink_file);
 
     println!("Matrix size: {}", mw.matrix_bit.len());
@@ -72,7 +72,7 @@ pub fn filter_main(matches: &ArgMatches) {
 impl MatrixWrapper {
     pub fn filet_maf(&mut self, maf: f64, MAF: f64) {
         let mut b = Vec::new();
-        for (i, (x, o)) in self
+        for (i, (x, _o)) in self
             .matrix_bit
             .iter()
             .zip(self.geno_names.iter_mut())
@@ -97,7 +97,7 @@ impl MatrixWrapper {
         for i in 0..self.matrix_bit[0].len() / 2 {
             let mut c = 0;
             for x in self.matrix_bit.iter() {
-                if x[i * 2] == true || x[i * 2 + 1] == false {
+                if x[i * 2] || !x[i * 2 + 1] {
                     c += 1;
                 }
             }

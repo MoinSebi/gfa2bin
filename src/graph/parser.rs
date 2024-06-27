@@ -1,9 +1,11 @@
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
 
 use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
-use gfa_reader::{Gfa, Pansn, Path};
+use gfa_reader::{Pansn, Path};
 
 
 /// Read a gfa file and convert it to a matrix (bit or u16)
@@ -24,7 +26,6 @@ pub fn gfa_reader(
         ];
         matrix.shape = (matrix.matrix_bit.len(), matrix.matrix_bit[0].len());
 
-
         let index2geno = &matrix.geno_names;
         for (path_index, nn) in graph_wrapper.genomes.iter().enumerate() {
             matrix.sample_names.push(nn.name.clone());
@@ -38,7 +39,6 @@ pub fn gfa_reader(
 
                     while i < path_geno_vec.len() && j < index2geno.len() {
                         if path_geno_vec[i] == index2geno[j] {
-
                             matrix.matrix_bit[j]
                                 .get_mut(path_index * 2 + 1)
                                 .unwrap()

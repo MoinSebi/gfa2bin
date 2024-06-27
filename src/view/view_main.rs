@@ -22,14 +22,16 @@ pub fn view_main(matches: &ArgMatches) {
 }
 
 impl MatrixWrapper {
+
+
     /// Write a VCF file with dumb header
     pub fn write_vcf(&self, filename: &str) {
         let file = File::create(filename).unwrap();
         let mut writer = std::io::BufWriter::new(file);
-        write!(writer, "##fileformat=VCFv4.2\n").expect("Error writing to file");
-        write!(
+        writeln!(writer, "##fileformat=VCFv4.2").expect("Error writing to file");
+        writeln!(
             writer,
-            "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">\n"
+            "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">"
         )
         .expect("Error writing to file");
 
@@ -54,18 +56,13 @@ impl MatrixWrapper {
         .expect("Test");
 
         for (x, y) in self.matrix_bit.iter().zip(bims.iter()) {
-            write!(
+            writeln!(
                 writer,
-                "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
-                "graph",
+                "graph\t{}\t.\t{}\t-\t{}\tPASS\t{}\tGT\t{}",
                 y,
-                ".",
                 y,
-                "-",
                 self.feature.to_string1(),
-                "PASS",
                 "GT=".to_string() + &(x.len() / 2).to_string(),
-                "GT",
                 bitvec2vcf_string(x)
             )
             .expect("Error writing to file");
@@ -78,16 +75,16 @@ pub fn bitvec2vcf_string(bitvec: &BitVec<u8>) -> String {
     let mut s = String::new();
     let chunks = bitvec.chunks(2);
     for x in chunks {
-        if x[0] == false && x[1] == false {
+        if !x[0] && !x[1] {
             s.push_str("0/0");
-        } else if x[0] == false && x[1] == true {
+        } else if !x[0] && x[1] {
             s.push_str("0/1");
-        } else if x[0] == true && x[1] == false {
+        } else if x[0] && !x[1] {
             s.push_str("1/0");
-        } else if x[0] == true && x[1] == true {
+        } else if x[0] && x[1] {
             s.push_str("1/1");
         }
-        s.push_str("\t");
+        s.push('\t');
     }
     s
 }

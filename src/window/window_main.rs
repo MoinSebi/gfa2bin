@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{merge_u32_to_u64, Feature};
+use crate::core::helper::{Feature};
 use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
 use clap::ArgMatches;
@@ -68,7 +68,7 @@ pub fn iterate_test(mw: &MatrixWrapper, window: usize) -> MatrixWrapper {
     mw_new.fam_entries = mw.fam_entries.clone();
     mw_new.feature = Feature::MWindow;
     mw_new.window_size = window;
-    return mw_new;
+    mw_new
 }
 
 ///

@@ -1,23 +1,23 @@
-use crate::core::helper::{merge_u32_to_u64, split_u64_to_u32s, to_string1, Feature};
+use crate::core::helper::{Feature};
 use crate::r#mod::input_data::FileData;
 use clap::ArgMatches;
-use gfa_reader::{Gfa, Pansn};
-use hashbrown::{HashMap, HashSet};
+use gfa_reader::{Gfa};
 
-use crate::block::block_main::node_size;
+
+
 use crate::core::core::MatrixWrapper;
-use crate::subpath::subpath_main::function1;
-use crate::window::window_main::{get_index, getbv};
-use bitvec::prelude::BitVec;
-use std::cmp::max;
-use std::fs::File;
-use std::io::Write;
+
+
+
+
+
+
 
 pub fn find_main(matches: &ArgMatches) {
     let graph_file = matches.value_of("gfa").unwrap();
     let feature_file = matches.value_of("features").unwrap();
-    let output = matches.value_of("output").unwrap();
-    let length = matches
+    let _output = matches.value_of("output").unwrap();
+    let _length = matches
         .value_of("length")
         .unwrap()
         .parse::<usize>()
@@ -31,7 +31,7 @@ pub fn find_main(matches: &ArgMatches) {
         mw.bfile_wrapper(feature_file);
         //find_matrix(data, mw, length);
     } else {
-        let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
+        let _graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
     }
 }
 
