@@ -87,9 +87,7 @@ impl Feature {
         if *self == Feature::PWindow {
             let (left, right) = split_u64_to_u32s(input);
 
-            "P".to_string()
-                + &format_unsigned_as_string(left)
-                + &format_unsigned_as_string(right)
+            "P".to_string() + &format_unsigned_as_string(left) + &format_unsigned_as_string(right)
         } else if *self == Feature::MWindow {
             let (left, right) = split_u64_to_u32s(input);
             return "M".to_string()
@@ -241,7 +239,6 @@ pub fn split_u64_to_u32s(value: u64) -> (u32, u32) {
 
     (high, low)
 }
-
 
 pub fn index2node_seq(vector: &[u32]) -> Vec<u64> {
     let mut result = Vec::new();

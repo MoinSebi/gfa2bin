@@ -1,17 +1,9 @@
-use crate::core::helper::{Feature};
+use crate::core::helper::Feature;
 use crate::r#mod::input_data::FileData;
 use clap::ArgMatches;
-use gfa_reader::{Gfa};
-
-
+use gfa_reader::Gfa;
 
 use crate::core::core::MatrixWrapper;
-
-
-
-
-
-
 
 pub fn find_main(matches: &ArgMatches) {
     let graph_file = matches.value_of("gfa").unwrap();

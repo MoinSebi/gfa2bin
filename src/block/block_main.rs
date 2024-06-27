@@ -1,12 +1,11 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
-use crate::subpath::subpath_main::{function1};
+use crate::subpath::subpath_main::function1;
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
 
 use log::info;
 use std::collections::HashSet;
-
 
 /// Block main function
 ///

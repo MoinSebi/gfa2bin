@@ -1,6 +1,4 @@
-use crate::core::helper::{
-    is_all_ones, is_all_zeros, merge_u32_to_u64, Feature,
-};
+use crate::core::helper::{is_all_ones, is_all_zeros, merge_u32_to_u64, Feature};
 
 use crate::r#mod::input_data::FileData;
 use crate::r#mod::mod_main::remove_feature;
@@ -8,7 +6,6 @@ use bitvec::prelude::*;
 use gfa_reader::Gfa;
 use hashbrown::HashSet;
 use log::info;
-
 
 use std::fmt::Debug;
 use std::fs::File;
@@ -125,6 +122,25 @@ impl MatrixWrapper {
 
         self.matrix_bit = matrix_bin;
     }
+
+    /// Create a presence/absence matrix based on a threshold
+    pub fn matrix2bin2(&mut self, relative: &Vec<f32>) {
+        let mut matrix_bin = Vec::new();
+        for (val, re) in self.matrix_f32.iter().zip(relative.iter()) {
+            let mut biit = BitVec::<u8>::repeat(false, val.len());
+            for y in val.iter() {
+                if *y as f64 >= *re as f64 {
+                    biit.push(true);
+                } else {
+                    biit.push(false);
+                }
+            }
+            matrix_bin.push(biit);
+        }
+        self.matrix_bit = matrix_bin;
+
+    }
+
 
     fn indices_where<F, T>(&self, condition: F, data: Vec<T>) -> Vec<usize>
     where
@@ -256,13 +272,11 @@ impl MatrixWrapper {
             let bb = self.geno_names.iter().zip(self.window_number.iter());
             let cc = file_data.data.iter().zip(file_data.window.iter());
 
-            
             remove_feature(bb, cc)
         } else {
             let bb = self.geno_names.iter();
             let cc = file_data.data.iter();
 
-            
             remove_feature(bb, cc)
         }
     }

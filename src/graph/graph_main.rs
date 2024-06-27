@@ -14,7 +14,6 @@ use std::path::Path;
 use std::process;
 use std::thread::sleep;
 
-
 /// Function for 'gfa2bin graph'
 pub fn graph_main(matches: &ArgMatches) {
     // Check graph file
@@ -70,7 +69,8 @@ pub fn graph_main(matches: &ArgMatches) {
         bin = true;
     }
 
-    if !matches.is_present("absolute-threshold") && !matches.is_present("method") && !bimbam_output {
+    if !matches.is_present("absolute-threshold") && !matches.is_present("method") && !bimbam_output
+    {
         bin = true;
         absolute_thresh = 1;
     }
@@ -170,10 +170,10 @@ pub fn graph_main(matches: &ArgMatches) {
     if !mw.matrix_bit.is_empty() {
         mw.remove_non_info();
         info!(
-        "Matrix  (after remove): {}, {}",
-        mw.matrix_bit.len(),
-        mw.matrix_bit[0].len()
-    );
+            "Matrix  (after remove): {}, {}",
+            mw.matrix_bit.len(),
+            mw.matrix_bit[0].len()
+        );
     }
 
     mw.write_wrapper(bimbam_output, split, output_prefix, thresh, feature_enum);

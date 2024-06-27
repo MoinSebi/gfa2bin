@@ -4,7 +4,8 @@ use crate::core::helper::Feature;
 use clap::ArgMatches;
 use log::{info, warn};
 
-use packing_lib::core::core::{PackCompact};
+use crate::core::helper::Feature::Alignment;
+use packing_lib::core::core::PackCompact;
 use packing_lib::core::reader::{read_index, unpack_zstd_to_byte, wrapper_reader};
 use packing_lib::normalize::convert_helper::Method;
 use std::fs::File;
@@ -36,22 +37,23 @@ pub fn align_main(matches: &ArgMatches) {
     let output_prefix = matches.value_of("output").unwrap();
 
     // Normalize the rows
-    let _eabsolute_thresh = matches
-        .value_of("eabsolute-threshold")
+    let absolute_thresh = matches
+        .value_of("absolute-threshold")
         .unwrap_or("0")
         .parse::<u32>()
         .unwrap();
-    let _efraction = matches
-        .value_of("efraction")
+    let fraction = matches
+        .value_of("fraction")
         .unwrap_or("1.0")
         .parse::<f32>()
         .unwrap();
-    let _emethod = Method::from_str(matches.value_of("emethod").unwrap_or("nothing"));
-    let _estd = matches
-        .value_of("estd")
+    let method = Method::from_str(matches.value_of("method").unwrap_or("nothing"));
+    let std = matches
+        .value_of("std")
         .unwrap_or("0.0")
         .parse::<f32>()
         .unwrap();
+    let include_all = matches.is_present("non-covered");
 
     // Output modification
     let bimbam = matches.is_present("bimbam");
@@ -61,10 +63,23 @@ pub fn align_main(matches: &ArgMatches) {
         .parse::<usize>()
         .unwrap();
 
+    info!("Input parameters");
+    info!("Feature: {}", Alignment.to_string1());
+    info!("Absolute threshold: {}", absolute_thresh);
+    info!("Method: {:?}", method.to_string());
+    info!("Relative threshold: {:?}", fraction);
+    info!("Standard deviation: {}", std);
+    info!("Include all: {}", include_all);
+    info!("Split: {}", split);
+    info!("Output format: {}", if bimbam { "bimbam" } else { "plink" });
+    info!("Output prefix: {}", output_prefix);
+
     // Initialize the matrix wrapper
     let mut mw = MatrixWrapper::new();
     mw.feature = Feature::Alignment;
     // "Normal" pack file
+
+    info!("Reading the input");
     if matches.is_present("pack") {
         let files_list = read_file_lines(pack_list.unwrap()).unwrap();
         let mut pcs = Vec::new();
@@ -78,7 +93,6 @@ pub fn align_main(matches: &ArgMatches) {
     } else {
         // Index of the file
         let index = read_index(matches.value_of("index").unwrap());
-
         // Compressed pack
         if matches.is_present("pack compressed") {
             let file_pack = cpack.unwrap();
@@ -101,6 +115,8 @@ pub fn align_main(matches: &ArgMatches) {
     //mw.remove_non_info();
 
     let feature_enum = Feature::Alignment;
+
+    //let thresh = PackCompact::threshold(&mut mw, include_all, std, fraction, method);
     if bimbam {
         info!("Writing the bimbam");
         let chunk_size = (mw.matrix_u16.len() / split) + 1;
@@ -113,7 +129,51 @@ pub fn align_main(matches: &ArgMatches) {
         }
     } else {
         // Output
-        info!("Writing the output");
+        if mw.matrix_bit.is_empty() {
+            info!("Writing the output");
+            if mw.matrix_f32.is_empty() {
+                let mut f = Vec::new();
+                for x in mw.matrix_u16.iter_mut() {
+                    f.push(PackCompact::threshold(
+                        &mut x.clone(),
+                        include_all,
+                        fraction,
+                        std,
+                        method,
+                    ));
+                }
+                mw.matrix2bin(&f);
+            } else {
+                let mut f = Vec::new();
+                for x in mw.matrix_f32.iter_mut() {
+                    f.push(PackCompact::threshold(
+                        &mut x.clone(),
+                        include_all,
+                        fraction,
+                        std,
+                        method,
+                    ));
+                }
+                mw.matrix2bin2(&f);
+            }
+        }
+
+        info!(
+            "Matrix  (before remove): {}, {}",
+            mw.matrix_bit.len(),
+            mw.matrix_bit[0].len()
+        );
+        if !mw.matrix_bit.is_empty() && mw.matrix_bit[0].len() > 2{
+            mw.remove_non_info();
+            if mw.matrix_bit.len() != 0 {
+                info!(
+                "Matrix  (after remove): {}, {}",
+                mw.matrix_bit.len(),
+                mw.matrix_bit[0].len()
+            );
+            }
+        }
+
         let chunk_size = (mw.matrix_bit.len() / split) + 1;
         let chunks = mw.matrix_bit.chunks(chunk_size);
 

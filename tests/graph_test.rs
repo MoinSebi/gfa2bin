@@ -120,4 +120,3 @@ fn gfa_edges() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-

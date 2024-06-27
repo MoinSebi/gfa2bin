@@ -22,8 +22,6 @@ pub fn view_main(matches: &ArgMatches) {
 }
 
 impl MatrixWrapper {
-
-
     /// Write a VCF file with dumb header
     pub fn write_vcf(&self, filename: &str) {
         let file = File::create(filename).unwrap();

@@ -14,6 +14,7 @@ pub fn matrix_pack_wrapper(
     if first_entry.data_type == DataType::TypeBit {
         matrix_w.matrix_bit =
             vec![BitVec::<u8, Lsb0>::repeat(false, input.len() * 2); first_entry.length as usize];
+
         for (i2, x) in input.iter().enumerate() {
             matrix_w.sample_names.push(x.name.clone());
             for (i, y) in x.bin_coverage.iter().enumerate() {
@@ -53,15 +54,15 @@ pub fn matrix_pack_wrapper(
         }
     } else {
         let ll = first_entry.length as usize;
-        matrix_w.matrix_u16 = vec![vec![0; input.len()]; ll];
+        matrix_w.matrix_f32 = vec![vec![0.0; input.len()]; ll];
         for (i, x) in input.iter().enumerate() {
-            let d = &x.coverage;
+            let d = &x.normalized_coverage;
             matrix_w.sample_names.push(x.name.clone());
             for (i2, y) in d.iter().enumerate() {
-                matrix_w.matrix_u16[i2][i] = *y
+                matrix_w.matrix_f32[i2][i] = *y
             }
         }
-        matrix_w.shape = (matrix_w.matrix_u16.len(), matrix_w.matrix_u16[0].len());
+        matrix_w.shape = (matrix_w.matrix_f32.len(), matrix_w.matrix_f32[0].len());
         matrix_w.sample_names = input.iter().map(|x| x.name.clone()).collect();
 
         if first_entry.is_sequence {

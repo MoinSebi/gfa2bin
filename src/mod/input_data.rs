@@ -1,4 +1,4 @@
-use crate::core::helper::{Feature};
+use crate::core::helper::Feature;
 
 use std::fs::File;
 use std::io::{BufRead, BufReader};

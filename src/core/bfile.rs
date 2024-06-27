@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{Feature};
+use crate::core::helper::Feature;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use std::fs;
