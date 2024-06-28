@@ -2,20 +2,31 @@ use crate::core::core::MatrixWrapper;
 
 use crate::r#mod::input_data::{read_paths, FileData};
 use clap::ArgMatches;
-use log::info;
+use log::{debug, info};
 
-pub fn mod_main(matches: &ArgMatches) {
+
+/// Function for "gfa2bin mod"
+///
+/// This function removed entries (SNPs) or path by name or index.
+///
+/// Input is a plink bed
+pub fn remove_main(matches: &ArgMatches) {
+    // Input parameters
     let plink_file = matches.value_of("plink").unwrap();
+
+    // Output parameters
     let output_prefix = matches.value_of("output").unwrap_or("gfa2bin.mod");
     let split = matches
         .value_of("split")
         .unwrap_or("1")
         .parse::<usize>()
         .unwrap();
+
+
     let mut mw = MatrixWrapper::new();
     mw.bfile_wrapper(plink_file);
     if matches.is_present("feature") || matches.is_present("paths") || matches.is_present("index") {
-        info!("All good");
+        debug!("One of the required parameters is present.");
     }
 
     if matches.is_present("index") {
@@ -30,10 +41,10 @@ pub fn mod_main(matches: &ArgMatches) {
         if mw.feature != data.feature {
             panic!("Feature is not the same");
         }
-        println!("Data: {:?}", data.data);
-        println!("Data: {:?}", mw.matrix_bit.len());
+        info!("Data: {:?}", data.data);
+        info!("Matrix (before): {:?}", mw.matrix_bit.len());
         mw.remove_feature(&data);
-        println!("Data: {:?}", mw.matrix_bit.len());
+        info!("Matrix (after): {:?}", mw.matrix_bit.len());
     }
     if matches.is_present("paths") {
         let paths = matches.value_of("paths").unwrap();

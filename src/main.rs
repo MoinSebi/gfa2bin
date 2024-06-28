@@ -17,7 +17,7 @@ use crate::filter::filter_main::filter_main;
 use crate::find::find_main::find_main;
 use crate::graph::graph_main::graph_main;
 use crate::logging::newbuilder;
-use crate::r#mod::mod_main::mod_main;
+use crate::r#mod::mod_main::remove_main;
 use crate::subpath::subpath_main::subpath_main;
 use crate::view::view_main::view_main;
 use crate::window::window_main::window_main;
@@ -229,7 +229,7 @@ fn main() {
 
 
         .subcommand(
-            App::new("mod")
+            App::new("remove")
                 .about("Remove samples from you graph/alignment-based plink file")
                 .version("0.1.0")
                 .help_heading("Input parameters")
@@ -241,6 +241,8 @@ fn main() {
                         .takes_value(true)
                         .required(true),
                 )
+
+                .help_heading("Modification parameters")
                 .arg(
                     Arg::new("features")
                         .short('f')
@@ -254,7 +256,13 @@ fn main() {
                         .about("Path to remove (one per line)")
                         .takes_value(true),
                 )
-                .help_heading("Intrinsic Modification")
+                .arg(
+                    Arg::new("index")
+                        .short('i')
+                        .long("index")
+                        .takes_value(true)
+                        .about("Remove the entries on this specific index (0-based)"),
+                )
                 .arg(
                     Arg::new("non-info")
                         .long("non-info")
@@ -277,13 +285,7 @@ fn main() {
                         .long("split")
                         .takes_value(true)
                         .about("Split output in multiple files"),
-                )
-                .arg(
-                    Arg::new("index")
-                        .short('i')
-                        .long("index")
-                        .takes_value(true)
-                        .about("Remove the entries on this specific index (0-based)"),
+
                 ),
         )
         // Will work on this later
@@ -541,8 +543,8 @@ fn main() {
         graph_main(matches);
     } else if let Some(matches) = matches.subcommand_matches("align") {
         align_main(matches);
-    } else if let Some(matches) = matches.subcommand_matches("mod") {
-        mod_main(matches);
+    } else if let Some(matches) = matches.subcommand_matches("remove") {
+        remove_main(matches);
     } else if let Some(matches) = matches.subcommand_matches("find") {
         find_main(matches);
     } else if let Some(matches) = matches.subcommand_matches("window") {
