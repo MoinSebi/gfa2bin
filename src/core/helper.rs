@@ -1,4 +1,4 @@
-use crate::r#mod::input_data::find_first_plus_minus;
+use crate::remove::input_data::find_first_plus_minus;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 
@@ -29,13 +29,13 @@ impl Feature {
         }
     }
 
-    pub fn string2u64(s: &str, feature: Feature, feature2: Option<Feature>) -> (u64, u32) {
+    pub fn string2u128(s: &str, feature: Feature, feature2: Option<Feature>) -> u128 {
         match feature {
-            Feature::Node => (s.parse().unwrap(), 0),
+            Feature::Node => s.parse().unwrap(),
             Feature::DirNode => {
                 let s1 = s.ends_with('+');
-                let s2 = s[..s.len() - 1].parse::<u64>().unwrap() * 2 + s1 as u64;
-                (s2, 0)
+                let s2 = s[..s.len() - 1].parse::<u128>().unwrap() * 2 + s1 as u128;
+                s2
             }
             Feature::Edge => {
                 let ss = find_first_plus_minus(s).unwrap();
@@ -43,30 +43,14 @@ impl Feature {
                 let s2 = &s[ss..ss + 1];
                 let s3 = &s[ss + 1..s.len() - 1];
                 let s4 = &s.chars().last().unwrap();
-                let ss1 = s1.parse::<u64>().unwrap() * 2 + (s2 == "+") as u64;
-                let ss2 = s3.parse::<u64>().unwrap() * 2 + (*s4 == '+') as u64;
-                (merge_u32_to_u64(ss1 as u32, ss2 as u32), 0)
+                let ss1 = s1.parse::<u128>().unwrap() * 2 + (s2 == "+") as u128;
+                let ss2 = s3.parse::<u128>().unwrap() * 2 + (*s4 == '+') as u128;
+                merge_u64_to_u128(ss1 as u64, ss2 as u64)
             }
-            Feature::Alignment => {
-                let ff: Vec<u32> = s.split('_').map(|a| a.parse().unwrap()).collect();
-                (merge_u32_to_u64(ff[0], ff[1]), 0)
-            }
-            Feature::MWindow => {
-                let ff: Vec<&str> = s.split('_').collect();
-
-                (
-                    Self::string2u64(ff[0], feature2.unwrap(), feature2).0,
-                    ff[2].parse().unwrap(),
-                )
-            }
-            Feature::PWindow => {
-                let ff: Vec<u32> = s.split('_').map(|a| a.parse().unwrap()).collect();
-                (merge_u32_to_u64(ff[0], ff[2]), 0)
-            }
-            Feature::Block => {
-                let ff: Vec<u32> = s.split('_').map(|a| a.parse().unwrap()).collect();
-                (merge_u32_to_u64(ff[0], ff[1]), ff[2])
-            }
+            Feature::Alignment => 1,
+            Feature::PWindow => 1,
+            Feature::Block => 1,
+            Feature::MWindow => 1,
         }
     }
 
@@ -267,6 +251,12 @@ pub fn merge_u32_to_u64(high: u32, low: u32) -> u64 {
     let result: u64 = (high_u64 << 32) | low_u64;
 
     result
+}
+
+pub fn merge_u64_to_u128(high: u64, low: u64) -> u128 {
+    let high_u128 = (high as u128) << 64;
+    let low_u128 = low as u128;
+    high_u128 | low_u128
 }
 
 pub fn is_all_zeros(bitvector: &BitVec<u8, Lsb0>) -> bool {

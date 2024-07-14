@@ -6,7 +6,7 @@ mod find;
 mod graph;
 mod helper;
 mod logging;
-mod r#mod;
+mod remove;
 mod subpath;
 mod view;
 mod window;
@@ -17,13 +17,14 @@ use crate::filter::filter_main::filter_main;
 use crate::find::find_main::find_main;
 use crate::graph::graph_main::graph_main;
 use crate::logging::newbuilder;
-use crate::r#mod::mod_main::remove_main;
+use crate::remove::remove_main::remove_main;
 use crate::subpath::subpath_main::subpath_main;
 use crate::view::view_main::view_main;
 use crate::window::window_main::window_main;
 use clap::{App, AppSettings, Arg};
+use std::error::Error;
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("gfa2bin")
         .version("0.1.0")
         .author("Sebastian V")
@@ -37,7 +38,9 @@ fn main() {
         )
         .subcommand(
             App::new("graph")
-                .about("Convert GFA file (v1) to plink (bed, bim, fam)")
+                .about("Convert GFA file (v1) to plink (bed, bim, fam). \n \
+                                Threshold modifier are used used to create a (1) presence-absence matrix or (2) scaling in bimbam format.")
+
                 .version("0.1.0")
                 .setting(AppSettings::ArgRequiredElseHelp)
 
@@ -73,6 +76,7 @@ fn main() {
                         .about("Ignore these paths (one per line)")
                         .takes_value(true),
                 )
+
                 .help_heading("Thresholds")
                 .arg(Arg::new("absolute-threshold")
                     .short('a')
@@ -99,10 +103,15 @@ fn main() {
                     .about("Adjust your threshold by decreasing if by X * standard deviation")
                     .takes_value(true)
                     .display_order(2))
-                .arg(Arg::new("non-covered")
-                    .long("non-covered")
+                .arg(Arg::new("keep-zeros")
+                    .long("keep-zeros")
                     .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean) [default: false]")
                     .display_order(4)
+                )
+                .arg(Arg::new("max")
+                    .long("max")
+                    .about("Use max value for scaling (only in BIMBAM)")
+                    .display_order(5)
                 )
 
 
@@ -122,6 +131,12 @@ fn main() {
                         .about("Output prefix for all files")
                         .required(true),
                 )
+                .arg(Arg::new("pheno")
+                    .long("pheno")
+                         .about("Phenotype value")
+                         .takes_value(true)
+                )
+
                 .arg(
                     Arg::new("bimbam")
                         .long("bimbam")
@@ -192,8 +207,8 @@ fn main() {
                     .about("Adjust your threshold by decreasing if by X * standard deviation")
                     .takes_value(true)
                     .display_order(2))
-                .arg(Arg::new("non-covered")
-                    .long("non-covered")
+                .arg(Arg::new("keep-zeros")
+                    .long("keep-zeros")
                     .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean)")
                     .display_order(4)
                 )
@@ -217,6 +232,11 @@ fn main() {
                         .long("split")
                         .takes_value(true)
                         .about("Split output in multiple files"),
+                )
+                .arg(Arg::new("pheno")
+                    .long("pheno")
+                    .about("Phenotype value")
+                    .takes_value(true)
                 )
                 .arg(
                     Arg::new("bimbam")
@@ -244,7 +264,7 @@ fn main() {
 
                 .help_heading("Modification parameters")
                 .arg(
-                    Arg::new("features")
+                    Arg::new("feature")
                         .short('f')
                         .long("feature")
                         .about("Feature list to remove (one per line)")
@@ -353,6 +373,13 @@ fn main() {
                         .about("Length of the feature")
                         .takes_value(true)
                         .default_value("200"),
+                )
+                .arg(
+                    Arg::new("blocks")
+                        .long("blocks")
+                        .short('b')
+                        .about("Output blocks [default: false]")
+                        .takes_value(true),
                 ),
         )
         .subcommand(
@@ -381,7 +408,14 @@ fn main() {
                         .long("length")
                         .about("Length of the feature")
                         .takes_value(true)
-                        .default_value("200"),
+                        .default_value("5"),
+                )
+                .arg(
+                    Arg::new("blocks")
+                        .long("blocks")
+                        .short('b')
+                        .about("Output blocks [default: false]")
+                        .takes_value(true),
                 ),
         )
 
@@ -416,7 +450,7 @@ fn main() {
                         .long("window")
                         .about("Window size (in nodes)")
                         .takes_value(true)
-                        .default_value("500"),
+                        .default_value("10"),
                 )
                 .arg(
                     Arg::new("step")
@@ -424,7 +458,7 @@ fn main() {
                         .long("step")
                         .about("Step")
                         .takes_value(true)
-                        .default_value("100"),
+                        .default_value("5"),
                 )
                 .arg(Arg::new("distance")
                     .short('d')
@@ -540,24 +574,25 @@ fn main() {
     newbuilder(&matches);
 
     if let Some(matches) = matches.subcommand_matches("graph") {
-        graph_main(matches);
+        graph_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("align") {
-        align_main(matches);
+        align_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("remove") {
-        remove_main(matches);
+        remove_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("find") {
-        find_main(matches);
+        Ok(find_main(matches))
     } else if let Some(matches) = matches.subcommand_matches("window") {
-        window_main(matches);
+        window_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("subpath") {
-        subpath_main(matches);
+        subpath_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("block") {
-        block_main(matches);
+        block_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("view") {
-        view_main(matches);
+        view_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("filter") {
-        filter_main(matches);
+        filter_main(matches)
     } else {
         println!("No subcommand was used");
+        Ok(())
     }
 }

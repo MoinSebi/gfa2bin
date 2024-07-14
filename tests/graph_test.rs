@@ -30,7 +30,7 @@ fn gfa_nodes() -> Result<(), Box<dyn std::error::Error>> {
     b.read_to_end(&mut buffer).unwrap();
 
     // Buffer should be 8 samples + header
-    assert_eq!(buffer.len(), 3 + (8 * 2));
+    assert_eq!(buffer.len(), 3 + (9 * 2));
 
     // First "real" byte is 00
     assert_eq!(buffer[3], 127);

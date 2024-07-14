@@ -4,8 +4,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 
 pub struct FileData {
-    pub data: Vec<u64>,
-    pub window: Vec<u32>,
+    pub data: Vec<u128>,
     pub feature: Feature,
 }
 
@@ -15,29 +14,19 @@ impl FileData {
 
         let mut data = Vec::new();
         let mut data3 = Vec::new();
-        let mut data2 = Vec::new();
         let file = File::open(filename).expect("ERROR: CAN NOT READ FILE\n");
         let reader = BufReader::new(file);
 
         for line in reader.lines() {
-            let a = Feature::string2u64(&line.unwrap(), feature.0, feature.1);
-            data.push((a.0, a.1));
+            let a = Feature::string2u128(&line.unwrap(), feature.0, feature.1);
+            data.push(a);
         }
 
         // Sort very important
         data.sort();
 
-        if feature.0 == Feature::MWindow || feature.0 == Feature::Block {
-            for x in data.iter() {
-                data2.push(x.1);
-                data3.push(x.0);
-            }
-        } else {
-            data3 = data.into_iter().map(|x| x.0).collect();
-        }
         Self {
             data: data3,
-            window: data2,
             feature: feature.0,
         }
     }

@@ -30,8 +30,6 @@ fn align_v1() -> Result<(), Box<dyn std::error::Error>> {
     // Buffer should be 8 samples + header
     assert_eq!(buffer.len(), 1002);
 
-
-
     Ok(())
 }
 

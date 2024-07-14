@@ -1,17 +1,19 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
-use crate::subpath::subpath_main::function1;
+use crate::subpath::subpath_main::traversal2samples;
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
 
 use log::info;
 use std::collections::HashSet;
+use std::fmt::Error;
+use std::{fmt, io};
 
 /// Block main function
 ///
 /// Easy block function
 /// Extract the subpath from a graph for each node
-pub fn block_main(matches: &ArgMatches) {
+pub fn block_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     // Input
     let graph_file = matches.value_of("gfa").unwrap();
     let sep = matches.value_of("PanSN").unwrap_or(" ");
@@ -22,8 +24,8 @@ pub fn block_main(matches: &ArgMatches) {
         .unwrap()
         .parse::<usize>()
         .unwrap();
-    let steps: usize = matches.value_of("step").unwrap().parse().unwrap();
-    let distance: usize = matches.value_of("distance").unwrap().parse().unwrap();
+    let step_size: usize = matches.value_of("step").unwrap().parse().unwrap();
+    let cutoff_distance: usize = matches.value_of("distance").unwrap().parse().unwrap();
 
     // Output
     let output_prefix = matches.value_of("output").unwrap();
@@ -37,8 +39,8 @@ pub fn block_main(matches: &ArgMatches) {
     info!("Graph file: {}", graph_file);
     info!("Separator: {}", sep);
     info!("Window size: {}", window);
-    info!("Distance: {}", distance);
-    info!("Step size: {}", steps);
+    info!("Distance: {}", cutoff_distance);
+    info!("Step size: {}", step_size);
     info!("Split size: {}", split);
     info!("Output prefix: {}\n", output_prefix);
 
@@ -48,13 +50,13 @@ pub fn block_main(matches: &ArgMatches) {
     let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, sep);
 
     info!("Indexing graph");
-    let a = blocks_node(&graph, steps, window);
+    let a = blocks_node(&graph, step_size, window);
     info!("Number of blocks: {}", a.len());
 
     let b = node_size(&graph);
 
     info!("Extracting blocks");
-    let mw = wrapper_blocks(&wrapper, b, a, distance);
+    let mw = wrapper_blocks(&wrapper, b, a, cutoff_distance);
 
     info!("Writing blocks");
     let chunk_size = (mw.matrix_bit.len() / split) + 1;
@@ -62,10 +64,33 @@ pub fn block_main(matches: &ArgMatches) {
 
     let len = chunks.len();
     for (index, _y) in chunks.enumerate() {
-        mw.write_fam(index, output_prefix, mw.feature, len);
+        mw.write_fam(index, output_prefix, mw.feature, len, 0.0);
         mw.write_bed(index, output_prefix, mw.feature, len);
         mw.write_bim(index, output_prefix, &mw.feature, len);
     }
+    Ok(())
+}
+// Define a custom error type that returns a String message
+#[derive(Debug)]
+struct CustomError(String);
+
+// Implement std::fmt::Display for CustomError
+impl fmt::Display for CustomError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "CustomError: {}", self.0)
+    }
+}
+
+pub fn check_compact2(graph: &Gfa<u32, (), ()>) -> Result<bool, io::Error> {
+    for (i, x) in graph.segments.iter().enumerate() {
+        if x.id != (i + 1) as u32 {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Sum cannot be negative",
+            ));
+        }
+    }
+    Ok(true)
 }
 
 /// Make blocks
@@ -117,6 +142,7 @@ pub fn wrapper_blocks(
         for (genome_id, path) in graph2.genomes.iter().enumerate() {
             for (haplo_id, x1) in path.haplotypes.iter().enumerate() {
                 for (path_id, x) in x1.paths.iter().enumerate() {
+                    //
                     let mut block_array: [usize; 3] = [0; 3]; // Triple 0
                     let mut distance = 0;
                     for (i, node) in x.nodes.iter().enumerate() {
@@ -137,7 +163,7 @@ pub fn wrapper_blocks(
                                 all_blocks.push((
                                     genome_id,
                                     haplo_id,
-                                    path_id,
+                                    path.haplotypes.len(),
                                     &x.nodes[block_array[0]..block_array[1]],
                                 ));
                                 block_array = [0; 3];
@@ -148,7 +174,7 @@ pub fn wrapper_blocks(
                         all_blocks.push((
                             genome_id,
                             haplo_id,
-                            path_id,
+                            path.haplotypes.len(),
                             &x.nodes[block_array[0]..block_array[1]],
                         ));
                     }
@@ -164,7 +190,7 @@ pub fn wrapper_blocks(
 
         let bb = all_blocks.len();
 
-        mw.matrix_bit.extend(function1(all_blocks, 20));
+        //mw.matrix_bit.extend(traversal2samples(all_blocks, 20));
         mw.geno_names
             .extend((0..bb).map(|aa| merge_u32_to_u64(x[0] / 2, aa as u32)));
     }

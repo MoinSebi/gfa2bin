@@ -125,14 +125,6 @@ pub fn gfa_reader(
         let mut c = 0;
         for nn in graph_wrapper.genomes.iter() {
             matrix.sample_names.push(nn.name.clone());
-            if nn.haplotypes.len() == 1 {
-                matrix.sample_index_u16.push([c, c]);
-            } else if nn.haplotypes.len() == 2 {
-                matrix.sample_index_u16.push([c, c + 1]);
-            } else {
-                panic!("Not implemented");
-            }
-
             for haplotype in nn.haplotypes.iter() {
                 for path in haplotype.paths.iter() {
                     let iter1 = paths_to_u64vec(path, feature);
@@ -143,6 +135,7 @@ pub fn gfa_reader(
 
                     while i < iter1.len() && j < hm.len() {
                         if iter1[i] == hm[j] {
+                            println!("{} {}", c, j);
                             matrix.matrix_u16[j][c] += 1;
                             lastentry = iter1[i];
                             i += 1;
@@ -158,8 +151,38 @@ pub fn gfa_reader(
                         }
                     }
                 }
-                c += 1
             }
+            c += 1;
+        }
+    }
+    matrix.sample_index_u16 = what_together(graph_wrapper);
+}
+
+/// Index for merge
+///
+/// C-Index
+pub fn what_together(graph_wrapper: &Pansn<u32, (), ()>) -> Vec<[usize; 2]> {
+    let mut c = Vec::new();
+    let mut count = 0;
+    for x in graph_wrapper.genomes.iter() {
+        if x.haplotypes.len() == 1 {
+            c.push([count, count]);
+            count += 1;
+        } else if x.haplotypes.len() == 2 {
+            c.push([count, count + 1]);
+            count += 2
+        } else {
+            panic!("Not implemented");
+        }
+    }
+    c
+}
+
+/// Add weight using the c-index
+pub fn weight_add<T: Clone>(u: &[[usize; 2]], a: &mut Vec<T>) {
+    for (index, ibool) in u.iter().enumerate() {
+        if ibool[0] == ibool[1] {
+            a.push(a[index].clone());
         }
     }
 }

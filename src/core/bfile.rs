@@ -2,15 +2,29 @@ use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-use std::fs;
+use std::{fs, io};
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, BufWriter, Read};
+use gfa_reader::Pansn;
+
+/// Read number of lines
+pub fn count_lines(file_path: &str) -> Result<usize, std::io::Error> {
+    let file = File::open(file_path)?;
+    let reader = BufReader::new(file);
+
+    // Count the lines using iterator folding
+    let num_lines = reader.lines().count();
+
+    Ok(num_lines)
+}
 
 impl MatrixWrapper {
-    pub fn bfile_wrapper(&mut self, filename: &str) {
-        self.read_fam(&format!("{}{}", filename, ".fam"));
-        self.read_bim(&format!("{}{}", filename, ".bim"));
-        self.read_bed(&format!("{}{}", filename, ".bed"));
+    pub fn bfile_wrapper(&mut self, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let mut bim_count = count_lines(&format!("{}{}", filename, ".bim"))?;
+        let mut fam_count = count_lines(&format!("{}{}", filename, ".fam"))?;
+
+        self.read_bed(&format!("{}{}", filename, ".bed"), 1, 1)?;
+        Ok(())
     }
 
     /// Read plink bed file
@@ -28,75 +42,46 @@ impl MatrixWrapper {
     ///          CD     11  -- other homozygote (second)
     ///        EF       01  -- heterozygote (third)
     ///      GH         10  -- missing genotype (fourth)
-    pub fn read_bed(&mut self, filename: &str) {
-        let mut file = File::open(filename).expect("no file found");
-        let metadata = fs::metadata(filename).expect("unable to read metadata");
+    pub fn read_bed(
+        &mut self,
+        filename: &str,
+        samples_number: usize,
+        snp_number: usize,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut file = File::open(filename)?;
+        let metadata = fs::metadata(filename)?;
         let mut buffer = vec![0; metadata.len() as usize];
 
-        file.read_exact(&mut buffer).expect("buffer overflow");
+        file.read_exact(&mut buffer)?;
         // cut off first 3 bytes
         buffer = buffer[3..].to_vec();
 
         // do i need this
-        let mut num = self.sample_names.len() / 4;
-        if (self.sample_names.len() % 4) > 0 {
+        let mut num = samples_number / 4;
+        if (samples_number % 4) > 0 {
             num += 1;
         }
         // Each chunk
         let chunks = buffer.chunks(num);
         for chunk in chunks.into_iter() {
             let mut bv: BitVec<u8, Lsb0> = BitVec::from_slice(chunk);
-            bv.truncate(self.sample_names.len() * 2);
+            bv.truncate(samples_number * 2);
 
             self.matrix_bit.push(bv);
         }
+        assert_eq!(self.matrix_bit.len(), snp_number);
+        Ok(())
     }
 
-    /// Read plink fam file
-    ///
-    /// More information about the file format: https://www.cog-genomics.org/plink/1.9/formats#fam
-    /// In general [FamilyID, withinFamId (wfi), wfi or father, wfi or mother, sex_code, phenotype value]
-    /// Example: tair10 0   0   0   0   0 321.32
-    /// 0 = unknown or not in data set
-    ///
-    ///
-    pub fn read_fam(&mut self, filename: &str) {
-        let buf = BufReader::new(File::open(filename).expect("Unable to open file"));
-        // Split the file at the newlines
-        for line in buf.lines() {
-            let vv = line.unwrap();
-            let splits = vv.split_whitespace().collect::<Vec<&str>>();
-            self.fam_entries.push(splits.join("\t"));
-            self.sample_names.push(splits[0].to_string());
-        }
-    }
+    /// Read number of lines
+    fn count_lines(file_path: &str) -> Result<usize, std::io::Error> {
+        let file = File::open(file_path)?;
+        let reader = BufReader::new(file);
 
-    /// Read plink BIM file
-    ///
-    /// More information about the file: https://www.cog-genomics.org/plink/1.9/formats#bim
-    /// Chromosome code (either an integer, or 'X'/'Y'/'XY'/'MT'; '0' indicates unknown) or name
-    /// Variant identifier
-    /// Position in morgans or centimorgans (safe to use dummy value of '0')
-    /// Base-pair coordinate (1-based; limited to 231-2)
-    /// Allele 1 (corresponding to clear bits in .bed; usually minor)
-    /// Allele 2 (corresponding to set bits in .bed; usually major)
-    /// [Chromosome code, variant identifier, position in morgans, bp, allele1, allele2]
-    pub fn read_bim(&mut self, filename: &str) {
-        let ff = get_type_bim(filename);
+        // Count the lines using iterator folding
+        let num_lines = reader.lines().count();
 
-        let file = BufReader::new(File::open(filename).expect("Unable to open file"));
-
-        let mut bb = vec![];
-        for (_i, x) in file.lines().enumerate() {
-            let data = x.unwrap();
-            let a = Feature::string2u64(data.split_whitespace().nth(3).unwrap(), ff.0, ff.1);
-            self.geno_names.push(a.0);
-            bb.push(a.1);
-            self.bim_entries.push(data);
-        }
-        if ff.0 == Feature::MWindow || ff.0 == Feature::Block {
-            self.window_number = bb;
-        }
+        Ok(num_lines)
     }
 }
 
@@ -110,4 +95,15 @@ pub fn get_type_bim(file_path: &str) -> (Feature, Option<Feature>) {
     let first_line = reader.lines().next().unwrap().unwrap();
     let first_line = first_line.split_whitespace().nth(3).unwrap();
     Feature::identify_feature(first_line)
+}
+
+
+use std::io::Write;
+pub fn write_dummy_fam(pansn: &Pansn<u32, (), ()>, outfile: &str) -> Result<(), io::Error>{
+    let mut file = File::create(outfile)?;
+    let mut bufwriter = BufWriter::new(file);
+    for (i, x) in pansn.genomes.iter().enumerate() {
+        writeln!(bufwriter, "{}\t{}\t0\t0\t0\t-9", i, x.name)?;
+    }
+    Ok(())
 }

@@ -1,5 +1,5 @@
 use crate::core::helper::Feature;
-use crate::r#mod::input_data::FileData;
+use crate::remove::input_data::FileData;
 use clap::ArgMatches;
 use gfa_reader::Gfa;
 

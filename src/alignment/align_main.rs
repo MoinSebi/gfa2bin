@@ -5,6 +5,7 @@ use clap::ArgMatches;
 use log::{info, warn};
 
 use crate::core::helper::Feature::Alignment;
+use crate::graph::parser::weight_add;
 use packing_lib::core::core::PackCompact;
 use packing_lib::core::reader::{read_index, unpack_zstd_to_byte, wrapper_reader};
 use packing_lib::normalize::convert_helper::Method;
@@ -12,7 +13,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-pub fn align_main(matches: &ArgMatches) {
+pub fn align_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     // You have either a list of packs (plain-text) or a compressed pack (cat or list), but you need to provide an index
     if matches.is_present("pack")
         | (matches.is_present("pack compressed") && matches.is_present("index"))
@@ -53,7 +54,7 @@ pub fn align_main(matches: &ArgMatches) {
         .unwrap_or("0.0")
         .parse::<f32>()
         .unwrap();
-    let include_all = matches.is_present("non-covered");
+    let keep_zeros = matches.is_present("keep-zeros");
 
     // Output modification
     let bimbam = matches.is_present("bimbam");
@@ -63,16 +64,28 @@ pub fn align_main(matches: &ArgMatches) {
         .parse::<usize>()
         .unwrap();
 
+    let mut pheno = f64::MAX;
+    if matches.is_present("pheno") {
+        pheno = matches.value_of("pheno").unwrap().parse()?;
+    }
     info!("Input parameters");
     info!("Feature: {}", Alignment.to_string1());
     info!("Absolute threshold: {}", absolute_thresh);
-    info!("Method: {:?}", method.to_string());
+    info!("Method: {}", method.to_string());
     info!("Relative threshold: {:?}", fraction);
     info!("Standard deviation: {}", std);
-    info!("Include all: {}", include_all);
+    info!("Keep zeros: {}", keep_zeros);
     info!("Split: {}", split);
     info!("Output format: {}", if bimbam { "bimbam" } else { "plink" });
     info!("Output prefix: {}", output_prefix);
+    info!(
+        "Dummy-Pheno: {}",
+        if pheno == f64::MAX {
+            "NA".to_string()
+        } else {
+            pheno.to_string()
+        }
+    );
 
     // Initialize the matrix wrapper
     let mut mw = MatrixWrapper::new();
@@ -112,79 +125,48 @@ pub fn align_main(matches: &ArgMatches) {
         }
     }
 
-    //mw.remove_non_info();
+    mw.sample_index_u16 = mw
+        .sample_names
+        .iter()
+        .enumerate()
+        .map(|x| [x.0, x.0])
+        .collect();
 
     let feature_enum = Feature::Alignment;
-
-    //let thresh = PackCompact::threshold(&mut mw, include_all, std, fraction, method);
-    if bimbam {
-        info!("Writing the bimbam");
-        let chunk_size = (mw.matrix_u16.len() / split) + 1;
-        let chunks = mw.matrix_u16.chunks(chunk_size);
-        let len = chunks.len();
-
-        for (index, _y) in chunks.enumerate() {
-            mw.write_bimbam(index, output_prefix, len, &vec![0.0; 0]);
-            mw.write_phenotype_bimbam(index, output_prefix, len);
+    let mut thresh = Vec::new();
+    if mw.matrix_f32.is_empty() {
+        for x in mw.matrix_u16.iter() {
+            let mut b = x.clone();
+            thresh.push(PackCompact::threshold(
+                &mut b,
+                keep_zeros,
+                fraction,
+                std,
+                method,
+            ));
         }
     } else {
-        // Output
-        if mw.matrix_bit.is_empty() {
-            info!("Writing the output");
-            if mw.matrix_f32.is_empty() {
-                let mut f = Vec::new();
-                for x in mw.matrix_u16.iter_mut() {
-                    f.push(PackCompact::threshold(
-                        &mut x.clone(),
-                        include_all,
-                        fraction,
-                        std,
-                        method,
-                    ));
-                }
-                mw.matrix2bin(&f);
-            } else {
-                let mut f = Vec::new();
-                for x in mw.matrix_f32.iter_mut() {
-                    f.push(PackCompact::threshold(
-                        &mut x.clone(),
-                        include_all,
-                        fraction,
-                        std,
-                        method,
-                    ));
-                }
-                mw.matrix2bin2(&f);
-            }
-        }
-
-        info!(
-            "Matrix  (before remove): {}, {}",
-            mw.matrix_bit.len(),
-            mw.matrix_bit[0].len()
-        );
-        if !mw.matrix_bit.is_empty() && mw.matrix_bit[0].len() > 2{
-            mw.remove_non_info();
-            if mw.matrix_bit.len() != 0 {
-                info!(
-                "Matrix  (after remove): {}, {}",
-                mw.matrix_bit.len(),
-                mw.matrix_bit[0].len()
-            );
-            }
-        }
-
-        let chunk_size = (mw.matrix_bit.len() / split) + 1;
-        let chunks = mw.matrix_bit.chunks(chunk_size);
-
-        let len = chunks.len();
-        for (index, _y) in chunks.enumerate() {
-            //write_bed2(y, output_prefix, feature, index, len);
-            mw.write_fam(index, output_prefix, feature_enum, len);
-            mw.write_bed(index, output_prefix, feature_enum, len);
-            mw.write_bim(index, output_prefix, &feature_enum, len);
+        for x in mw.matrix_f32.iter() {
+            let mut b = x.clone();
+            thresh.push(PackCompact::threshold(
+                &mut b,
+                keep_zeros,
+                fraction,
+                std,
+                method,
+            ));
         }
     }
+    mw.write_wrapper(
+        bimbam,
+        split,
+        output_prefix,
+        thresh,
+        feature_enum,
+        pheno,
+        !keep_zeros,
+    );
+    Ok(())
 }
 
 /// Read a file and return a vector of lines

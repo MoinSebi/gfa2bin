@@ -1,50 +1,70 @@
+use crate::core::bfile::count_lines;
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
+use crate::remove::remove_main::copy_file;
 use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
 use clap::ArgMatches;
+use gfa_reader::Opt;
+use log::info;
+use std::fs::File;
+use std::io::{BufRead, BufWriter, Write};
 
 /// Window function
 ///
 /// Reading a ped file return "genotypes" which reflect windows over the entries
 /// We assume that the entries that in variation graphs we have some kind of pan-genomic order in the order of the entries which reflect haplotypes
-pub fn window_main(matches: &ArgMatches) {
+pub fn window_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let plink_file = matches.value_of("plink").unwrap();
-    let output_prefix = matches.value_of("output").unwrap_or("gfa2bin2.mod");
+    let out_file = matches.value_of("output").unwrap();
     let window: usize = matches.value_of("length").unwrap().parse().unwrap();
-    let split = matches
-        .value_of("split")
-        .unwrap_or("1")
-        .parse::<usize>()
-        .unwrap();
+    let mut block = None;
+    if let Some(blocks_path) = matches.value_of("blocks") {
+        let file = File::create(blocks_path)?;
+        block = Some(BufWriter::new(file));
+    }
 
     // Read the bed file
     let mut mw = MatrixWrapper::new();
-    let feature = mw.feature;
-    mw.bfile_wrapper(plink_file);
+    let bim_count = count_lines(&format!("{}{}", plink_file, ".bim"))?;
+    let fam_count = count_lines(&format!("{}{}", plink_file, ".fam"))?;
+    mw.read_bed(&format!("{}{}", plink_file, ".bed"), fam_count, bim_count)?;
+    let (mut mw, index) = iterate_test(&mw, window, &mut block)?;
 
-    let mut mw = iterate_test(&mw, window);
+    mw.write_bed(0, out_file, Feature::Node, 1);
+    read_write_bim(
+        &mw,
+        &index,
+        &format!("{}{}", plink_file, ".bim"),
+        &format!("{}{}", out_file, ".bim"),
+        window,
+    )
+    .unwrap();
+    copy_file(
+        &format!("{}{}", plink_file, ".fam"),
+        &format!("{}{}", out_file, ".fam"),
+    )
+    .unwrap();
 
-    mw.make_counter();
-
-    let chunk_size = (mw.matrix_bit.len() / split) + 1;
-    let chunks = mw.matrix_bit.chunks(chunk_size);
-
-    let len = chunks.len();
-    for (index, _y) in chunks.enumerate() {
-        mw.write_fam(index, output_prefix, feature, len);
-        mw.write_bed(index, output_prefix, feature, len);
-        mw.write_bim(index, output_prefix, &feature, len);
-    }
+    Ok(())
 }
 
 /// Wrapper around the matrix in sliding window
 ///
 /// Iterate over the matrix
 /// No bim entries
-pub fn iterate_test(mw: &MatrixWrapper, window: usize) -> MatrixWrapper {
+pub fn iterate_test(
+    mw: &MatrixWrapper,
+    window: usize,
+    blocks: &mut Option<BufWriter<File>>,
+) -> Result<(MatrixWrapper, Vec<usize>), std::io::Error> {
     let num_path = mw.matrix_bit[0].len() / 2;
+    let mut index = Vec::new();
+
     let mut mw_new = MatrixWrapper::new();
+    if mw.matrix_bit.len() < window {
+        panic!("Window size is larger than the number of entries");
+    }
     for x in window..mw.matrix_bit.len() - window {
         let mut bv2 = Vec::new();
         for y in 0..num_path {
@@ -57,22 +77,21 @@ pub fn iterate_test(mw: &MatrixWrapper, window: usize) -> MatrixWrapper {
         }
         // sort by the bitvec
         bv2.sort_by(|a, b| a.1.cmp(&b.1));
-        let f = get_index(&bv2);
+        let f = get_index(&bv2, blocks, x)?;
         let flen = f.len();
         mw_new.matrix_bit.extend(f);
-        mw_new
-            .geno_names
-            .extend((0..flen).map(|_| mw.geno_names[x]));
+        index.push(flen);
     }
     mw_new.shape = (mw_new.matrix_bit.len(), mw_new.matrix_bit[0].len());
-    mw_new.fam_entries = mw.fam_entries.clone();
-    mw_new.feature = Feature::MWindow;
-    mw_new.window_size = window;
-    mw_new
+    Ok((mw_new, index))
 }
 
 ///
-pub fn get_index(vv: &Vec<(usize, Vec<[bool; 2]>)>) -> Vec<BitVec<u8>> {
+pub fn get_index(
+    vv: &Vec<(usize, Vec<[bool; 2]>)>,
+    blocks: &mut Option<BufWriter<File>>,
+    index: usize,
+) -> Result<Vec<BitVec<u8>>, std::io::Error> {
     let mut pp = Vec::new();
     let mut last = &vv[0].1;
     pp.push(vec![vv[0].0]);
@@ -84,7 +103,10 @@ pub fn get_index(vv: &Vec<(usize, Vec<[bool; 2]>)>) -> Vec<BitVec<u8>> {
             pp.last_mut().unwrap().push(x.0);
         }
     }
-    getbv(&pp, vv.len())
+    if let Some(b) = blocks {
+        writeln!(b, "{}\t{:?}", index, pp)?;
+    }
+    Ok(getbv(&pp, vv.len()))
 }
 
 /// Create a bitvector
@@ -102,21 +124,39 @@ pub fn getbv(vv: &Vec<Vec<usize>>, len: usize) -> Vec<BitVec<u8>> {
     gg
 }
 
-impl MatrixWrapper {
-    pub fn make_counter(&mut self) {
-        let mut last = &self.geno_names[0];
-        let mut counter = 0;
-        self.window_number.push(counter);
+pub fn read_write_bim(
+    mw: &MatrixWrapper,
+    index: &Vec<usize>,
+    input: &str,
+    output: &str,
+    window: usize,
+) -> Result<(), std::io::Error> {
+    let input_file = std::fs::File::open(input).unwrap();
+    let input_reader = std::io::BufReader::new(input_file);
 
-        for x in self.geno_names.iter().skip(1) {
-            if x == last {
-                self.window_number.push(counter);
-                counter += 1;
-            } else {
-                counter = 0;
-                self.window_number.push(counter);
-                last = x;
-            }
+    let file_out = File::create(output)?;
+    let mut output_reader = std::io::BufWriter::new(file_out);
+
+    let mut i = 0;
+
+    for line in input_reader.lines().skip(window).enumerate() {
+        let line = line.1?; // unwrap the line or propagate error
+        let line_split = line.split_whitespace().collect::<Vec<&str>>();
+        for x in 0..index[i] {
+            writeln!(
+                output_reader,
+                "graph\t.\t0\tW{}:{}_{}\tA\tT",
+                line_split[3], window, x
+            )?;
+        }
+        i += 1;
+        if i == index.len() {
+            break;
         }
     }
+
+    // Flush the buffer to ensure all data is written to file
+    output_reader.flush()?;
+
+    Ok(())
 }

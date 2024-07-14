@@ -31,11 +31,10 @@ In our experience there is no need for a columns (path) normalization, since sam
 ````text
 gfa2bin graph -g input.gfa -o output -f node --bimbam 
 gfa2bin graph -g input.gfa -o output -f dirnode -m mean -r 50 --pansn '#'
-
 ````
 
 ### align - Using graph alignment
 
 
-### mod
-Modify a graph or alignment based plink file (bed, bim, fam). Use gretl to export nodes or paths which should be excluded from the ped file. 
+### Remove
+Remove samples or entries from the plink files (bed, bim, fam). Use gretl to get a list of path or entries which exhibit a specific statistical profile which should be removed. Alternatively, use your own pipeline to select samples/nodes. 

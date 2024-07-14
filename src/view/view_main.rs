@@ -8,17 +8,89 @@ use std::io::Write;
 /// View main function
 ///
 /// Convert a bed file to VCF file
-pub fn view_main(matches: &ArgMatches) {
+pub fn view_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let plink_file = matches.value_of("plink").unwrap();
     let output_prefix = matches.value_of("output").unwrap();
     // Read the bed file
 
-    info!("Reading Plink file");
-    let mut mw = MatrixWrapper::new();
-    mw.bfile_wrapper(plink_file);
-
     info!("Writing output (vcf)");
-    mw.write_vcf(output_prefix);
+    write_vcf(plink_file, output_prefix)?;
+    Ok(())
+}
+pub fn write_vcf(
+    filename_prefix: &str,
+    output_prefix: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // Write the header
+    let file = File::create(output_prefix).unwrap();
+    let mut writer = std::io::BufWriter::new(file);
+    writeln!(writer, "##fileformat=VCFv4.2").expect("Error writing to file");
+    writeln!(
+        writer,
+        "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">"
+    )?;
+
+    // Read the bim file
+    let fam = read_first_column_from_tsv(&format!("{}{}", filename_prefix, ".fam"))?;
+    write!(
+        writer,
+        "{}",
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t".to_string()
+            + &fam.join("\t")
+            + "\n"
+    )?;
+
+    let mut mw = MatrixWrapper::new();
+    let bim_count = count_lines(&format!("{}{}", filename_prefix, ".bim"))?;
+    info!("bim count: {}", bim_count);
+    let fam_count = count_lines(&format!("{}{}", filename_prefix, ".fam"))?;
+    mw.read_bed(
+        &format!("{}{}", filename_prefix, ".bed"),
+        fam_count,
+        bim_count,
+    )?;
+
+    let file_bim = File::open(&format!("{}{}", filename_prefix, ".bim"))?;
+    let reader_bim = BufReader::new(file_bim);
+    let mut lines_bim = reader_bim.lines();
+    let mut index: usize = 0;
+
+    while let Some(line_bim) = lines_bim.next() {
+        let line1 = line_bim?;
+        let b = &mw.matrix_bit[index];
+        writeln!(
+            writer,
+            "graph\t{}\t.\t{}\t-\t{}\tPASS\t{}\tGT\t{}",
+            line1.split_whitespace().nth(3).unwrap(),
+            line1.split_whitespace().nth(3).unwrap(),
+            mw.feature.to_string1(),
+            "GT=".to_string() + &(b.len() / 2).to_string(),
+            bitvec2vcf_string(b)
+        )?;
+    }
+
+    Ok(())
+}
+
+use crate::core::bfile::count_lines;
+use std::io::{BufRead, BufReader};
+
+fn read_first_column_from_tsv(file_path: &str) -> Result<Vec<String>, std::io::Error> {
+    let file = File::open(file_path)?;
+    let reader = BufReader::new(file);
+
+    let mut first_columns = Vec::new();
+
+    for line in reader.lines() {
+        let line = line?;
+        let columns: Vec<&str> = line.split('\t').collect();
+
+        if let Some(first_column) = columns.get(0) {
+            first_columns.push((*first_column).to_string());
+        }
+    }
+
+    Ok(first_columns)
 }
 
 impl MatrixWrapper {
