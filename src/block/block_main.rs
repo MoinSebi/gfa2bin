@@ -1,6 +1,6 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
-use crate::subpath::subpath_main::traversal2samples;
+use crate::subpath::subpath_main::traversal2bitvec;
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
 
@@ -74,8 +74,13 @@ pub fn block_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
-
-pub fn block_wrapper(graph: &Gfa<u32, (), ()>, step: usize, window_size: usize, sequence: Option<&str>, sequence_window: Option<&str>) -> Result<Vec<[u32; 2]>, Box<dyn std::error::Error>> {
+pub fn block_wrapper(
+    graph: &Gfa<u32, (), ()>,
+    step: usize,
+    window_size: usize,
+    sequence: Option<&str>,
+    sequence_window: Option<&str>,
+) -> Result<Vec<[u32; 2]>, Box<dyn std::error::Error>> {
     let mut blocks = Vec::new();
     if sequence.is_none() {
         blocks = blocks_node(graph, step, window_size);
@@ -93,14 +98,13 @@ pub fn block_wrapper(graph: &Gfa<u32, (), ()>, step: usize, window_size: usize, 
 ///  - Returns start and end nodes of a block
 pub fn blocks_node(graph: &Gfa<u32, (), ()>, step: usize, wsize: usize) -> Vec<[u32; 2]> {
     let mut gg = Vec::new();
-    for x in (0..(graph.segments.len()-wsize)).step_by(step) {
-        gg.push([graph.segments[x].id, graph.segments[x+wsize].id]);
+    for x in (0..(graph.segments.len() - wsize)).step_by(step) {
+        gg.push([graph.segments[x].id, graph.segments[x + wsize].id]);
     }
     gg
 }
 
-
-pub fn block_seq(graph: &Gfa<u32, (), ()>, size: usize, step_size: usize) -> Vec<[u32; 2]>{
+pub fn block_seq(graph: &Gfa<u32, (), ()>, size: usize, step_size: usize) -> Vec<[u32; 2]> {
     let starts = get_starts(graph, step_size);
     let mut result = Vec::new();
     let mut sequence = 0;
@@ -130,8 +134,6 @@ pub fn get_starts(graph: &Gfa<u32, (), ()>, step: usize) -> Vec<usize> {
     }
     gg
 }
-
-
 
 /// Node size index
 pub fn node_size(graph: &Gfa<u32, (), ()>) -> Vec<usize> {

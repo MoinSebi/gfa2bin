@@ -2,10 +2,10 @@ use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-use std::{fs, io};
+use gfa_reader::Pansn;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Read};
-use gfa_reader::Pansn;
+use std::{fs, io};
 
 /// Read number of lines
 pub fn count_lines(file_path: &str) -> Result<usize, std::io::Error> {
@@ -97,9 +97,8 @@ pub fn get_type_bim(file_path: &str) -> (Feature, Option<Feature>) {
     Feature::identify_feature(first_line)
 }
 
-
 use std::io::Write;
-pub fn write_dummy_fam(pansn: &Pansn<u32, (), ()>, outfile: &str) -> Result<(), io::Error>{
+pub fn write_dummy_fam(pansn: &Pansn<u32, (), ()>, outfile: &str) -> Result<(), io::Error> {
     let mut file = File::create(outfile)?;
     let mut bufwriter = BufWriter::new(file);
     for (i, x) in pansn.genomes.iter().enumerate() {

@@ -12,7 +12,7 @@ hashbrown = "0.11"
 bitvec = "1"
 byteorder = "1.0.0"
 gfa-reader = {git = "https://github.com/MoinSebi/gfa-reader", rev = "0500079"}
-
+rayon = "1.10.0"
 
 
 log = "0.4.0"

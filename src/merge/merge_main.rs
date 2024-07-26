@@ -1,14 +1,13 @@
-use clap::ArgMatches;
 use crate::core::bfile::count_lines;
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
 use crate::remove::remove_main::copy_file;
 use crate::window::window_main::{iterate_test, read_write_bim};
+use clap::ArgMatches;
+use log::info;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead, Read, Write};
-use log::info;
-
 
 /// Window function
 ///
@@ -21,7 +20,7 @@ pub fn window_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     let input_list = read_list(plink_list)?;
     let names = clear_names(input_list)?;
     let fams = check_fams(&names)?;
-    if fams == false{
+    if fams == false {
         panic!("Fam files are not the same");
     }
     copy_file(
@@ -30,7 +29,6 @@ pub fn window_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     )?;
     merge_bim(&names, &(out_file.to_string() + ".bim"))?;
     bed_merge(&names, &(out_file.to_string() + ".bed"))?;
-
 
     Ok(())
 }
@@ -45,12 +43,12 @@ pub fn read_list(file: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> 
     Ok(list)
 }
 
-pub fn clear_names(names: Vec<String>) ->  Result<Vec<String>, Box<dyn std::error::Error>> {
+pub fn clear_names(names: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut new_names: Vec<String> = Vec::new();
-    for x in names.iter(){
-        if x.ends_with(".bed"){
+    for x in names.iter() {
+        if x.ends_with(".bed") {
             let a = x.split(".").collect::<Vec<&str>>();
-            new_names.push(a[0..a.len()-2].join("."));
+            new_names.push(a[0..a.len() - 2].join("."));
         } else {
             new_names.push(x.clone());
         }
@@ -59,21 +57,21 @@ pub fn clear_names(names: Vec<String>) ->  Result<Vec<String>, Box<dyn std::erro
 }
 
 pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>> {
-    if fams.len() == 0{
+    if fams.len() == 0 {
         return Ok(false);
     }
-    let a =  fs::read_to_string(fams[0].to_string() + ".fam")?;
+    let a = fs::read_to_string(fams[0].to_string() + ".fam")?;
 
-    for x in fams.iter().skip(1){
+    for x in fams.iter().skip(1) {
         let b = fs::read_to_string(x.to_string() + ".fam")?;
-        if a != b{
+        if a != b {
             return Ok(false);
         }
     }
     Ok(true)
 }
 
-pub fn merge_bim(fams: &Vec<String>, output: &str) -> io::Result<()>{
+pub fn merge_bim(fams: &Vec<String>, output: &str) -> io::Result<()> {
     let output_file = "output.txt";
 
     // Create or truncate the output file
@@ -94,8 +92,6 @@ pub fn merge_bim(fams: &Vec<String>, output: &str) -> io::Result<()>{
 }
 
 pub fn bed_merge(files: &Vec<String>, output_file: &str) -> io::Result<()> {
-
-
     // Open the output file
     let mut output = File::create(output_file)?;
 

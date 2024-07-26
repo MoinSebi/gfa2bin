@@ -6,13 +6,12 @@ mod find;
 mod graph;
 mod helper;
 mod logging;
+mod merge;
 mod remove;
 mod subpath;
 mod view;
 mod window;
-mod merge;
 
-use std::any::Any;
 use crate::alignment::align_main::align_main;
 use crate::block::block_main::block_main;
 use crate::filter::filter_main::filter_main;
@@ -24,6 +23,7 @@ use crate::subpath::subpath_main::subpath_main;
 use crate::view::view_main::view_main;
 use crate::window::window_main::window_main;
 use clap::{App, AppSettings, Arg};
+use std::any::Any;
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -418,6 +418,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .short('b')
                         .about("Output blocks [default: false]")
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::new("threads")
+                        .long("threads")
+                        .short('t')
+                        .about("Number of threads")
+                        .takes_value(true)
+                        .default_value("1")
                 ),
         )
 

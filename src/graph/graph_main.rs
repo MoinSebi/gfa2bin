@@ -166,11 +166,7 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
         weight_add(&mw.sample_index_u16, &mut b);
 
         thresh.push(PackCompact::threshold(
-            &mut b,
-            keep_zeros,
-            fraction,
-            std,
-            method,
+            &mut b, keep_zeros, fraction, std, method,
         ));
     }
 

@@ -138,22 +138,14 @@ pub fn align_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
         for x in mw.matrix_u16.iter() {
             let mut b = x.clone();
             thresh.push(PackCompact::threshold(
-                &mut b,
-                keep_zeros,
-                fraction,
-                std,
-                method,
+                &mut b, keep_zeros, fraction, std, method,
             ));
         }
     } else {
         for x in mw.matrix_f32.iter() {
             let mut b = x.clone();
             thresh.push(PackCompact::threshold(
-                &mut b,
-                keep_zeros,
-                fraction,
-                std,
-                method,
+                &mut b, keep_zeros, fraction, std, method,
             ));
         }
     }

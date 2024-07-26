@@ -1,16 +1,19 @@
-use std::fs::File;
-use std::io::{BufRead, BufWriter, Write};
+use std::fmt::format;
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
 use crate::window::window_main::getbv;
 use bitvec::bitvec;
 use bitvec::order::Lsb0;
+use std::fs::File;
+use std::io::{BufRead, BufWriter, Write};
 
 use bitvec::prelude::BitVec;
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Opt, Pansn, Segment};
 use hashbrown::HashMap;
 use log::info;
+use rayon::prelude::*;
+use crate::block::block_main::block_wrapper;
 
 /// Subpath main function
 ///
@@ -20,12 +23,7 @@ pub fn subpath_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
     let graph_file = matches.value_of("gfa").unwrap();
     let output_prefix = matches.value_of("output").unwrap();
     let window: usize = matches.value_of("length").unwrap().parse().unwrap();
-    let split = matches
-        .value_of("split")
-        .unwrap_or("1")
-        .parse::<usize>()
-        .unwrap();
-
+    let threads: usize = matches.value_of("threads").unwrap().parse().unwrap();
     let mut block = None;
     if let Some(blocks_path) = matches.value_of("blocks") {
         let file = File::create(blocks_path).unwrap();
@@ -47,21 +45,18 @@ pub fn subpath_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
     let a = gfa_index(&wrapper);
 
     info!("Extracting subpath");
-    let mw = subpath_wrapper(&wrapper, &graph, window, a, &mut block);
-
-    info!("Number of nodes: {}", graph.segments.len());
-    info!("Number of subpath: {}", mw.matrix_bit.len());
-    info!("Number of subpath: {}", mw.geno_names.len());
-
-    info!("Writing output");
-
+    subpath_wrapper(&wrapper, &graph, window, a, matches.is_present("blocks"), output_prefix, threads)?;
     Ok(())
 }
 
-/// #Index the graph
+/// Node to position index (hashmap)
+///
+/// For each path: Iterate over all nodes and store the index of each node
 ///
 /// For each path:
 ///     node -> Vec<index>
+///
+/// Comment: Saved genome_id, haplotype_id, path_id, total_haplo, node2index
 pub fn gfa_index(
     graph: &Pansn<u32, (), ()>,
 ) -> Vec<(usize, usize, usize, usize, HashMap<u32, Vec<usize>>)> {
@@ -98,63 +93,87 @@ pub fn subpath_wrapper(
     graph: &Gfa<u32, (), ()>,
     window: usize,
     node2index_hm: Vec<(usize, usize, usize, usize, HashMap<u32, Vec<usize>>)>,
-    blocks: &mut Option<BufWriter<File>>,
-) -> MatrixWrapper {
-    // Initialize the matrix wrapper
-    let mut mw = MatrixWrapper::new();
-
+    blocks: bool,
+    out_prefix: &str,
+    threads: usize,
+) -> Result<(), Box<dyn std::error::Error>>{
     // Sample size
     let sample_size = graph2.genomes.len();
     let is_diploid = diploid_or_not(graph2);
-    // Iterate over each node
-    let a = graph.segments.iter().map(|x| x.id).collect::<Vec<u32>>();
-
-    let chunks = a.chunks(a.len() / 8);
-
-    for node_id in graph.segments.iter() {
-        // Result vec
-        let mut result_vec = get_t(&node_id, &node2index_hm, graph2, window);
-
-
-        // Sort by first then second thing
-        result_vec.sort();
-        if result_vec.is_empty() {
-            continue;
+    let segment_id = graph.segments.iter().map(|x| x.id).collect::<Vec<u32>>();
+    segment_id.par_chunks(segment_id.len()/threads+1).enumerate().for_each(|(i, chunks)| {
+        let mut file_bed = BufWriter::new(File::create(format!("{}_{}.bed", out_prefix, i)).expect("Not able to create bed file"));
+        let mut file_bim = BufWriter::new(File::create(format!("{}_{}.bim", out_prefix, i)).expect("Not able to create bim file"));
+        let mut block = None;
+        if blocks{
+            block = Some(BufWriter::new(File::create(format!("{}_{}.block", out_prefix, i)).expect("Not able to create block file")));
         }
 
-        // !Thiis mmight be wring
-        let o = traversal2samples(result_vec, sample_size, &is_diploid, blocks);
+        for node_id in chunks {
+            // Result vec
+            let mut result_vec = get_traversals(*node_id, &node2index_hm, graph2, window);
 
-        mw.matrix_bit.extend(o);
+            // Sort the traversals by genome_id, then haplotype_id
+            result_vec.sort();
+
+            // Checker
+            if result_vec.is_empty() {
+                continue;
+            }
+
+
+            // !Thiis mmight be wring
+            let vec_bitvec = traversal2bitvec(result_vec, sample_size, &is_diploid, &mut block);
+            for x in 0..vec_bitvec.len(){
+                writeln!(file_bim, "{}\t{}\t{}", "graph", node_id.to_string() + &window.to_string() + &x.to_string(), x).unwrap();
+                let buff = vec_bitvec[x].as_raw_slice();
+                file_bed.write_all(&buff).expect("Not able to write ")
+            }
+        }
+    });
+    info!("Concatenating files");
+    let filenames1 = make_filename(out_prefix, threads);
+    concatenate_files_and_cleanup(&filenames1.iter().map(|a1| format!("{}.bim", a1)).collect::<Vec<String>>(), format!("{}.bim", out_prefix), &Vec::new())?;
+    concatenate_files_and_cleanup(&filenames1.iter().map(|a1| format!("{}.bed", a1)).collect::<Vec<String>>(), format!("{}.bed", out_prefix), &vec![108, 27, 1])?;
+    if blocks{
+        concatenate_files_and_cleanup(&filenames1.iter().map(|a1| format!("{}.block", a1)).collect::<Vec<String>>(), format!("{}.block", out_prefix), &Vec::new())?;
     }
-    println!("{:?}", mw.matrix_bit.len());
-    mw.feature = Feature::PWindow;
-    mw.window_size = window;
-    mw.shape = (mw.matrix_bit.len(), mw.matrix_bit[0].len());
-    mw.sample_names = graph2.genomes.iter().map(|x| x.name.clone()).collect();
+    info!("Done");
+    Ok(())
 
-    mw
+
 }
 
-pub fn get_t<'a>(node_id: &Segment<u32, ()>, node2index_hm: &Vec<(usize, usize, usize, usize, HashMap<u32, Vec<usize>>)>,   graph2: &'a  Pansn<u32, (), ()>,
-             window: usize) -> Vec<(usize, usize, &'a [u32])> {
+pub fn make_filename(output_prefix: &str, num: usize) -> Vec<String> {
+    (0..num).into_iter().map(|x| format!("{}_{}",output_prefix, x.to_string())).collect()
+}
+
+
+pub fn get_traversals<'a>(
+    node_id: u32,
+    node2index_hm: &Vec<(usize, usize, usize, usize, HashMap<u32, Vec<usize>>)>,
+    graph: &'a Pansn<u32, (), ()>,
+    window: usize,
+) -> Vec<(usize, usize, &'a [u32])> {
     let mut result_vec = Vec::new();
-    for (genome_id, haplotype_id, path_id, total_haplo, node2index) in node2index_hm.iter() {
-        // Max index
-        let max_index = graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id]
+    for (genome_id, haplo_id, path_id, _total_haplo, node2index) in node2index_hm.iter() {
+        // For each path, get the max number of nodes
+        let max_index = graph.genomes[*genome_id].haplotypes[*haplo_id].paths[*path_id]
             .nodes
             .len();
 
-        //
-        if node2index.contains_key(&node_id.id) {
-            // Iterate of there are more than one occurence of the node
-            for z in node2index.get(&node_id.id).unwrap() {
+        // If node is in path
+        if node2index.contains_key(&node_id) {
+            // Iterate over all occurrences
+            for z in node2index.get(&node_id).unwrap() {
+                // If window is within the path (does not exceed)
+                // Push to vector with slice
                 if window <= *z && *z + window < max_index + 1 {
                     result_vec.push((
                         *genome_id,
-                        *haplotype_id,
-                        &graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id]
-                            .nodes[*z - window..*z + window],
+                        *haplo_id,
+                        &graph.genomes[*genome_id].haplotypes[*haplo_id].paths[*path_id].nodes
+                            [*z - window..*z + window],
                     ));
                 }
             }
@@ -163,48 +182,55 @@ pub fn get_t<'a>(node_id: &Segment<u32, ()>, node2index_hm: &Vec<(usize, usize, 
     result_vec
 }
 
-pub fn diploid_or_not(gr: &Pansn<u32, (), ()>) -> Vec<bool> {
-    let mut ii = Vec::new();
-    for x in gr.genomes.iter() {
-        if x.haplotypes.len() > 1 {
-            ii.push(true);
-        } else {
-            ii.push(false);
-        }
-    }
-    ii
-}
 
 /// Convert collection of traversals to collection of samples with similar traversals
 ///
 /// Genome_id, haplotype_id, path_id, &[u32]
 ///
 /// Check if  &[u32] is the same
-pub fn traversal2samples(
-    ii: Vec<(usize, usize, &[u32])>,
+pub fn traversal2bitvec(
+    traversals: Vec<(usize, usize, &[u32])>,
     number_of_samples: usize,
     ppl: &Vec<bool>,
-    blocks: &mut Option<BufWriter<File>>
-) -> Vec<BitVec<u8>> {
-    let mut pp: Vec<Vec<[usize; 2]>> = Vec::new();
-    let mut last = ii[0].2;
-    pp.push(vec![[ii[0].0, ii[0].1]]);
-    for x in ii.iter().skip(1) {
-        if x.2 != last {
-            last = x.2;
-            pp.push(vec![[x.0, x.1]]);
-        } else {
-            pp.last_mut().unwrap().push([x.0, x.1]);
-        }
+    blocks: &mut Option<BufWriter<File>>,
+)  -> Vec<BitVec<u8>> {
+    let mut sample_list: Vec<Vec<[usize; 2]>> = group_traversal(traversals);
+
+
+    // If you want blocks written into extra
+    if let Some(bufw) = blocks {
+        writeln!(bufw, "{}\t{:?}", 0, sample_list).unwrap();
     }
-    if let Some(b) = blocks {
-        writeln!(b, "{}\t{:?}", 0, pp).unwrap();
-    }
-    getbv2(&mut pp, number_of_samples, ppl)
+    get_bitvector(&mut sample_list, number_of_samples, ppl)
 }
 
-/// Create a bitvector
-pub fn getbv2(
+/// Group traversals with similar traversals
+///
+/// One group contains all samples with the same traversal
+/// Collected into one vector
+pub fn group_traversal(traversals: Vec<(usize, usize, &[u32])>) -> Vec<Vec<[usize; 2]>> {
+    let mut sample_list: Vec<Vec<[usize; 2]>> = Vec::new();
+    let mut previous = traversals[0].2;
+    sample_list.push(vec![[traversals[0].0, traversals[0].1]]);
+    for traversal in traversals.iter().skip(1) {
+        if traversal.2 != previous {
+            previous = traversal.2;
+            sample_list.push(vec![[traversal.0, traversal.1]]);
+        } else {
+            sample_list
+                .last_mut()
+                .unwrap()
+                .push([traversal.0, traversal.1]);
+        }
+    }
+    sample_list
+}
+
+/// Each group is one genotype.
+///
+/// Iterate over one genotype and setup a bitvector
+///
+pub fn get_bitvector(
     present_sample_collection: &mut Vec<Vec<[usize; 2]>>,
     len: usize,
     is_diploid: &Vec<bool>,
@@ -219,7 +245,7 @@ pub fn getbv2(
                 bitvec_tmp.set(samples[index][0] * 2 + 1, true);
                 index += 2;
             } else {
-               if !is_diploid[samples[index][0]] {
+                if !is_diploid[samples[index][0]] {
                     bitvec_tmp.set(samples[index][0] * 2, true);
                     bitvec_tmp.set(samples[index][0] * 2 + 1, true);
                     index += 1;
@@ -228,13 +254,58 @@ pub fn getbv2(
                     index += 1;
                 }
             }
-
         }
         if index == samples.len() - 1 {
             bitvec_tmp.set(samples[index][0] * 2 + 1, true);
         }
         bitvec_collection.push(bitvec_tmp);
-
     }
     bitvec_collection
+}
+use std::io::{self, BufReader, Read};
+use std::path::Path;
+
+fn concatenate_files_and_cleanup<P: AsRef<Path>>(input_files: &[P], output_file: P, buffer: &Vec<u8>) -> io::Result<()> {
+    // Open the output file for writing
+    let output = File::create(output_file)?;
+    let mut writer = BufWriter::new(output);
+    writer.write_all(buffer)?;
+    // Process each input file
+    for input_path in input_files {
+        // Open the current input file for reading
+        let input = File::open(input_path)?;
+        let mut reader = BufReader::new(input);
+
+        // Buffer to read data
+        let mut buffer = [0; 8192]; // Adjust buffer size as needed
+
+        // Read and write data in chunks
+        loop {
+            let bytes_read = reader.read(&mut buffer)?;
+            if bytes_read == 0 {
+                break; // End of file
+            }
+            writer.write_all(&buffer[..bytes_read])?;
+        }
+
+        // Delete the input file after processing
+       std::fs::remove_file(input_path)?;
+    }
+
+    // Ensure all data is written to the output file
+    writer.flush()?;
+
+    Ok(())
+}
+
+pub fn diploid_or_not(gr: &Pansn<u32, (), ()>) -> Vec<bool> {
+    let mut diploid_vec = Vec::new();
+    for sample in gr.genomes.iter() {
+        if sample.haplotypes.len() > 1 {
+            diploid_vec.push(true);
+        } else {
+            diploid_vec.push(false);
+        }
+    }
+    diploid_vec
 }
