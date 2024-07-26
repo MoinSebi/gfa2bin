@@ -10,7 +10,9 @@ mod remove;
 mod subpath;
 mod view;
 mod window;
+mod merge;
 
+use std::any::Any;
 use crate::alignment::align_main::align_main;
 use crate::block::block_main::block_main;
 use crate::filter::filter_main::filter_main;
@@ -565,6 +567,28 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .about("Split output in multiple files"),
                 ),
+        )
+        .subcommand(
+            App::new("merge")
+                .version("1.0.0")
+                .about("Merge the multiple plink files into one. Must be the same samples (fam).")
+                .arg(
+                    Arg::new("plink")
+                        .short('p')
+                        .long("plink")
+                        .about("Plink prefix OR BED files")
+                        .takes_value(true)
+                        .required(true)
+
+                )
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
+                )
         )
         .get_matches();
 

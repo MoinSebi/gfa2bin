@@ -18,13 +18,16 @@ pub fn block_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     let graph_file = matches.value_of("gfa").unwrap();
     let sep = matches.value_of("PanSN").unwrap_or(" ");
 
-    // Block param,eters
+    // Block parameters
     let window: usize = matches
         .value_of("window")
         .unwrap()
         .parse::<usize>()
         .unwrap();
     let step_size: usize = matches.value_of("step").unwrap().parse().unwrap();
+    let sequence = matches.value_of("sequence");
+    let sequence_window = matches.value_of("sequence window");
+
     let cutoff_distance: usize = matches.value_of("distance").unwrap().parse().unwrap();
 
     // Output
@@ -45,12 +48,12 @@ pub fn block_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     info!("Output prefix: {}\n", output_prefix);
 
     info!("Reading graph file");
-    let window = window / 2;
+    let window = window;
     let graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
     let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, sep);
 
     info!("Indexing graph");
-    let a = blocks_node(&graph, step_size, window);
+    let a = block_wrapper(&graph, step_size, window, sequence, sequence_window)?;
     info!("Number of blocks: {}", a.len());
 
     let b = node_size(&graph);
@@ -70,27 +73,18 @@ pub fn block_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     }
     Ok(())
 }
-// Define a custom error type that returns a String message
-#[derive(Debug)]
-struct CustomError(String);
 
-// Implement std::fmt::Display for CustomError
-impl fmt::Display for CustomError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "CustomError: {}", self.0)
-    }
-}
 
-pub fn check_compact2(graph: &Gfa<u32, (), ()>) -> Result<bool, io::Error> {
-    for (i, x) in graph.segments.iter().enumerate() {
-        if x.id != (i + 1) as u32 {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Sum cannot be negative",
-            ));
-        }
+pub fn block_wrapper(graph: &Gfa<u32, (), ()>, step: usize, window_size: usize, sequence: Option<&str>, sequence_window: Option<&str>) -> Result<Vec<[u32; 2]>, Box<dyn std::error::Error>> {
+    let mut blocks = Vec::new();
+    if sequence.is_none() {
+        blocks = blocks_node(graph, step, window_size);
+    } else {
+        let sequence = sequence.unwrap().parse()?;
+        let sequence_window = sequence_window.unwrap().parse()?;
+        blocks = block_seq(graph, sequence, sequence_window);
     }
-    Ok(true)
+    Ok(blocks)
 }
 
 /// Make blocks
@@ -98,13 +92,46 @@ pub fn check_compact2(graph: &Gfa<u32, (), ()>) -> Result<bool, io::Error> {
 ///  - A block starts at a node and end at a node
 ///  - Returns start and end nodes of a block
 pub fn blocks_node(graph: &Gfa<u32, (), ()>, step: usize, wsize: usize) -> Vec<[u32; 2]> {
-    let glen = graph.segments.len();
     let mut gg = Vec::new();
-    for x in (wsize..glen - wsize).step_by(step) {
-        gg.push([(x - wsize) as u32, (x + wsize) as u32]);
+    for x in (0..(graph.segments.len()-wsize)).step_by(step) {
+        gg.push([graph.segments[x].id, graph.segments[x+wsize].id]);
     }
     gg
 }
+
+
+pub fn block_seq(graph: &Gfa<u32, (), ()>, size: usize, step_size: usize) -> Vec<[u32; 2]>{
+    let starts = get_starts(graph, step_size);
+    let mut result = Vec::new();
+    let mut sequence = 0;
+    let mut starting_id = graph.segments[0].id;
+    for x in starts.iter() {
+        for y in *x..graph.segments.len() {
+            sequence += graph.segments[y].sequence.get_len();
+            if sequence > size {
+                result.push([starting_id, graph.segments[y].id]);
+                starting_id = graph.segments[y].id;
+                sequence = 0;
+            }
+        }
+    }
+    result
+}
+
+pub fn get_starts(graph: &Gfa<u32, (), ()>, step: usize) -> Vec<usize> {
+    let mut gg = Vec::new();
+    let mut pos = 0;
+    for (index, x) in graph.segments.iter().enumerate() {
+        pos += x.sequence.get_len();
+        if pos > step {
+            gg.push(index);
+            pos = 0;
+        }
+    }
+    gg
+}
+
+
 
 /// Node size index
 pub fn node_size(graph: &Gfa<u32, (), ()>) -> Vec<usize> {
