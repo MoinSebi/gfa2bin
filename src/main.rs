@@ -8,10 +8,10 @@ mod helper;
 mod logging;
 mod merge;
 mod remove;
+mod split;
 mod subpath;
 mod view;
 mod window;
-mod split;
 
 use crate::alignment::align_main::align_main;
 use crate::block::block_main::block_main;
@@ -19,15 +19,15 @@ use crate::filter::filter_main::filter_main;
 use crate::find::find_main::find_main;
 use crate::graph::graph_main::graph_main;
 use crate::logging::newbuilder;
+use crate::merge::merge_main::merge_main;
 use crate::remove::remove_main::remove_main;
+use crate::split::split_main::split_main;
 use crate::subpath::subpath_main::subpath_main;
 use crate::view::view_main::view_main;
 use crate::window::window_main::window_main;
 use clap::{App, AppSettings, Arg};
-use std::any::Any;
+
 use std::error::Error;
-use crate::merge::merge_main::merge_main;
-use crate::split::split_main::split_main;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("gfa2bin")
@@ -628,7 +628,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else if let Some(matches) = matches.subcommand_matches("remove") {
         remove_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("find") {
-        Ok(find_main(matches))
+        find_main(matches);
+        Ok(())
     } else if let Some(matches) = matches.subcommand_matches("window") {
         window_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("subpath") {
@@ -639,9 +640,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         view_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("filter") {
         filter_main(matches)
-    }else if let Some(matches) = matches.subcommand_matches("merge") {
+    } else if let Some(matches) = matches.subcommand_matches("merge") {
         merge_main(matches)
-    } else if let Some (matches) = matches.subcommand_matches("split") {
+    } else if let Some(matches) = matches.subcommand_matches("split") {
         split_main(matches)
     } else {
         println!("No subcommand was used");

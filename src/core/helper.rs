@@ -29,13 +29,13 @@ impl Feature {
         }
     }
 
-    pub fn string2u128(s: &str, feature: Feature, feature2: Option<Feature>) -> u128 {
+    pub fn string2u128(s: &str, feature: Feature, _feature2: Option<Feature>) -> u128 {
         match feature {
             Feature::Node => s.parse().unwrap(),
             Feature::DirNode => {
                 let s1 = s.ends_with('+');
-                let s2 = s[..s.len() - 1].parse::<u128>().unwrap() * 2 + s1 as u128;
-                s2
+                
+                s[..s.len() - 1].parse::<u128>().unwrap() * 2 + s1 as u128
             }
             Feature::Edge => {
                 let ss = find_first_plus_minus(s).unwrap();

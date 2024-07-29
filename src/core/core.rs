@@ -1,6 +1,6 @@
-use crate::core::helper::{is_all_ones, is_all_zeros, merge_u32_to_u64, Feature};
+use crate::core::helper::{merge_u32_to_u64, Feature};
 
-use crate::remove::input_data::FileData;
+
 use bitvec::prelude::*;
 use gfa_reader::Gfa;
 use hashbrown::HashSet;
@@ -178,7 +178,7 @@ impl MatrixWrapper {
                 }
             } else {
                 let chunk_size = (self.matrix_f32.len() / split) + 1;
-                let mut chunks = self.matrix_f32.chunks(chunk_size);
+                let chunks = self.matrix_f32.chunks(chunk_size);
                 let len = chunks.len();
                 for (index, y) in chunks.enumerate() {
                     self.write_bimbam(index, output_prefix, len, &thresh, y);
@@ -394,7 +394,7 @@ impl MatrixWrapper {
         let f = File::create(output).expect("Unable to create file");
         let mut f = BufWriter::new(f);
         if self.fam_entries.is_empty() {
-            for x in self.sample_names.iter() {
+            for _x in self.sample_names.iter() {
                 writeln!(f, "{}", pheno).expect("Can not write file");
             }
         } else {

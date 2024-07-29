@@ -20,8 +20,8 @@ pub fn count_lines(file_path: &str) -> Result<usize, std::io::Error> {
 
 impl MatrixWrapper {
     pub fn bfile_wrapper(&mut self, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let mut bim_count = count_lines(&format!("{}{}", filename, ".bim"))?;
-        let mut fam_count = count_lines(&format!("{}{}", filename, ".fam"))?;
+        let _bim_count = count_lines(&format!("{}{}", filename, ".bim"))?;
+        let _fam_count = count_lines(&format!("{}{}", filename, ".fam"))?;
 
         self.read_bed(&format!("{}{}", filename, ".bed"), 1, 1)?;
         Ok(())
@@ -99,7 +99,7 @@ pub fn get_type_bim(file_path: &str) -> (Feature, Option<Feature>) {
 
 use std::io::Write;
 pub fn write_dummy_fam(pansn: &Pansn<u32, (), ()>, outfile: &str) -> Result<(), io::Error> {
-    let mut file = File::create(outfile)?;
+    let file = File::create(outfile)?;
     let mut bufwriter = BufWriter::new(file);
     for (i, x) in pansn.genomes.iter().enumerate() {
         writeln!(bufwriter, "{}\t{}\t0\t0\t0\t-9", i, x.name)?;

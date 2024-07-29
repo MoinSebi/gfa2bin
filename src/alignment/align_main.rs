@@ -2,10 +2,10 @@ use crate::alignment::pack::matrix_pack_wrapper;
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
 use clap::ArgMatches;
-use log::{info, warn};
+use log::{info};
 
 use crate::core::helper::Feature::Alignment;
-use crate::graph::parser::weight_add;
+
 use packing_lib::core::core::PackCompact;
 use packing_lib::core::reader::{read_index, unpack_zstd_to_byte, wrapper_reader};
 use packing_lib::normalize::convert_helper::Method;
@@ -58,11 +58,6 @@ pub fn align_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
 
     // Output modification
     let bimbam = matches.is_present("bimbam");
-    let split = matches
-        .value_of("split")
-        .unwrap_or("1")
-        .parse::<usize>()
-        .unwrap();
 
     let mut pheno = f64::MAX;
     if matches.is_present("pheno") {
@@ -75,7 +70,6 @@ pub fn align_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     info!("Relative threshold: {:?}", fraction);
     info!("Standard deviation: {}", std);
     info!("Keep zeros: {}", keep_zeros);
-    info!("Split: {}", split);
     info!("Output format: {}", if bimbam { "bimbam" } else { "plink" });
     info!("Output prefix: {}", output_prefix);
     info!(
@@ -151,7 +145,7 @@ pub fn align_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     }
     mw.write_wrapper(
         bimbam,
-        split,
+        1,
         output_prefix,
         thresh,
         feature_enum,

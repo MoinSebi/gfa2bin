@@ -50,12 +50,12 @@ pub fn write_vcf(
         bim_count,
     )?;
 
-    let file_bim = File::open(&format!("{}{}", filename_prefix, ".bim"))?;
+    let file_bim = File::open(format!("{}{}", filename_prefix, ".bim"))?;
     let reader_bim = BufReader::new(file_bim);
-    let mut lines_bim = reader_bim.lines();
-    let mut index: usize = 0;
+    let lines_bim = reader_bim.lines();
+    let index: usize = 0;
 
-    while let Some(line_bim) = lines_bim.next() {
+    for line_bim in lines_bim {
         let line1 = line_bim?;
         let b = &mw.matrix_bit[index];
         writeln!(
@@ -85,7 +85,7 @@ fn read_first_column_from_tsv(file_path: &str) -> Result<Vec<String>, std::io::E
         let line = line?;
         let columns: Vec<&str> = line.split('\t').collect();
 
-        if let Some(first_column) = columns.get(0) {
+        if let Some(first_column) = columns.first() {
             first_columns.push((*first_column).to_string());
         }
     }

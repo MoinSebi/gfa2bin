@@ -74,8 +74,7 @@ pub fn filter_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     info!(
         "Matrix size (SNPs X Samples) - after path: {} {}",
         mw.matrix_bit.len(),
-        mw.matrix_bit
-            .get(0)
+        mw.matrix_bit.first()
             .ok_or("Matrix is now empty after path removal")?
             .len()
     );
@@ -83,8 +82,7 @@ pub fn filter_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     info!(
         "Matrix size (SNPs X Samples) - after maf: {} {}",
         mw.matrix_bit.len(),
-        mw.matrix_bit
-            .get(0)
+        mw.matrix_bit.first()
             .ok_or("Matrix is now empty after MAF/maf removal ")?
             .len()
     );

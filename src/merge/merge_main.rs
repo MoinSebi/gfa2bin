@@ -1,8 +1,8 @@
-use crate::core::bfile::count_lines;
-use crate::core::core::MatrixWrapper;
-use crate::core::helper::Feature;
+
+
+
 use crate::remove::remove_main::copy_file;
-use crate::window::window_main::{iterate_test, read_write_bim};
+
 use clap::ArgMatches;
 use log::info;
 use std::fs;
@@ -20,7 +20,7 @@ pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     let input_list = read_list(plink_list)?;
     let names = clear_names(input_list)?;
     let fams = check_fams(&names)?;
-    if fams == false {
+    if !fams {
         panic!("Fam files are not the same");
     }
     copy_file(
@@ -47,7 +47,7 @@ pub fn clear_names(names: Vec<String>) -> Result<Vec<String>, Box<dyn std::error
     let mut new_names: Vec<String> = Vec::new();
     for x in names.iter() {
         if x.ends_with(".bed") {
-            let a = x.split(".").collect::<Vec<&str>>();
+            let a = x.split('.').collect::<Vec<&str>>();
             new_names.push(a[0..a.len() - 2].join("."));
         } else {
             new_names.push(x.clone());
@@ -57,7 +57,7 @@ pub fn clear_names(names: Vec<String>) -> Result<Vec<String>, Box<dyn std::error
 }
 
 pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>> {
-    if fams.len() == 0 {
+    if fams.is_empty() {
         return Ok(false);
     }
     let a = fs::read_to_string(fams[0].to_string() + ".fam")?;

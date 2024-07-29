@@ -5,8 +5,8 @@ use crate::remove::remove_main::copy_file;
 use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
 use clap::ArgMatches;
-use gfa_reader::Opt;
-use log::info;
+
+
 use std::fs::File;
 use std::io::{BufRead, BufWriter, Write};
 
@@ -29,7 +29,7 @@ pub fn window_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     let bim_count = count_lines(&format!("{}{}", plink_file, ".bim"))?;
     let fam_count = count_lines(&format!("{}{}", plink_file, ".fam"))?;
     mw.read_bed(&format!("{}{}", plink_file, ".bed"), fam_count, bim_count)?;
-    let (mut mw, index) = iterate_test(&mw, window, &mut block)?;
+    let (mw, index) = iterate_test(&mw, window, &mut block)?;
 
     mw.write_bed(0, out_file, Feature::Node, 1);
     read_write_bim(
@@ -125,7 +125,7 @@ pub fn getbv(vv: &Vec<Vec<usize>>, len: usize) -> Vec<BitVec<u8>> {
 }
 
 pub fn read_write_bim(
-    mw: &MatrixWrapper,
+    _mw: &MatrixWrapper,
     index: &Vec<usize>,
     input: &str,
     output: &str,

@@ -13,7 +13,7 @@ impl FileData {
         let feature = get_type(filename);
 
         let mut data = Vec::new();
-        let mut data3 = Vec::new();
+        let data3 = Vec::new();
         let file = File::open(filename).expect("ERROR: CAN NOT READ FILE\n");
         let reader = BufReader::new(file);
 

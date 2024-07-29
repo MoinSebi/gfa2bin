@@ -1,16 +1,16 @@
-use crate::core::core::MatrixWrapper;
-use crate::core::helper::{merge_u32_to_u64, Feature};
-use crate::window::window_main::getbv;
-use bitvec::bitvec;
-use bitvec::order::Lsb0;
-use std::fmt::format;
-use std::fs::File;
-use std::io::{BufRead, BufWriter, Write};
 
-use crate::block::block_main::block_wrapper;
+
+
+
+use bitvec::order::Lsb0;
+
+use std::fs::File;
+use std::io::{BufWriter, Write};
+
+
 use bitvec::prelude::BitVec;
 use clap::ArgMatches;
-use gfa_reader::{Gfa, Opt, Pansn, Segment};
+use gfa_reader::{Gfa, Pansn};
 use hashbrown::HashMap;
 use log::info;
 use rayon::prelude::*;
@@ -78,7 +78,7 @@ pub fn gfa_index(
 
                 for (ind, node) in p.nodes.iter().enumerate() {
                     node2index
-                        .entry(node.clone())
+                        .entry(*node)
                         .or_insert_with(Vec::new)
                         .push(ind);
                 }
@@ -147,14 +147,13 @@ pub fn subpath_wrapper(
                 for x in 0..vec_bitvec.len() {
                     writeln!(
                         file_bim,
-                        "{}\t{}\t{}",
-                        "graph",
+                        "graph\t{}\t{}",
                         node_id.to_string() + &window.to_string() + &x.to_string(),
                         x
                     )
                     .unwrap();
                     let buff = vec_bitvec[x].as_raw_slice();
-                    file_bed.write_all(&buff).expect("Not able to write ")
+                    file_bed.write_all(buff).expect("Not able to write ")
                 }
             }
         });
@@ -192,8 +191,7 @@ pub fn subpath_wrapper(
 
 pub fn make_filename(output_prefix: &str, num: usize) -> Vec<String> {
     (0..num)
-        .into_iter()
-        .map(|x| format!("{}_{}", output_prefix, x.to_string()))
+        .map(|x| format!("{}_{}", output_prefix, x))
         .collect()
 }
 
@@ -290,15 +288,13 @@ pub fn get_bitvector(
                 bitvec_tmp.set(samples[index][0] * 2, true);
                 bitvec_tmp.set(samples[index][0] * 2 + 1, true);
                 index += 2;
+            } else if !is_diploid[samples[index][0]] {
+                bitvec_tmp.set(samples[index][0] * 2, true);
+                bitvec_tmp.set(samples[index][0] * 2 + 1, true);
+                index += 1;
             } else {
-                if !is_diploid[samples[index][0]] {
-                    bitvec_tmp.set(samples[index][0] * 2, true);
-                    bitvec_tmp.set(samples[index][0] * 2 + 1, true);
-                    index += 1;
-                } else {
-                    bitvec_tmp.set(samples[index][0] * 2 + 1, true);
-                    index += 1;
-                }
+                bitvec_tmp.set(samples[index][0] * 2 + 1, true);
+                index += 1;
             }
         }
         if index == samples.len() - 1 {
@@ -308,9 +304,9 @@ pub fn get_bitvector(
     }
     bitvec_collection
 }
+use crate::core::bfile::write_dummy_fam;
 use std::io::{self, BufReader, Read};
 use std::path::Path;
-use crate::core::bfile::write_dummy_fam;
 
 pub fn concatenate_files_and_cleanup<P: AsRef<Path>>(
     input_files: &[P],
@@ -360,4 +356,3 @@ pub fn diploid_or_not(gr: &Pansn<u32, (), ()>) -> Vec<bool> {
     }
     diploid_vec
 }
-

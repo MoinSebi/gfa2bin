@@ -1,9 +1,9 @@
 use crate::core::core::MatrixWrapper;
 use std::collections::HashSet;
 
-use crate::remove::input_data::{read_paths, FileData};
+
 use clap::ArgMatches;
-use log::{debug, info, warn};
+use log::{info, warn};
 
 /// Function for "gfa2bin remove"
 ///
@@ -16,7 +16,7 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
 
     // Output parameters
     let output_prefix = matches.value_of("output").unwrap_or("gfa2bin.remove");
-    let split = matches
+    let _split = matches
         .value_of("split")
         .unwrap_or("1")
         .parse::<usize>()
@@ -85,7 +85,7 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
         if matches.is_present("pindex") {
             let index = read_file_to_vector(matches.value_of("pindex").unwrap()).unwrap();
             let aa = index.iter().map(|x| x.parse::<usize>().unwrap()).collect();
-            let f = process_file2(
+            process_file2(
                 &format!("{}{}", plink_file, ".fam"),
                 &format!("{}{}", output_prefix, ".fam"),
                 &aa,
@@ -110,7 +110,7 @@ pub fn copy_file(filename1: &str, filename2: &str) -> io::Result<()> {
     let contents = fs::read(filename1)?;
 
     // Write the contents to filename2
-    fs::write(filename2, &contents)?;
+    fs::write(filename2, contents)?;
 
     Ok(())
 }
@@ -131,7 +131,7 @@ pub fn process_file(
     output_file: &str,
     hs: &HashSet<String>,
     ii: usize,
-) -> Result<(Vec<usize>), std::io::Error> {
+) -> Result<Vec<usize>, std::io::Error> {
     // Open input file for reading
     let file_in = File::open(input_file)?;
     let reader = BufReader::new(file_in);
@@ -179,7 +179,7 @@ pub fn process_file2(
 
     // Iterate over lines in input file
     // Read lines from the reader
-    while let Some(line_result) = lines.next() {
+    for line_result in lines.by_ref() {
         let line = line_result?;
 
         // Check if we need to skip this line based on index_vec

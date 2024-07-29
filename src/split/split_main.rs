@@ -1,14 +1,14 @@
 use crate::core::bfile::count_lines;
-use crate::core::core::MatrixWrapper;
-use crate::core::helper::Feature;
+
+
 use crate::remove::remove_main::copy_file;
-use crate::window::window_main::{iterate_test, read_write_bim};
+
 use clap::ArgMatches;
 use log::info;
-use std::fs;
+
 use std::fs::File;
+use std::io::BufReader;
 use std::io::{self, BufRead, Read, Write};
-use std::io::{BufReader};
 
 /// Window function
 ///
@@ -22,21 +22,37 @@ pub fn split_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     info!("Splitting bim file: {}", format!("{}.bim", plink_file));
 
     let lines = count_lines(&format!("{}.bim", plink_file))?;
-    let fam_lines= count_lines(&format!("{}.fam", plink_file))?;
+    let fam_lines = count_lines(&format!("{}.fam", plink_file))?;
     info!("Number of samples: {}", fam_lines);
     info!("Number of variants: {}", lines);
     // split bim
     info!("Splitting bim file: {}", format!("{}.bim", plink_file));
-    split_file(&format!("{}.bim", plink_file), out_file, number_splits, lines)?;
+    split_file(
+        &format!("{}.bim", plink_file),
+        out_file,
+        number_splits,
+        lines,
+    )?;
     info!("Splitting fam file: {}", format!("{}.fam", plink_file));
     split_fam(&format!("{}.fam", plink_file), number_splits, out_file)?;
     info!("Splitting bed file: {}", format!("{}.bed", plink_file));
-    split_bed(&format!("{}.bed", plink_file), number_splits, fam_lines, lines,  out_file)?;
+    split_bed(
+        &format!("{}.bed", plink_file),
+        number_splits,
+        fam_lines,
+        lines,
+        out_file,
+    )?;
     info!("Done");
     Ok(())
 }
 
-fn split_file(filename: &str, output_prefix: &str, n: usize, number_lines: usize) -> io::Result<()> {
+fn split_file(
+    filename: &str,
+    output_prefix: &str,
+    n: usize,
+    number_lines: usize,
+) -> io::Result<()> {
     let input_file = File::open(filename)?;
     let reader = BufReader::new(input_file);
 
@@ -78,10 +94,15 @@ pub fn split_fam(fam_file: &str, splits: usize, output_prefix: &str) -> io::Resu
     Ok(())
 }
 
-fn split_bed(filename: &str, n: usize, sample_size: usize, var_size: usize, output_prefix: &str) -> io::Result<()> {
+fn split_bed(
+    filename: &str,
+    n: usize,
+    sample_size: usize,
+    var_size: usize,
+    output_prefix: &str,
+) -> io::Result<()> {
     // Open the input file
     let mut input_file = File::open(filename)?;
-
 
     // Create output files and write the initial 3 zero bytes
     let mut output_files = Vec::with_capacity(n);
@@ -89,20 +110,20 @@ fn split_bed(filename: &str, n: usize, sample_size: usize, var_size: usize, outp
         let file_name = format!("{}.{}.bed", output_prefix, i + 1);
         let mut output_file = File::create(file_name)?;
         // Write 3 zero bytes at the beginning of each file
-        output_file.write_all(&vec![108, 27, 1],)?;
+        output_file.write_all(&[108, 27, 1])?;
         output_files.push(output_file);
     }
 
     // Prepare a buffer for reading from the input file
-    let sample_size = (sample_size as f64 / 4 as f64).ceil() as usize;
-    let mut bytes_per_file = sample_size * (var_size as f64/ n as f64).ceil() as usize;
+    let sample_size = (sample_size as f64 / 4_f64).ceil() as usize;
+    let mut bytes_per_file = sample_size * (var_size as f64 / n as f64).ceil() as usize;
     info!("Bytes per new file: {}", bytes_per_file);
     let mut start = 0;
     let total_len = File::open(filename)?.metadata()?.len() - 3;
     // Read from the input file and write to the output files
     for x in 0..n {
-        if (total_len - start as u64) < bytes_per_file as u64{
-            bytes_per_file = (total_len - start as u64) as usize;
+        if (total_len - start) < bytes_per_file as u64 {
+            bytes_per_file = (total_len - start) as usize;
         }
         let mut buffer = vec![0; bytes_per_file];
         input_file.read_exact(&mut buffer)?;

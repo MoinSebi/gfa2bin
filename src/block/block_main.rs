@@ -1,17 +1,17 @@
-use crate::core::core::MatrixWrapper;
-use crate::core::helper::{merge_u32_to_u64, Feature};
+
+
 use crate::subpath::subpath_main::{diploid_or_not, make_filename, traversal2bitvec};
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
 use rayon::prelude::*;
 
+use crate::core::bfile::write_dummy_fam;
 use log::info;
 use std::collections::HashSet;
-use std::fmt::Error;
+
 use std::fs::File;
 use std::io::{BufWriter, Write};
-use std::{fmt, io};
-use crate::core::bfile::write_dummy_fam;
+
 
 /// Block main function
 ///
@@ -57,9 +57,16 @@ pub fn block_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
 
     let b = node_size(&graph);
 
-
     info!("Extracting blocks");
-    let aa = wrapper_blocks(&wrapper, b, a, cutoff_distance, true, output_prefix, threads)?;
+    wrapper_blocks(
+        &wrapper,
+        b,
+        a,
+        cutoff_distance,
+        true,
+        output_prefix,
+        threads,
+    )?;
     write_dummy_fam(&wrapper, &format!("{}.fam", output_prefix))?;
     Ok(())
 }
@@ -183,7 +190,7 @@ pub fn wrapper_blocks(
                 // Iterate over each
                 for (genome_id, path) in graph2.genomes.iter().enumerate() {
                     for (haplo_id, x1) in path.haplotypes.iter().enumerate() {
-                        for (path_id, x) in x1.paths.iter().enumerate() {
+                        for (_path_id, x) in x1.paths.iter().enumerate() {
                             //
                             let mut block_array: [usize; 3] = [0; 3]; // Triple 0
                             let mut distance = 0;
@@ -229,14 +236,16 @@ pub fn wrapper_blocks(
                 for x in 0..vec_bitvec.len() {
                     writeln!(
                         file_bim,
-                        "{}\t{}\t{}",
-                        "graph",
-                        block_border[0].to_string() + "_" + &block_border[1].to_string() + &x.to_string(),
+                        "graph\t{}\t{}",
+                        block_border[0].to_string()
+                            + "_"
+                            + &block_border[1].to_string()
+                            + &x.to_string(),
                         x
                     )
                     .unwrap();
                     let buff = vec_bitvec[x].as_raw_slice();
-                    file_bed.write_all(&buff).expect("Not able to write ")
+                    file_bed.write_all(buff).expect("Not able to write ")
                 }
             }
         });

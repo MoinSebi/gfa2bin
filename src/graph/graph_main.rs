@@ -12,7 +12,7 @@ use packing_lib::core::core::PackCompact;
 use packing_lib::normalize::convert_helper::Method;
 use std::path::Path;
 use std::process;
-use std::thread::sleep;
+
 
 /// Function for 'gfa2bin graph'
 pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
