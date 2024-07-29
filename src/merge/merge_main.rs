@@ -13,7 +13,7 @@ use std::io::{self, BufRead, Read, Write};
 ///
 /// Reading a ped file return "genotypes" which reflect windows over the entries
 /// We assume that the entries that in variation graphs we have some kind of pan-genomic order in the order of the entries which reflect haplotypes
-pub fn window_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let plink_list = matches.value_of("plink").unwrap();
     let out_file = matches.value_of("output").unwrap();
 

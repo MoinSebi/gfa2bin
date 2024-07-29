@@ -11,6 +11,7 @@ mod remove;
 mod subpath;
 mod view;
 mod window;
+mod split;
 
 use crate::alignment::align_main::align_main;
 use crate::block::block_main::block_main;
@@ -25,6 +26,8 @@ use crate::window::window_main::window_main;
 use clap::{App, AppSettings, Arg};
 use std::any::Any;
 use std::error::Error;
+use crate::merge::merge_main::merge_main;
+use crate::split::split_main::split_main;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("gfa2bin")
@@ -119,12 +122,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 
                 .help_heading("Output parameter")
-                .arg(
-                    Arg::new("split")
-                        .long("split")
-                        .takes_value(true)
-                        .about("Split output in multiple files"),
-                )
                 .arg(
                     Arg::new("output")
                         .short('o')
@@ -228,13 +225,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true),
                 )
-                .arg(
-                    Arg::new("split")
-                        .short('s')
-                        .long("split")
-                        .takes_value(true)
-                        .about("Split output in multiple files"),
-                )
                 .arg(Arg::new("pheno")
                     .long("pheno")
                     .about("Phenotype value")
@@ -301,14 +291,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .about("Output prefix for the new plink file")
                         .takes_value(true),
                 )
-                .arg(
-                    Arg::new("split")
-                        .short('s')
-                        .long("split")
-                        .takes_value(true)
-                        .about("Split output in multiple files"),
-
-                ),
         )
         // Will work on this later
         .subcommand(
@@ -460,7 +442,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .long("window")
                         .about("Window size (in nodes)")
                         .takes_value(true)
-                        .default_value("10"),
+                        .default_value("1000"),
                 )
                 .arg(
                     Arg::new("step")
@@ -468,7 +450,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .long("step")
                         .about("Step")
                         .takes_value(true)
-                        .default_value("5"),
+                        .default_value("1000"),
                 )
                 .arg(Arg::new("distance")
                     .short('d')
@@ -488,10 +470,18 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .required(true),
                 )
                 .arg(
-                    Arg::new("split")
-                        .long("split")
+                    Arg::new("threads")
+                        .long("threads")
+                        .short('t')
+                        .about("Number of threads")
                         .takes_value(true)
-                        .about("Split output in multiple files"),
+                        .default_value("1")
+                )
+                .arg(
+                    Arg::new("blocks")
+                        .long("blocks")
+                        .short('b')
+                        .about("Output blocks [default: false]")
                 ),
         )
 
@@ -569,12 +559,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .about("Maximum amount of entries")
                         .takes_value(true),
                 )
-                .arg(
-                    Arg::new("split")
-                        .long("split")
-                        .takes_value(true)
-                        .about("Split output in multiple files"),
-                ),
         )
         .subcommand(
             App::new("merge")
@@ -594,6 +578,38 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .short('o')
                         .long("output")
                         .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
+                )
+        )
+
+        .subcommand(
+            App::new("split")
+                .version("1.0.0")
+                .about("Split PLINK files into multiple files")
+                .arg(
+                    Arg::new("plink")
+                        .short('p')
+                        .long("plink")
+                        .about("Plink prefix OR BED files")
+                        .takes_value(true)
+                        .required(true)
+
+                )
+                .arg(
+                    Arg::new("splits")
+                        .short('s')
+                        .long("splits")
+                        .about("Number of splits")
+                        .takes_value(true)
+                        .required(true)
+                )
+
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink files")
                         .takes_value(true)
                         .required(true),
                 )
@@ -623,6 +639,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         view_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("filter") {
         filter_main(matches)
+    }else if let Some(matches) = matches.subcommand_matches("merge") {
+        merge_main(matches)
+    } else if let Some (matches) = matches.subcommand_matches("split") {
+        split_main(matches)
     } else {
         println!("No subcommand was used");
         Ok(())

@@ -1,13 +1,17 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
-use crate::subpath::subpath_main::traversal2bitvec;
+use crate::subpath::subpath_main::{diploid_or_not, make_filename, traversal2bitvec};
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
+use rayon::prelude::*;
 
 use log::info;
 use std::collections::HashSet;
 use std::fmt::Error;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::{fmt, io};
+use crate::core::bfile::write_dummy_fam;
 
 /// Block main function
 ///
@@ -32,11 +36,7 @@ pub fn block_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
 
     // Output
     let output_prefix = matches.value_of("output").unwrap();
-    let split = matches
-        .value_of("split")
-        .unwrap_or("1")
-        .parse::<usize>()
-        .unwrap();
+    let threads: usize = matches.value_of("threads").unwrap().parse().unwrap();
 
     info!("Block subcommand");
     info!("Graph file: {}", graph_file);
@@ -44,7 +44,6 @@ pub fn block_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     info!("Window size: {}", window);
     info!("Distance: {}", cutoff_distance);
     info!("Step size: {}", step_size);
-    info!("Split size: {}", split);
     info!("Output prefix: {}\n", output_prefix);
 
     info!("Reading graph file");
@@ -58,19 +57,10 @@ pub fn block_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
 
     let b = node_size(&graph);
 
+
     info!("Extracting blocks");
-    let mw = wrapper_blocks(&wrapper, b, a, cutoff_distance);
-
-    info!("Writing blocks");
-    let chunk_size = (mw.matrix_bit.len() / split) + 1;
-    let chunks = mw.matrix_bit.chunks(chunk_size);
-
-    let len = chunks.len();
-    for (index, _y) in chunks.enumerate() {
-        mw.write_fam(index, output_prefix, mw.feature, len, 0.0);
-        mw.write_bed(index, output_prefix, mw.feature, len);
-        mw.write_bim(index, output_prefix, &mw.feature, len);
-    }
+    let aa = wrapper_blocks(&wrapper, b, a, cutoff_distance, true, output_prefix, threads)?;
+    write_dummy_fam(&wrapper, &format!("{}.fam", output_prefix))?;
     Ok(())
 }
 
@@ -158,74 +148,126 @@ pub fn wrapper_blocks(
     node_size: Vec<usize>,
     block: Vec<[u32; 2]>,
     max_distance: usize,
-) -> MatrixWrapper {
-    // this is the output
-    let mut mw = MatrixWrapper::new();
+    blocks: bool,
+    out_prefix: &str,
+    threads: usize,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let sample_size = graph2.genomes.len();
+    let is_diploid = diploid_or_not(graph2);
 
-    // Iterate over the blocks
-    for x in block.iter() {
-        let block_hashset = (x[0]..x[1]).collect::<HashSet<u32>>();
-        let mut all_blocks = Vec::new();
+    block
+        .par_chunks(block.len() / threads + 1)
+        .enumerate()
+        .for_each(|(i, chunk)| {
+            let mut file_bed = BufWriter::new(
+                File::create(format!("{}_{}.bed", out_prefix, i))
+                    .expect("Not able to create bed file"),
+            );
+            let mut file_bim = BufWriter::new(
+                File::create(format!("{}_{}.bim", out_prefix, i))
+                    .expect("Not able to create bim file"),
+            );
+            let mut block = None;
+            if blocks {
+                block = Some(BufWriter::new(
+                    File::create(format!("{}_{}.block", out_prefix, i))
+                        .expect("Not able to create block file"),
+                ));
+            }
 
-        // Iterate over each
-        for (genome_id, path) in graph2.genomes.iter().enumerate() {
-            for (haplo_id, x1) in path.haplotypes.iter().enumerate() {
-                for (path_id, x) in x1.paths.iter().enumerate() {
-                    //
-                    let mut block_array: [usize; 3] = [0; 3]; // Triple 0
-                    let mut distance = 0;
-                    for (i, node) in x.nodes.iter().enumerate() {
-                        if block_hashset.contains(node) {
-                            if block_array[2] == 0 {
-                                block_array[0] = i;
-                                block_array[1] = i;
-                                block_array[2] = node_size[*node as usize - 1];
-                                distance = 0;
-                            } else {
-                                block_array[1] = i;
-                                block_array[2] += node_size[*node as usize - 1];
-                                distance = 0;
+            for block_border in chunk.iter() {
+                println!("Block: {:?}", block_border);
+                let block_hashset = (block_border[0]..block_border[1]).collect::<HashSet<u32>>();
+                let mut all_blocks = Vec::new();
+
+                // Iterate over each
+                for (genome_id, path) in graph2.genomes.iter().enumerate() {
+                    for (haplo_id, x1) in path.haplotypes.iter().enumerate() {
+                        for (path_id, x) in x1.paths.iter().enumerate() {
+                            //
+                            let mut block_array: [usize; 3] = [0; 3]; // Triple 0
+                            let mut distance = 0;
+                            for (i, node) in x.nodes.iter().enumerate() {
+                                if block_hashset.contains(node) {
+                                    if block_array[2] == 0 {
+                                        block_array[0] = i;
+                                        block_array[1] = i;
+                                        block_array[2] = node_size[*node as usize - 1];
+                                        distance = 0;
+                                    } else {
+                                        block_array[1] = i;
+                                        block_array[2] += node_size[*node as usize - 1];
+                                        distance = 0;
+                                    }
+                                } else {
+                                    distance += node_size[*node as usize - 1];
+                                    if distance > max_distance && block_array[2] != 0 {
+                                        all_blocks.push((
+                                            genome_id,
+                                            haplo_id,
+                                            &x.nodes[block_array[0]..block_array[1]],
+                                        ));
+                                        block_array = [0; 3];
+                                    }
+                                }
                             }
-                        } else {
-                            distance += node_size[*node as usize - 1];
-                            if distance > max_distance && block_array[2] != 0 {
+                            if block_array[2] != 0 {
                                 all_blocks.push((
                                     genome_id,
                                     haplo_id,
-                                    path.haplotypes.len(),
                                     &x.nodes[block_array[0]..block_array[1]],
                                 ));
-                                block_array = [0; 3];
                             }
                         }
                     }
-                    if block_array[2] != 0 {
-                        all_blocks.push((
-                            genome_id,
-                            haplo_id,
-                            path.haplotypes.len(),
-                            &x.nodes[block_array[0]..block_array[1]],
-                        ));
-                    }
+                }
+                all_blocks.sort();
+                if all_blocks.is_empty() {
+                    continue;
+                }
+                let vec_bitvec = traversal2bitvec(all_blocks, sample_size, &is_diploid, &mut block);
+                for x in 0..vec_bitvec.len() {
+                    writeln!(
+                        file_bim,
+                        "{}\t{}\t{}",
+                        "graph",
+                        block_border[0].to_string() + "_" + &block_border[1].to_string() + &x.to_string(),
+                        x
+                    )
+                    .unwrap();
+                    let buff = vec_bitvec[x].as_raw_slice();
+                    file_bed.write_all(&buff).expect("Not able to write ")
                 }
             }
-        }
-
-        //
-        all_blocks.sort();
-        if all_blocks.is_empty() {
-            continue;
-        }
-
-        let bb = all_blocks.len();
-
-        //mw.matrix_bit.extend(traversal2samples(all_blocks, 20));
-        mw.geno_names
-            .extend((0..bb).map(|aa| merge_u32_to_u64(x[0] / 2, aa as u32)));
+        });
+    info!("Concatenating files");
+    let filenames1 = make_filename(out_prefix, threads);
+    crate::subpath::subpath_main::concatenate_files_and_cleanup(
+        &filenames1
+            .iter()
+            .map(|a1| format!("{}.bim", a1))
+            .collect::<Vec<String>>(),
+        format!("{}.bim", out_prefix),
+        &Vec::new(),
+    )?;
+    crate::subpath::subpath_main::concatenate_files_and_cleanup(
+        &filenames1
+            .iter()
+            .map(|a1| format!("{}.bed", a1))
+            .collect::<Vec<String>>(),
+        format!("{}.bed", out_prefix),
+        &vec![108, 27, 1],
+    )?;
+    if blocks {
+        crate::subpath::subpath_main::concatenate_files_and_cleanup(
+            &filenames1
+                .iter()
+                .map(|a1| format!("{}.block", a1))
+                .collect::<Vec<String>>(),
+            format!("{}.block", out_prefix),
+            &Vec::new(),
+        )?;
     }
-    mw.feature = Feature::Block;
-    mw.window_size = (block[0][1] - block[0][0]) as usize;
-    mw.shape = (mw.matrix_bit.len(), mw.matrix_bit[0].len());
-    mw.sample_names = graph2.genomes.iter().map(|x| x.name.clone()).collect();
-    mw
+    info!("Done");
+    Ok(())
 }

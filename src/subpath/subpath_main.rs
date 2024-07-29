@@ -1,19 +1,19 @@
-use std::fmt::format;
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::{merge_u32_to_u64, Feature};
 use crate::window::window_main::getbv;
 use bitvec::bitvec;
 use bitvec::order::Lsb0;
+use std::fmt::format;
 use std::fs::File;
 use std::io::{BufRead, BufWriter, Write};
 
+use crate::block::block_main::block_wrapper;
 use bitvec::prelude::BitVec;
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Opt, Pansn, Segment};
 use hashbrown::HashMap;
 use log::info;
 use rayon::prelude::*;
-use crate::block::block_main::block_wrapper;
 
 /// Subpath main function
 ///
@@ -45,7 +45,16 @@ pub fn subpath_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
     let a = gfa_index(&wrapper);
 
     info!("Extracting subpath");
-    subpath_wrapper(&wrapper, &graph, window, a, matches.is_present("blocks"), output_prefix, threads)?;
+    subpath_wrapper(
+        &wrapper,
+        &graph,
+        window,
+        a,
+        matches.is_present("blocks"),
+        output_prefix,
+        threads,
+    )?;
+    write_dummy_fam(&wrapper, &format!("{}.fam", output_prefix))?;
     Ok(())
 }
 
@@ -96,58 +105,97 @@ pub fn subpath_wrapper(
     blocks: bool,
     out_prefix: &str,
     threads: usize,
-) -> Result<(), Box<dyn std::error::Error>>{
+) -> Result<(), Box<dyn std::error::Error>> {
     // Sample size
     let sample_size = graph2.genomes.len();
     let is_diploid = diploid_or_not(graph2);
     let segment_id = graph.segments.iter().map(|x| x.id).collect::<Vec<u32>>();
-    segment_id.par_chunks(segment_id.len()/threads+1).enumerate().for_each(|(i, chunks)| {
-        let mut file_bed = BufWriter::new(File::create(format!("{}_{}.bed", out_prefix, i)).expect("Not able to create bed file"));
-        let mut file_bim = BufWriter::new(File::create(format!("{}_{}.bim", out_prefix, i)).expect("Not able to create bim file"));
-        let mut block = None;
-        if blocks{
-            block = Some(BufWriter::new(File::create(format!("{}_{}.block", out_prefix, i)).expect("Not able to create block file")));
-        }
-
-        for node_id in chunks {
-            // Result vec
-            let mut result_vec = get_traversals(*node_id, &node2index_hm, graph2, window);
-
-            // Sort the traversals by genome_id, then haplotype_id
-            result_vec.sort();
-
-            // Checker
-            if result_vec.is_empty() {
-                continue;
+    segment_id
+        .par_chunks(segment_id.len() / threads + 1)
+        .enumerate()
+        .for_each(|(i, chunks)| {
+            let mut file_bed = BufWriter::new(
+                File::create(format!("{}_{}.bed", out_prefix, i))
+                    .expect("Not able to create bed file"),
+            );
+            let mut file_bim = BufWriter::new(
+                File::create(format!("{}_{}.bim", out_prefix, i))
+                    .expect("Not able to create bim file"),
+            );
+            let mut block = None;
+            if blocks {
+                block = Some(BufWriter::new(
+                    File::create(format!("{}_{}.block", out_prefix, i))
+                        .expect("Not able to create block file"),
+                ));
             }
 
+            for node_id in chunks {
+                // Result vec
+                let mut result_vec = get_traversals(*node_id, &node2index_hm, graph2, window);
 
-            // !Thiis mmight be wring
-            let vec_bitvec = traversal2bitvec(result_vec, sample_size, &is_diploid, &mut block);
-            for x in 0..vec_bitvec.len(){
-                writeln!(file_bim, "{}\t{}\t{}", "graph", node_id.to_string() + &window.to_string() + &x.to_string(), x).unwrap();
-                let buff = vec_bitvec[x].as_raw_slice();
-                file_bed.write_all(&buff).expect("Not able to write ")
+                // Sort the traversals by genome_id, then haplotype_id
+                result_vec.sort();
+
+                // Checker
+                if result_vec.is_empty() {
+                    continue;
+                }
+
+                // !Thiis mmight be wring
+                let vec_bitvec = traversal2bitvec(result_vec, sample_size, &is_diploid, &mut block);
+                for x in 0..vec_bitvec.len() {
+                    writeln!(
+                        file_bim,
+                        "{}\t{}\t{}",
+                        "graph",
+                        node_id.to_string() + &window.to_string() + &x.to_string(),
+                        x
+                    )
+                    .unwrap();
+                    let buff = vec_bitvec[x].as_raw_slice();
+                    file_bed.write_all(&buff).expect("Not able to write ")
+                }
             }
-        }
-    });
+        });
     info!("Concatenating files");
     let filenames1 = make_filename(out_prefix, threads);
-    concatenate_files_and_cleanup(&filenames1.iter().map(|a1| format!("{}.bim", a1)).collect::<Vec<String>>(), format!("{}.bim", out_prefix), &Vec::new())?;
-    concatenate_files_and_cleanup(&filenames1.iter().map(|a1| format!("{}.bed", a1)).collect::<Vec<String>>(), format!("{}.bed", out_prefix), &vec![108, 27, 1])?;
-    if blocks{
-        concatenate_files_and_cleanup(&filenames1.iter().map(|a1| format!("{}.block", a1)).collect::<Vec<String>>(), format!("{}.block", out_prefix), &Vec::new())?;
+    concatenate_files_and_cleanup(
+        &filenames1
+            .iter()
+            .map(|a1| format!("{}.bim", a1))
+            .collect::<Vec<String>>(),
+        format!("{}.bim", out_prefix),
+        &Vec::new(),
+    )?;
+    concatenate_files_and_cleanup(
+        &filenames1
+            .iter()
+            .map(|a1| format!("{}.bed", a1))
+            .collect::<Vec<String>>(),
+        format!("{}.bed", out_prefix),
+        &vec![108, 27, 1],
+    )?;
+    if blocks {
+        concatenate_files_and_cleanup(
+            &filenames1
+                .iter()
+                .map(|a1| format!("{}.block", a1))
+                .collect::<Vec<String>>(),
+            format!("{}.block", out_prefix),
+            &Vec::new(),
+        )?;
     }
     info!("Done");
     Ok(())
-
-
 }
 
 pub fn make_filename(output_prefix: &str, num: usize) -> Vec<String> {
-    (0..num).into_iter().map(|x| format!("{}_{}",output_prefix, x.to_string())).collect()
+    (0..num)
+        .into_iter()
+        .map(|x| format!("{}_{}", output_prefix, x.to_string()))
+        .collect()
 }
-
 
 pub fn get_traversals<'a>(
     node_id: u32,
@@ -182,7 +230,6 @@ pub fn get_traversals<'a>(
     result_vec
 }
 
-
 /// Convert collection of traversals to collection of samples with similar traversals
 ///
 /// Genome_id, haplotype_id, path_id, &[u32]
@@ -193,9 +240,8 @@ pub fn traversal2bitvec(
     number_of_samples: usize,
     ppl: &Vec<bool>,
     blocks: &mut Option<BufWriter<File>>,
-)  -> Vec<BitVec<u8>> {
+) -> Vec<BitVec<u8>> {
     let mut sample_list: Vec<Vec<[usize; 2]>> = group_traversal(traversals);
-
 
     // If you want blocks written into extra
     if let Some(bufw) = blocks {
@@ -264,8 +310,13 @@ pub fn get_bitvector(
 }
 use std::io::{self, BufReader, Read};
 use std::path::Path;
+use crate::core::bfile::write_dummy_fam;
 
-fn concatenate_files_and_cleanup<P: AsRef<Path>>(input_files: &[P], output_file: P, buffer: &Vec<u8>) -> io::Result<()> {
+pub fn concatenate_files_and_cleanup<P: AsRef<Path>>(
+    input_files: &[P],
+    output_file: P,
+    buffer: &Vec<u8>,
+) -> io::Result<()> {
     // Open the output file for writing
     let output = File::create(output_file)?;
     let mut writer = BufWriter::new(output);
@@ -289,7 +340,7 @@ fn concatenate_files_and_cleanup<P: AsRef<Path>>(input_files: &[P], output_file:
         }
 
         // Delete the input file after processing
-       std::fs::remove_file(input_path)?;
+        std::fs::remove_file(input_path)?;
     }
 
     // Ensure all data is written to the output file
@@ -309,3 +360,4 @@ pub fn diploid_or_not(gr: &Pansn<u32, (), ()>) -> Vec<bool> {
     }
     diploid_vec
 }
+
