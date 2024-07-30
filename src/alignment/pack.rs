@@ -1,5 +1,5 @@
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::index2node_seq;
+use crate::core::helper::{index2node_seq, merge_u32_to_u64};
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use packing_lib::core::core::{DataType, PackCompact};
@@ -74,23 +74,29 @@ pub fn matrix_pack_wrapper(
 }
 
 fn remove_duplicates(sorted_vec: &Vec<u32>) -> Vec<u64> {
-    let mut unique_vec = Vec::new();
+    let mut unique_vec: Vec<u32> = Vec::new();
+    let mut result = Vec::new();
 
     // If the input vector is empty, return an empty vector
     if sorted_vec.is_empty() {
-        return unique_vec;
+        return result;
     }
 
     // Add the first element of the sorted vector
-    unique_vec.push(sorted_vec[0] as u64);
+    unique_vec.push(sorted_vec[0] as u32);
 
     // Iterate through the sorted vector and add only distinct elements
     for i in 1..sorted_vec.len() {
         // If the current element is different from the previous one, add it to the unique vector
         if sorted_vec[i] != sorted_vec[i - 1] {
-            unique_vec.push(sorted_vec[i] as u64);
+            unique_vec.push(sorted_vec[i] as u32);
         }
     }
+    let mut result = Vec::new();
 
-    unique_vec
+    for x in unique_vec.iter() {
+        result.push(merge_u32_to_u64(*x, 0));
+    }
+
+    result
 }

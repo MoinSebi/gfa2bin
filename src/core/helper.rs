@@ -92,7 +92,7 @@ impl Feature {
             return format_unsigned_as_string(left) + &format_unsigned_as_string(right);
         } else {
             let (left, right) = split_u64_to_u32s(input);
-            return left.to_string() + "_" + right.to_string().as_str();
+            return "A".to_string() + &left.to_string() + "-" + right.to_string().as_str();
         }
     }
 
