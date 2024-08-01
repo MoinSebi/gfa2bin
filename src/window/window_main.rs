@@ -12,8 +12,8 @@ use std::io::{BufRead, BufWriter, Write};
 
 /// Window function
 ///
-/// Reading a ped file return "genotypes" which reflect windows over the entries
-/// We assume that the entries that in variation graphs we have some kind of pan-genomic order in the order of the entries which reflect haplotypes
+/// Reading a bed file and return "genotypes" which reflect windows over multiple entries
+/// We assume that the entries that are present in variation graphs have some kind of pan-genomic order. Otherwise, this makes not that much sense.
 pub fn window_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let plink_file = matches.value_of("plink").unwrap();
     let out_file = matches.value_of("output").unwrap();

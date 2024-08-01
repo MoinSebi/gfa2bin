@@ -320,7 +320,7 @@ impl MatrixWrapper {
         let mut f = BufWriter::new(file);
         if self.bim_entries.is_empty() {
             for x in self.geno_names.iter() {
-                writeln!(f, "graph\t.\t{}\t{}\tA\tT", 0, feature.to_string_u64(*x))
+                writeln!(f, "graph\t{}\t{}\t{}\tA\tT", feature.to_string_u64(*x), 0, feature.to_string_u64(*x))
                     .expect("Can not write file");
             }
         } else {
