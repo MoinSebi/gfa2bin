@@ -8,8 +8,8 @@ use crate::core::core::MatrixWrapper;
 pub fn find_main(matches: &ArgMatches) {
     let graph_file = matches.value_of("gfa").unwrap();
     let feature_file = matches.value_of("features").unwrap();
-    let _output = matches.value_of("output").unwrap();
-    let _length = matches
+    let output = matches.value_of("output").unwrap();
+    let length = matches
         .value_of("length")
         .unwrap()
         .parse::<usize>()

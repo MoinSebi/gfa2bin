@@ -12,6 +12,7 @@ mod split;
 mod subpath;
 mod view;
 mod window;
+mod nearest;
 
 use crate::alignment::align_main::align_main;
 use crate::block::block_main::block_main;
