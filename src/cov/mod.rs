@@ -1,2 +1,2 @@
-pub mod align_main;
+pub mod cov_main;
 pub mod pack;

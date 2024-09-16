@@ -68,3 +68,32 @@ fn cov_pn() -> Result<(), Box<dyn std::error::Error>> {
     // Buffer should be 8 samples + header
     Ok(())
 }
+
+
+#[test]
+/// Test cov pn
+fn cov_pack_pn() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gfa2bin")?;
+    cmd.arg("cov")
+        .arg("--pc-list")
+        .arg("data/example_data/packs/realpath.pn.txt")
+        .arg("-i")
+        .arg("data/example_data/packs/9986.1k.pi")
+        .arg("-o")
+        .arg("data/output/gfa2bin.cov.list.merge.pn");
+    cmd.assert().success();
+    let mut b = File::open("data/output/gfa2bin.cov.list.merge.pn.bed").unwrap();
+    // Read the buffer
+    let mut buffer = Vec::new();
+    b.read_to_end(&mut buffer).unwrap();
+    assert_eq!(buffer.len(), 3 + 999);
+
+
+    let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.bim")?;
+    assert_eq!(content.lines().count(), 999);
+
+    let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.fam")?;
+    assert_eq!(content.lines().count(), 2);
+    // Buffer should be 8 samples + header
+    Ok(())
+}

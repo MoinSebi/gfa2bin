@@ -30,7 +30,7 @@ use clap::{App, AppSettings, Arg};
 
 use crate::nearest::nearest_main::nearest_main;
 use std::error::Error;
-use crate::cov::align_main::cov_main;
+use crate::cov::cov_main::cov_main;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("gfa2bin")

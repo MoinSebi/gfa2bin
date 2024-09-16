@@ -17,16 +17,16 @@ use std::path::Path;
 
 pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     // You have either a list of packs (plain-text) or a compressed pack (cat or list), but you need to provide an index
-    if matches.is_present("packlist")
+    if matches.is_present("pack")
         | (matches.is_present("pack compressed") && matches.is_present("index"))
-        | (matches.is_present("cpacklist") && matches.is_present("index"))
+        | (matches.is_present("pc-list") && matches.is_present("index"))
     {
-        info!("Aligning");
+        info!("Using packlist");
     } else {
         if matches.is_present("pack compressed") {
             panic!("You need to provide an index file");
         }
-        if matches.is_present("bfile") {
+        if matches.is_present("pc-list") {
             panic!("You need to provide an index file");
         } else {
             panic!("You need to provide a pack file");
@@ -135,10 +135,10 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         // Index of the file
         let index_file = read_index(matches.value_of("index").unwrap());
         // Compressed pack list
-        if matches.is_present("cpacklist") {
+        if matches.is_present("pc-list") {
             let cpack_list = read_file_lines(cpacklist.unwrap()).unwrap();
-            let mut first_file = read_pack1(true, &cpack_list[0]);
-            init_geno_names(&mut mw, &mut first_file, want_node, &vec![]);
+            let mut first_file = read_pack1(false, &cpack_list[0]);
+            init_geno_names(&mut mw, &mut first_file, want_node, &index_file);
             init_matrix(&mut mw, &mut first_file, want_node, bimbam, cpack_list.len());
             for (index, x) in cpack_list.iter().enumerate() {
                 let mut pc = PackCompact::read_wrapper(&x);
