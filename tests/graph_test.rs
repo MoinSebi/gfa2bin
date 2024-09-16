@@ -5,12 +5,9 @@ use std::io::Read;
 use std::process::Command;
 
 #[test]
-/// Test for plink subcommand
-/// -g
-/// -f node
-/// --pansn #
+/// Test for "gfa2bin graph"
 ///
-/// 4 Samples
+/// Nodes
 fn gfa_nodes() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("graph")
@@ -44,12 +41,9 @@ fn gfa_nodes() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-/// Test for plink subcommand
-/// -g
-/// -f node
-/// --pansn #
+/// Test for "gfa2bin graph"
 ///
-/// 4 Samples
+/// Dirnodes
 fn gfa_dirnodes() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("graph")
@@ -83,12 +77,9 @@ fn gfa_dirnodes() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-/// Test for plink subcommand
-/// -g
-/// -f node
-/// --pansn #
+/// Test for "gfa2bin graph"
 ///
-/// 4 Samples
+/// Edges
 fn gfa_edges() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("graph")

@@ -35,6 +35,57 @@ gfa2bin graph -g input.gfa -o output -f dirnode -m mean -r 50 --pansn '#'
 
 ### align - Using graph alignment
 
+Convert coverage information from sequence to graph alignments to plink bed files. Either can use plain pack files directly (which will consume large amount of memory) or use one of the custom coverage file formats from packiong repository as input. The packing repository helps to reduce storage and can perform pre-processing on sample level.  
+Comparable to graph subcommand, we offer additional normalization can be run when using value based input. THis normalization is then run on feature level (e.g. nodes or edges). 
+
+#### Example usage: 
+
 
 ### Remove
-Remove samples or entries from the plink files (bed, bim, fam). Use gretl to get a list of path or entries which exhibit a specific statistical profile which should be removed. Alternatively, use your own pipeline to select samples/nodes. 
+Remove samples or entries from the plink files (bed, bim, fam). 
+
+#### Example usage: 
+````text
+./target/release/gfa2bin remove -b input --samples samples.txt --genotypes genotypes_names.txt -o output_plink
+````
+Tip: Use gretl or any other tool to get a list of samples or entries with a specific statistic.
+
+### Filter
+Filter entries or samples from a plink file. 
+
+**Samples can be filtered by:**
+-  
+
+
+**Genotypes can be filtered by:**
+- MAF (major allele frequency)
+- maf (minor allele frequency)
+
+Genotypes can be filtered by:
+
+
+### Split and merge
+#### Split 
+Split a single plink file (bed, bim, fam), into multiple parts of the same size. This might be prefered if the testing data set is very big and performing GWAS takes a lot of time and multiprocessing not is possible. 
+
+#### Merge
+Merging multiple plink files back together. Either from the above computation or any other splitting operation. Entries in all input files, must be in same sample order (similar fam order and names). 
+
+### View 
+
+Convert a plink bed file to a vcf-like file format. This method might be useful for general checking of the genrated genotyes. File might of huge size dependent on input. 
+
+#### Example 
+
+### Find 
+
+Given a list of genotypes (e.g. significant nodes or edges) and graph, return the position (in bed format) of those paths, where such genotypes can be found. Each genotype will be listed as additional information in the bed file. If users might need more than just the exact position, additional --length information can be added, which will return in bigger intervals, adding the additinal lengthg to each site.  
+The output is made for extracting the sequence from the initial sequence and blasting these back to a database to get more information about selected DNA segment (overlap with genes or other interesting regions). 
+
+### Nearest node 
+
+Return the closest reference-node in resprect to the input node. A reference node is the clostest node which can be found on any given reference path. The result does additionally return reference position of this node, An example is shown shown below. 
+
+#### Example usage 
+
+#### Example output

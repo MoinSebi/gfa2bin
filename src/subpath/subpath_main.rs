@@ -1,12 +1,7 @@
-
-
-
-
 use bitvec::order::Lsb0;
 
 use std::fs::File;
 use std::io::{BufWriter, Write};
-
 
 use bitvec::prelude::BitVec;
 use clap::ArgMatches;
@@ -77,10 +72,7 @@ pub fn gfa_index(
                 let mut node2index: HashMap<u32, Vec<usize>> = HashMap::new();
 
                 for (ind, node) in p.nodes.iter().enumerate() {
-                    node2index
-                        .entry(*node)
-                        .or_insert_with(Vec::new)
-                        .push(ind);
+                    node2index.entry(*node).or_insert_with(Vec::new).push(ind);
                 }
                 index.push((
                     genome_id,

@@ -6,7 +6,6 @@ use bitvec::order::Lsb0;
 use bitvec::vec::BitVec;
 use clap::ArgMatches;
 
-
 use std::fs::File;
 use std::io::{BufRead, BufWriter, Write};
 

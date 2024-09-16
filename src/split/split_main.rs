@@ -1,14 +1,13 @@
 use crate::core::bfile::count_lines;
 
-
 use crate::remove::remove_main::copy_file;
 
 use clap::ArgMatches;
 use log::info;
 
 use std::fs::File;
-use std::io::BufReader;
 use std::io::{self, BufRead, Read, Write};
+use std::io::{BufReader, BufWriter};
 
 /// Window function
 ///
@@ -55,14 +54,15 @@ fn split_file(
 ) -> io::Result<()> {
     let input_file = File::open(filename)?;
     let reader = BufReader::new(input_file);
-
+    println!("dsajkdha");
     // Create the output files
     let mut output_files = Vec::with_capacity(n);
     for i in 0..n {
-        let file_name = format!("{}.{}.txt", output_prefix, i + 1);
-        let output_file = File::create(file_name)?;
+        let file_name = format!("{}.{}.bim", output_prefix, i + 1);
+        let output_file = BufWriter::new(File::create(file_name)?);
         output_files.push(output_file);
     }
+    println!("dsajkdha {:?}", output_files);
 
     // Write lines to the appropriate output file
     let mut current_file_index = 0;

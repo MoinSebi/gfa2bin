@@ -15,11 +15,6 @@ pub fn filter_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     // Read the arguments from the command line
     let plink_file = matches.value_of("plink").unwrap();
     let output_prefix = matches.value_of("output").unwrap();
-    let split = matches
-        .value_of("split")
-        .unwrap_or("1")
-        .parse::<usize>()
-        .unwrap();
 
     // Read the bed file
     let mut maf = 0.0;
@@ -34,7 +29,6 @@ pub fn filter_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     info!("Input file: {}", plink_file);
     info!("maf: {}", maf);
     info!("MAF: {}", MAF);
-    info!("Split size: {}", split);
     info!("Output prefix: {}", output_prefix);
 
     let mut mw = MatrixWrapper::new();
@@ -74,7 +68,8 @@ pub fn filter_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     info!(
         "Matrix size (SNPs X Samples) - after path: {} {}",
         mw.matrix_bit.len(),
-        mw.matrix_bit.first()
+        mw.matrix_bit
+            .first()
             .ok_or("Matrix is now empty after path removal")?
             .len()
     );
@@ -82,10 +77,12 @@ pub fn filter_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     info!(
         "Matrix size (SNPs X Samples) - after maf: {} {}",
         mw.matrix_bit.len(),
-        mw.matrix_bit.first()
+        mw.matrix_bit
+            .first()
             .ok_or("Matrix is now empty after MAF/maf removal ")?
             .len()
     );
+    mw.write_bed(0, output_prefix, Feature::Node, 1);
 
     process_file2(
         &format!("{}{}", plink_file, ".bim"),
@@ -97,8 +94,6 @@ pub fn filter_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
         &format!("{}{}", output_prefix, ".fam"),
         &o2,
     )?;
-
-    mw.write_bed(0, output_prefix, Feature::Node, 1);
 
     Ok(())
 }

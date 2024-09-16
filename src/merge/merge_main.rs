@@ -1,6 +1,3 @@
-
-
-
 use crate::remove::remove_main::copy_file;
 
 use clap::ArgMatches;
@@ -19,7 +16,9 @@ pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
 
     let input_list = read_list(plink_list)?;
     let names = clear_names(input_list)?;
+
     let fams = check_fams(&names)?;
+
     if !fams {
         panic!("Fam files are not the same");
     }
@@ -28,6 +27,7 @@ pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
         &format!("{}{}", out_file, ".fam"),
     )?;
     merge_bim(&names, &(out_file.to_string() + ".bim"))?;
+
     bed_merge(&names, &(out_file.to_string() + ".bed"))?;
 
     Ok(())
@@ -35,7 +35,7 @@ pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
 
 pub fn read_list(file: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut list: Vec<String> = Vec::new();
-    let file = fs::File::open(file)?;
+    let file = fs::File::open(file).expect("Could not open file");
     let reader = io::BufReader::new(file);
     for line in reader.lines() {
         list.push(line?);
@@ -48,9 +48,7 @@ pub fn clear_names(names: Vec<String>) -> Result<Vec<String>, Box<dyn std::error
     for x in names.iter() {
         if x.ends_with(".bed") {
             let a = x.split('.').collect::<Vec<&str>>();
-            new_names.push(a[0..a.len() - 2].join("."));
-        } else {
-            new_names.push(x.clone());
+            new_names.push(a[0..a.len() - 1].join("."));
         }
     }
     Ok(new_names)
@@ -61,7 +59,6 @@ pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>
         return Ok(false);
     }
     let a = fs::read_to_string(fams[0].to_string() + ".fam")?;
-
     for x in fams.iter().skip(1) {
         let b = fs::read_to_string(x.to_string() + ".fam")?;
         if a != b {
@@ -71,11 +68,9 @@ pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>
     Ok(true)
 }
 
-pub fn merge_bim(fams: &Vec<String>, output: &str) -> io::Result<()> {
-    let output_file = "output.txt";
-
+pub fn merge_bim(fams: &Vec<String>, output_file: &str) -> io::Result<()> {
     // Create or truncate the output file
-    let mut output = fs::File::create(output)?;
+    let mut output = fs::File::create(output_file)?;
 
     // Read each file and write its content to the output file
     for file in fams {
@@ -85,7 +80,6 @@ pub fn merge_bim(fams: &Vec<String>, output: &str) -> io::Result<()> {
         // Write the content to the output file
         writeln!(output, "{}", content)?;
     }
-
     info!("Files have been concatenated into {}", output_file);
 
     Ok(())
@@ -93,28 +87,28 @@ pub fn merge_bim(fams: &Vec<String>, output: &str) -> io::Result<()> {
 
 pub fn bed_merge(files: &Vec<String>, output_file: &str) -> io::Result<()> {
     // Open the output file
-    let mut output = File::create(output_file)?;
+    let mut output = File::create(output_file).expect("Failed to create output file");
 
     // Copy the first file as-is
     if let Some(first_file) = files.first() {
-        let mut input = File::open(first_file)?;
+        let mut input = File::open(first_file.to_string() + ".bed")?;
         io::copy(&mut input, &mut output)?;
     }
 
     // Process and append the remaining files
     for file in files.iter().skip(1) {
-        let mut input = File::open(file)?;
+        let mut input = File::open(file.to_string() + ".bed")?;
         let mut buffer = Vec::new();
         input.read_to_end(&mut buffer)?;
 
         // Skip the first 3 bytes
         if buffer.len() > 3 {
             let remaining_bytes = &buffer[3..];
-            output.write_all(remaining_bytes)?;
+            output
+                .write_all(remaining_bytes)
+                .expect("Failed to write to output file");
         }
     }
-
-    println!("Files have been concatenated into {}", output_file);
 
     Ok(())
 }

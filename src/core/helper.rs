@@ -1,4 +1,3 @@
-use crate::remove::input_data::find_first_plus_minus;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 
@@ -21,7 +20,7 @@ impl Feature {
             "node" => Feature::Node,
             "dirnode" => Feature::DirNode,
             "edge" => Feature::Edge,
-            "alignment" => Feature::Alignment,
+            "cov" => Feature::Alignment,
             "mwindow" => Feature::MWindow,
             "pwindow" => Feature::PWindow,
             "block" => Feature::Block,
@@ -34,11 +33,11 @@ impl Feature {
             Feature::Node => s.parse().unwrap(),
             Feature::DirNode => {
                 let s1 = s.ends_with('+');
-                
+
                 s[..s.len() - 1].parse::<u128>().unwrap() * 2 + s1 as u128
             }
             Feature::Edge => {
-                let ss = find_first_plus_minus(s).unwrap();
+                let ss = 0;
                 let s1 = &s[..ss];
                 let s2 = &s[ss..ss + 1];
                 let s3 = &s[ss + 1..s.len() - 1];
@@ -59,7 +58,7 @@ impl Feature {
             Feature::Node => "node".to_string(),
             Feature::DirNode => "dirnode".to_string(),
             Feature::Edge => "edge".to_string(),
-            Feature::Alignment => "alignment".to_string(),
+            Feature::Alignment => "cov".to_string(),
             Feature::MWindow => "mwindow".to_string(),
             Feature::PWindow => "pwindow".to_string(),
             Feature::Block => "block".to_string(),

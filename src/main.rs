@@ -1,4 +1,4 @@
-mod alignment;
+mod cov;
 mod block;
 mod core;
 mod filter;
@@ -7,14 +7,14 @@ mod graph;
 mod helper;
 mod logging;
 mod merge;
+mod nearest;
 mod remove;
 mod split;
 mod subpath;
 mod view;
 mod window;
-mod nearest;
 
-use crate::alignment::align_main::align_main;
+
 use crate::block::block_main::block_main;
 use crate::filter::filter_main::filter_main;
 use crate::find::find_main::find_main;
@@ -28,7 +28,9 @@ use crate::view::view_main::view_main;
 use crate::window::window_main::window_main;
 use clap::{App, AppSettings, Arg};
 
+use crate::nearest::nearest_main::nearest_main;
 use std::error::Error;
+use crate::cov::align_main::cov_main;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("gfa2bin")
@@ -146,8 +148,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 
         .subcommand(
-            App::new("align")
-                .about("Conversion from a alignment (pack or compressed pack)")
+            App::new("cov")
+                .about("Conversion from a covment (pack or compressed pack)")
                 .version("0.1.0")
                 .setting(AppSettings::ArgRequiredElseHelp)
 
@@ -168,7 +170,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::new("pc list")
+                    Arg::new("pc-list")
                         .long("pc-list")
                         .about("File with pc files (one per line)")
                         .takes_value(true),
@@ -182,7 +184,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 )
 
 
-                .help_heading("'SNP' thresholds")
+                .help_heading("thresholds")
                 .arg(Arg::new("absolute-threshold")
                     .long("absolute-threshold")
                     .about("Set a absolute threshold")
@@ -202,17 +204,21 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .takes_value(true)
                     .display_order(2)
                 )
-                .arg(Arg::new("standard-deviation")
-                    .long("std")
-                    .about("Adjust your threshold by decreasing if by X * standard deviation")
-                    .takes_value(true)
-                    .display_order(2))
                 .arg(Arg::new("keep-zeros")
                     .long("keep-zeros")
                     .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean)")
                     .display_order(4)
                 )
-
+                .arg(Arg::new("node")
+                    .long("node")
+                    .about("Use node instead of sequence")
+                    .display_order(5)
+                )
+                .arg(Arg::new("no-default")
+                    .long("no-default")
+                    .about("Do not use default values (only works with bimbam)")
+                    .display_order(6)
+                )
 
 
 
@@ -243,44 +249,50 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         .subcommand(
             App::new("remove")
-                .about("Remove samples from you graph/alignment-based plink file")
+                .about("Remove samples or genotypes from you graph/covment-based plink file")
                 .version("0.1.0")
                 .help_heading("Input parameters")
                 .arg(
                     Arg::new("plink")
                         .short('p')
                         .long("plink")
-                        .about("Plink input file")
+                        .about("Plink input file (prefix)")
                         .takes_value(true)
                         .required(true),
                 )
 
                 .help_heading("Modification parameters")
                 .arg(
-                    Arg::new("feature")
-                        .short('f')
-                        .long("feature")
-                        .about("Feature list to remove (one per line)")
+                    Arg::new("genotypes")
+                        .short('g')
+                        .long("genotypes")
+                        .about("List of genotypes to remove (one per line)")
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::new("paths")
-                        .long("paths")
-                        .about("Path to remove (one per line)")
-                        .takes_value(true),
-                )
-                .arg(
-                    Arg::new("index")
-                        .short('i')
-                        .long("index")
+                    Arg::new("gindex")
+                        .long("gindex")
                         .takes_value(true)
-                        .about("Remove the entries on this specific index (0-based)"),
+                        .about("List of index (genotypes) to remove (one per line, (0-based))"),
                 )
+                .arg(
+                    Arg::new("samples")
+                        .long("samples")
+                        .about("List of samples to remove (one per line)")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::new("sindex")
+                        .long("sindex")
+                        .takes_value(true)
+                        .about("List of index (samples) to remove (one per line, (0-based))"),
+                )
+
                 .arg(
                     Arg::new("non-info")
                         .long("non-info")
                         .about(
-                            "Remove all entries which hold no information (all true or all false)",
+                            "Remove all genotypes which hold no information (all true or all false)",
                         )
                         .takes_value(true),
                 )
@@ -414,77 +426,77 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 
 
-        .subcommand(
-            App::new("block")
-                .version("1.0.1")
-                .about("Genotyping by pan-genomic blocks")
-
-                .help_heading("Input parameters")
-                .arg(
-                    Arg::new("gfa")
-                        .short('g')
-                        .long("graph")
-                        .about("GFA input file")
-                        .takes_value(true)
-                        .required(true),
-                )
-                .arg(
-                    Arg::new("PanSN")
-                        .long("PanSN")
-                        .about("PanSN-spec separator")
-                        .takes_value(true),
-                )
-
-
-                .help_heading("Parameter")
-                .arg(
-                    Arg::new("window")
-                        .short('w')
-                        .long("window")
-                        .about("Window size (in nodes)")
-                        .takes_value(true)
-                        .default_value("1000"),
-                )
-                .arg(
-                    Arg::new("step")
-                        .short('s')
-                        .long("step")
-                        .about("Step")
-                        .takes_value(true)
-                        .default_value("1000"),
-                )
-                .arg(Arg::new("distance")
-                    .short('d')
-                    .long("distance")
-                    .about("Distance till breaking the block")
-                    .takes_value(true)
-                    .default_value("10000"))
-
-
-                .help_heading("Output parameter")
-                .arg(
-                    Arg::new("output")
-                        .short('o')
-                        .long("output")
-                        .about("Output prefix for the new plink file")
-                        .takes_value(true)
-                        .required(true),
-                )
-                .arg(
-                    Arg::new("threads")
-                        .long("threads")
-                        .short('t')
-                        .about("Number of threads")
-                        .takes_value(true)
-                        .default_value("1")
-                )
-                .arg(
-                    Arg::new("blocks")
-                        .long("blocks")
-                        .short('b')
-                        .about("Output blocks [default: false]")
-                ),
-        )
+        // .subcommand(
+        //     App::new("block")
+        //         .version("1.0.1")
+        //         .about("Genotyping by pan-genomic blocks")
+        //
+        //         .help_heading("Input parameters")
+        //         .arg(
+        //             Arg::new("gfa")
+        //                 .short('g')
+        //                 .long("graph")
+        //                 .about("GFA input file")
+        //                 .takes_value(true)
+        //                 .required(true),
+        //         )
+        //         .arg(
+        //             Arg::new("PanSN")
+        //                 .long("PanSN")
+        //                 .about("PanSN-spec separator")
+        //                 .takes_value(true),
+        //         )
+        //
+        //
+        //         .help_heading("Parameter")
+        //         .arg(
+        //             Arg::new("window")
+        //                 .short('w')
+        //                 .long("window")
+        //                 .about("Window size (in nodes)")
+        //                 .takes_value(true)
+        //                 .default_value("1000"),
+        //         )
+        //         .arg(
+        //             Arg::new("step")
+        //                 .short('s')
+        //                 .long("step")
+        //                 .about("Step")
+        //                 .takes_value(true)
+        //                 .default_value("1000"),
+        //         )
+        //         .arg(Arg::new("distance")
+        //             .short('d')
+        //             .long("distance")
+        //             .about("Distance till breaking the block")
+        //             .takes_value(true)
+        //             .default_value("10000"))
+        //
+        //
+        //         .help_heading("Output parameter")
+        //         .arg(
+        //             Arg::new("output")
+        //                 .short('o')
+        //                 .long("output")
+        //                 .about("Output prefix for the new plink file")
+        //                 .takes_value(true)
+        //                 .required(true),
+        //         )
+        //         .arg(
+        //             Arg::new("threads")
+        //                 .long("threads")
+        //                 .short('t')
+        //                 .about("Number of threads")
+        //                 .takes_value(true)
+        //                 .default_value("1")
+        //         )
+        //         .arg(
+        //             Arg::new("blocks")
+        //                 .long("blocks")
+        //                 .short('b')
+        //                 .about("Output blocks [default: false]")
+        //         ),
+        // )
 
         // This is fine
         .subcommand(
@@ -569,7 +581,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Arg::new("plink")
                         .short('p')
                         .long("plink")
-                        .about("Plink prefix OR BED files")
+                        .about("List of BED files (one per line). Bim and Fam files should have the same prefix.")
                         .takes_value(true)
                         .required(true)
 
@@ -615,6 +627,41 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .required(true),
                 )
         )
+
+        .subcommand(
+            App::new("nearest")
+                .version("1.0.0")
+                .about("Nearest node to reference node")
+                .arg(
+                    Arg::new("gfa")
+                        .short('g')
+                        .long("gfa")
+                        .about("GFA input file")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(Arg::new("prefix")
+                    .short('p')
+                    .long("prefix")
+                    .about("Prefix of the reference nodes")
+                    .takes_value(true))
+                .arg(Arg::new("references")
+                    .long("references")
+                    .about("Reference nodes")
+                    .takes_value(true))
+                .arg(Arg::new("nodes")
+                    .long("nodes")
+                    .about("Nodes to find the nearest reference node")
+                    .takes_value(true))
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink files")
+                        .takes_value(true)
+                        .required(true),
+                )
+        )
         .get_matches();
 
     //cargo run -- -g /home/svorbrugg_local/Rust/data/AAA_AAB.cat.gfa
@@ -624,13 +671,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     if let Some(matches) = matches.subcommand_matches("graph") {
         graph_main(matches)
-    } else if let Some(matches) = matches.subcommand_matches("align") {
-        align_main(matches)
+    } else if let Some(matches) = matches.subcommand_matches("cov") {
+        cov_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("remove") {
         remove_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("find") {
-        find_main(matches);
-        Ok(())
+        find_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("window") {
         window_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("subpath") {
@@ -645,6 +691,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         merge_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("split") {
         split_main(matches)
+    } else if let Some(matches) = matches.subcommand_matches("nearest") {
+        nearest_main(matches)
     } else {
         println!("No subcommand was used");
         Ok(())

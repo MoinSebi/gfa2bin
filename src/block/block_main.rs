@@ -1,5 +1,3 @@
-
-
 use crate::subpath::subpath_main::{diploid_or_not, make_filename, traversal2bitvec};
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
@@ -12,7 +10,8 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufWriter, Write};
 
-
+/// DEAD CODE
+///
 /// Block main function
 ///
 /// Easy block function

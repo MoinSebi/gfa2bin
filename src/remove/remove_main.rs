@@ -1,46 +1,45 @@
+use crate::core::bfile::count_lines;
 use crate::core::core::MatrixWrapper;
-use std::collections::HashSet;
-
-
+use crate::core::helper::Feature;
 use clap::ArgMatches;
 use log::{info, warn};
+use std::collections::HashSet;
+use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Error, Write};
 
 /// Function for "gfa2bin remove"
 ///
 /// This function removed entries (SNPs) or path by name or index.
 ///
-/// Input is a plink bed
+/// Input is a single plink (bed, bim, fam) file.
 pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     // Input parameters
     let plink_file = matches.value_of("plink").unwrap();
 
     // Output parameters
     let output_prefix = matches.value_of("output").unwrap_or("gfa2bin.remove");
-    let _split = matches
-        .value_of("split")
-        .unwrap_or("1")
-        .parse::<usize>()
-        .unwrap();
 
     let mut mw = MatrixWrapper::new();
     let bim_count = count_lines(&format!("{}{}", plink_file, ".bim"))?;
     let fam_count = count_lines(&format!("{}{}", plink_file, ".fam"))?;
-    println!("dsahjdsa");
 
+    // Read the plink file
     mw.read_bed(&format!("{}{}", plink_file, ".bed"), fam_count, bim_count)?;
-    if !(matches.is_present("feature")
-        || matches.is_present("paths")
+
+    if !(matches.is_present("genotypes")
+        || matches.is_present("samples")
         || matches.is_present("index"))
     {
         warn!("One of the required parameters is present.");
     }
 
-    if matches.is_present("index") || matches.is_present("feature") {
-        if matches.is_present("index") && matches.is_present("feature") {
+    // Feature based removement
+    if matches.is_present("gindex") || matches.is_present("genotypes") {
+        if matches.is_present("gindex") && matches.is_present("genotypes") {
             panic!("You can't use both index and feature at the same time.");
-        }
-        if matches.is_present("index") {
-            let index = read_file_to_vector(matches.value_of("index").unwrap()).unwrap();
+        } else if matches.is_present("gindex") {
+            info!("Removing by index.");
+            let index = read_file_to_vector(matches.value_of("gindex").unwrap()).unwrap();
             let aa = index.iter().map(|x| x.parse::<usize>().unwrap()).collect();
             process_file2(
                 &format!("{}{}", plink_file, ".bim"),
@@ -48,11 +47,9 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
                 &aa,
             )?;
             mw.remove_by_index(&aa);
-        }
-
-        if matches.is_present("feature") {
-            println!("dsakjdsa");
-            let index = read_file_to_vector(matches.value_of("feature").unwrap())?;
+        } else if matches.is_present("genotypes") {
+            info!("Removing by genotype name.");
+            let index = read_file_to_vector(matches.value_of("genotypes").unwrap())?;
             let f = process_file(
                 &format!("{}{}", plink_file, ".bim"),
                 &format!("{}{}", output_prefix, ".bim"),
@@ -68,12 +65,12 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
         )?;
     }
 
-    if matches.is_present("paths") || matches.is_present("pindex") {
-        if matches.is_present("paths") && matches.is_present("pindex") {
+    // If samples are to be removed
+    if matches.is_present("samples") || matches.is_present("sindex") {
+        if matches.is_present("samples") && matches.is_present("sindex") {
             panic!("You can't use both paths and pindex at the same time.");
-        }
-        if matches.is_present("paths") {
-            let index = read_file_to_vector(matches.value_of("paths").unwrap())?;
+        } else if matches.is_present("samples") {
+            let index = read_file_to_vector(matches.value_of("samples").unwrap())?;
             let f = process_file(
                 &format!("{}{}", plink_file, ".fam"),
                 &format!("{}{}", output_prefix, ".fam"),
@@ -81,9 +78,8 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
                 0,
             )?;
             mw.remove_index_samples(&f);
-        }
-        if matches.is_present("pindex") {
-            let index = read_file_to_vector(matches.value_of("pindex").unwrap()).unwrap();
+        } else if matches.is_present("sindex") {
+            let index = read_file_to_vector(matches.value_of("sindex").unwrap()).unwrap();
             let aa = index.iter().map(|x| x.parse::<usize>().unwrap()).collect();
             process_file2(
                 &format!("{}{}", plink_file, ".fam"),
@@ -92,10 +88,13 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
             )?;
             mw.remove_by_index(&aa);
         }
-        copy_file(
-            &format!("{}{}", plink_file, ".bim"),
-            &format!("{}{}", output_prefix, ".bim"),
-        )?;
+
+        if !matches.is_present("genotypes") && !matches.is_present("gindex") {
+            copy_file(
+                &format!("{}{}", plink_file, ".bim"),
+                &format!("{}{}", output_prefix, ".bim"),
+            )?;
+        }
     }
 
     mw.write_bed(0, output_prefix, Feature::Node, 1);
@@ -104,7 +103,7 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
 use std::fs;
 use std::io;
 
-/// Copy a file
+/// Copy a file from filename1 to filename2
 pub fn copy_file(filename1: &str, filename2: &str) -> io::Result<()> {
     // Read the contents of filename1
     let contents = fs::read(filename1)?;
@@ -115,22 +114,18 @@ pub fn copy_file(filename1: &str, filename2: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Read a file to a vector of strings
 fn read_file_to_vector(file_path: &str) -> Result<Vec<String>, Error> {
     let file = File::open(file_path)?;
     let lines: Result<Vec<String>, _> = BufReader::new(file).lines().collect();
     lines
 }
 
-use crate::core::bfile::count_lines;
-use crate::core::helper::Feature;
-use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Error, Write};
-
 pub fn process_file(
     input_file: &str,
     output_file: &str,
     hs: &HashSet<String>,
-    ii: usize,
+    index_check: usize,
 ) -> Result<Vec<usize>, std::io::Error> {
     // Open input file for reading
     let file_in = File::open(input_file)?;
@@ -146,7 +141,7 @@ pub fn process_file(
         let line = line?; // unwrap the line or propagate error
         let line_split = line.split_whitespace().collect::<Vec<&str>>();
         // 3 for bim, 0 for fam
-        if !hs.contains(line_split[ii]) {
+        if !hs.contains(line_split[index_check]) {
             writeln!(writer, "{}", line)?;
         } else {
             index1.push(index);
@@ -160,6 +155,7 @@ pub fn process_file(
     Ok(index1)
 }
 
+/// Remove entries by index from the matrix
 pub fn process_file2(
     input_file: &str,
     output_file: &str,

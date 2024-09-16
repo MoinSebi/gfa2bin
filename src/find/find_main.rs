@@ -1,11 +1,14 @@
-use crate::core::helper::Feature;
-use crate::remove::input_data::FileData;
+use crate::core::core::MatrixWrapper;
+use crate::core::helper::{merge_u32_to_u64, Feature};
 use clap::ArgMatches;
 use gfa_reader::Gfa;
+use std::cmp::PartialEq;
+use std::fs::File;
+use std::io::Write;
+use std::io::{BufRead, BufReader};
 
-use crate::core::core::MatrixWrapper;
-
-pub fn find_main(matches: &ArgMatches) {
+/// Main function for find subcommand
+pub fn find_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let graph_file = matches.value_of("gfa").unwrap();
     let feature_file = matches.value_of("features").unwrap();
     let output = matches.value_of("output").unwrap();
@@ -15,214 +18,203 @@ pub fn find_main(matches: &ArgMatches) {
         .parse::<usize>()
         .unwrap();
 
-    let data = FileData::from_file(feature_file);
-    let feature = data.feature;
+    let a = determine_type(feature_file)?;
+    find_easy(
+        &Gfa::parse_gfa_file(graph_file),
+        &a,
+        read_file_lines(feature_file, &a)?,
+        output,
+    )?;
+    Ok(())
+}
 
-    if feature == Feature::MWindow {
-        let mut mw = MatrixWrapper::new();
-        mw.bfile_wrapper(feature_file);
-        //find_matrix(data, mw, length);
+#[derive(PartialEq, Eq, Hash)]
+enum InputType {
+    Segment,
+    DirSegment,
+    Link,
+    Subgraph,
+    Block,
+}
+
+pub fn to_string(dig: u64, input_type: InputType) -> String {
+    if input_type == InputType::Segment {
+        return dig.to_string();
+    } else if input_type == InputType::DirSegment {
+        let mut dig1 = dig / 2;
+        let mut dig2 = dig % 2;
+        return format!("{}{}", dig1, if dig2 == 0 { "+" } else { "-" });
+    } else if input_type == InputType::Link {
+        let dig1 = dig / 2;
+        let dig2 = dig % 2;
+        let dig3 = dig1 / 2;
+        let dig4 = dig1 % 2;
+        return format!(
+            "{}{}{}{}",
+            dig3,
+            if dig4 == 0 { "+" } else { "-" },
+            dig2 / 2,
+            if dig2 % 2 == 0 { "+" } else { "-" }
+        );
     } else {
-        let _graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
+        format!("help")
     }
 }
 
-// pub fn find_wrapper(
-//     feature: Feature,
-//     gfa: NCGfa<()>,
-//     file_data: FileData,
-//     length: usize,
-//     output: &str,
-// ) {
-//     if feature == Feature::Node || feature == Feature::Edge || feature == Feature::DirNode {
-//         find_easy(&gfa, file_data, feature, length);
-//     } else if feature == Feature::Alignment {
-//         find_alignment(&gfa, file_data, feature, length);
-//     } else {
-//         println!("not implemented")
-//     }
-// }
+/// Determine the type of input
+pub fn determine_type(input: &str) -> Result<InputType, Box<dyn std::error::Error>> {
+    let file = File::open(input).unwrap();
+    // Create a buffered reader for the file
+    let reader = BufReader::new(file);
 
-// pub fn find_easy(graph: &NCGfa<()>, input: FileData, feature: Feature, length: usize) {
-//     let node_size = node_size(&graph);
-//
-//     //
-//     let mut position_nodesize = Vec::new();
-//     let mut vec_res_u64 = Vec::new();
-//
-//     for path in graph.paths.iter() {
-//         let mut vec_u64 = Vec::new();
-//         let mut index = Vec::new();
-//         let mut pos = 0;
-//         for i in 0..path.nodes.len() - 1 {
-//             index.push([pos, node_size[path.nodes[i] as usize - 1]]);
-//             pos += node_size[path.nodes[i] as usize - 1];
-//             let v1 = path.nodes[i];
-//             let v2 = path.dir[i];
-//             let v3 = path.nodes[i + 1];
-//             let v4 = path.dir[i + 1];
-//
-//             if feature == Feature::Node {
-//                 vec_u64.push(v1 as u64);
-//             } else if feature == Feature::DirNode {
-//                 vec_u64.push(v1 as u64 * 2 + v2 as u64);
-//             } else if feature == Feature::Edge {
-//                 let u1 = v1 * 2 + v2 as u32;
-//                 let u2 = v3 * 2 + v4 as u32;
-//                 vec_u64.push(merge_u32_to_u64(u1, u2));
-//             }
-//         }
-//         vec_res_u64.push(vec_u64);
-//         position_nodesize.push(index)
-//     }
-//
-//     let file = File::create("output").unwrap();
-//     let mut writer = std::io::BufWriter::new(file);
-//     let data_hs = input.data.iter().collect::<HashSet<&u64>>();
-//     for (i, x) in vec_res_u64.iter().enumerate() {
-//         for (i2, y) in x.iter().enumerate() {
-//             if data_hs.contains(y) {
-//                 writeln!(
-//                     writer,
-//                     "{}\t{}\t{}\tID:{};NS:{};NB:{}",
-//                     graph.paths[i].name,
-//                     max(0, position_nodesize[i][i2][0] as i128 - length),
-//                     position_nodesize[i][i2][0] as i128
-//                         + position_nodesize[i][i2][1] as i128
-//                         + 1
-//                         + length,
-//                     to_string1(*y, &feature),
-//                     position_nodesize[i][i2][1],
-//                     position_nodesize[i][i2][0],
-//                 )
-//                 .expect("Error writing to file")
-//             }
-//         }
-//     }
-// // }
-//
-// pub fn find_alignment(graph: &NCGfa<()>, input: FileData, feature: Feature, length: usize) {
-//     let mut ff = FileData::new();
-//     ff.data = input
-//         .data
-//         .iter()
-//         .map(|x| split_u64_to_u32s(*x).0 as u64)
-//         .collect();
-//     ff.feature = Feature::Node;
-//     find_easy(graph, ff, feature, length);
-// }
-//
-// pub fn find_matrix(input: FileData, mw: MatrixWrapper, window: usize) {
-//     let num_path = mw.matrix_bit[0].len() / 2;
-//
-//     let mut j = 0;
-//     for x in window..mw.matrix_bit.len() - window {
-//         if split_u64_to_u32s(input.data[j]).0 as u64 == mw.geno_names[x] {
-//             j += 1;
-//             let ff = split_u64_to_u32s(input.data[j]).1;
-//             let mut bv2 = Vec::new();
-//             for y in 0..num_path {
-//                 let mut bv: Vec<[bool; 2]> = Vec::new();
-//
-//                 for z in x - window..x + window {
-//                     bv.push([mw.matrix_bit[z][y * 2], mw.matrix_bit[z][y * 2 + 1]]);
-//                 }
-//                 bv2.push((y, bv));
-//             }
-//             // sort by the bitvec
-//             bv2.sort_by(|a, b| a.1.cmp(&b.1));
-//             let f = &get_index(&bv2)[ff as usize];
-//         }
-//     }
-// }
-//
-// pub fn write_matrix(
-//     mw: MatrixWrapper,
-//     output: &str,
-//     win: usize,
-//     start: usize,
-//     aa: Vec<(usize, Vec<[bool; 2]>)>,
-// ) {
-//     let file = File::create(output).unwrap();
-//     let mut writer = std::io::BufWriter::new(file);
-//
-//     write!(writer, "{}", mw.geno_names[start - win, start + win]).expect("Error writing to file");
-//     for x in aa.iter() {
-//         write!(writer, "{}", mw.sample_names[x.0]).expect("Error writing to file");
-//         write!(
-//             writer,
-//             "{}",
-//             x.1.iter().map(|x| matric_writer(x)).collect::<String>()
-//         )
-//         .expect("Error writing to file");
-//     }
-// }
-//
-// pub fn matric_writer(a: &[bool; 2]) -> String {
-//     return format!("{}{}", a[0] as u8, a[1] as u8);
-// }
+    // Read the first line of the file
+    let mut lines = reader.lines();
+    if let Some(line) = lines.next() {
+        let first_line = line.unwrap();
+        if first_line.starts_with("A") {
+            return Ok(InputType::Segment);
+        } else if first_line.starts_with("G") {
+            // Count + and - in the firstline
+            let mut pm = 0;
+            for c in first_line.chars() {
+                if c == '+' {
+                    pm += 1;
+                } else if c == '-' {
+                    pm += 1;
+                }
+            }
+            if pm == 2 {
+                return Ok(InputType::Link);
+            } else {
+                return Ok(InputType::DirSegment);
+            }
+        } else if first_line.starts_with("S") {
+            return Ok(InputType::Subgraph);
+        } else {
+            return Ok(InputType::Block);
+        }
 
-// pub fn find_subpath(
-//     graph2: &Pansn<NCPath>,
-//     nodes: Vec<u32>,
-//     window: usize,
-//     vv: Vec<(usize, usize, usize, HashMap<u32, Vec<usize>>)>,
-// ) {
-//     let sample_size = graph2.genomes.len();
-//     for x1 in nodes.iter() {
-//         let mut vecc = Vec::new();
-//         for (genome_id, haplotype_id, path_id, node2index) in vv.iter() {
-//             let ll = graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id]
-//                 .nodes
-//                 .len();
-//             if node2index.contains_key(&x1) {
-//                 for z in node2index.get(&x1).unwrap() {
-//                     if window <= *z && *z + window < ll + 1 {
-//                         vecc.push((
-//                             graph2.genomes[*genome_id].haplotypes[*haplotype_id].paths[*path_id]
-//                                 .nodes[*z - window..*z + window],
-//                             *genome_id,
-//                             *haplotype_id,
-//                             *path_id,
-//                             *z,
-//                             *window,
-//                         ));
-//                     }
-//                 }
-//             }
-//         }
-//         vecc.sort();
-//         if vecc.is_empty() {
-//             continue;
-//         }
-//     }
-// }
-//
-// pub fn write_subpath(
-//     aa: &Vec<(Vec<&[u32]>, usize, usize, usize, usize, usize)>,
-//     ll: usize,
-//     output: &str,
-//     pp: &Pansn<NCPath>,
-// ) {
-//     let mut ab = aa.first().unwrap();
-//     let file = File::create(output).unwrap();
-//     let mut writer = std::io::BufWriter::new(file);
-//     let mut c = 0;
-//
-//     for y in aa.iter() {
-//         if y.0 != ab.0 {
-//             c += 1;
-//             ab = y;
-//         }
-//
-//         if c == ll {
-//             write!(
-//                 writer,
-//                 "{}",
-//                 pp.genomes[ab.1].haplotypes[ab.2].paths[ab.3].name
-//             )
-//             .expect("Error writing to file");
-//             write!(writer, "{}", 1).expect("Error writing to file");
-//         }
-//     }
-// }
+        println!("The first line is: {}", first_line);
+    } else {
+        println!("The file is empty.");
+    }
+    Ok(InputType::Block)
+}
+
+pub fn read_file_lines(file_path: &str, class: &InputType) -> std::io::Result<Vec<u64>> {
+    let file = File::open("example.txt")?;
+
+    // Create a buffered reader for efficient reading.
+    let reader = BufReader::new(file);
+
+    let mut vec_u64 = Vec::new();
+
+    // Iterate over each line in the file.
+    for line in reader.lines() {
+        let line = line?[1..].to_string(); // Handle any errors in reading lines.
+        let mut bools = [false; 2];
+        let mut jj = [0; 2];
+        let mut index = 0;
+        for x in line.chars() {
+            if x == '+' || x == '-' {
+                if x == '+' {
+                    bools[0] = true;
+                }
+                jj[0] = line[0..index].parse().unwrap();
+                break;
+            }
+            index += 1;
+        }
+        if line.chars().last().unwrap() == '+' || line.chars().last().unwrap() == '-' {
+            bools[1] = line.chars().last().unwrap() == '+';
+            jj[1] = line[index..line.len() - 2].parse().unwrap();
+        } else {
+            jj[1] = line[index..line.len() - 1].parse().unwrap();
+        }
+
+        if *class == InputType::Segment {
+            vec_u64.push(jj[1] as u64);
+        } else if *class == InputType::DirSegment {
+            vec_u64.push(jj[0] as u64 * 2 + bools[0] as u64);
+        } else if *class == InputType::Link {
+            let u1 = jj[0] * 2 + bools[0] as u32;
+            let u2 = jj[1] * 2 + bools[1] as u32;
+            vec_u64.push(merge_u32_to_u64(u1, u2));
+        }
+    }
+
+    Ok(vec_u64)
+}
+
+/// positional vector
+///
+/// question. where can I find a node in a path, which position
+/// Slice of a vector
+pub fn pos(graph: &Gfa<u32, (), ()>, name: String, class: &InputType) -> Vec<(u32, u64)> {
+    for path in graph.paths.iter() {
+        if name == path.name {
+            let mut pos: u32 = 0;
+            let mut vec_u64 = Vec::new();
+            for i in 0..path.nodes.len() - 1 {
+                pos += graph.get_node_by_id(&path.nodes[i]).length as u32;
+                let v1 = path.nodes[i];
+                let v2 = path.dir[i];
+                let v3 = path.nodes[i + 1];
+                let v4 = path.dir[i + 1];
+
+                if *class == InputType::Segment {
+                    vec_u64.push((pos, v1 as u64));
+                } else if *class == InputType::DirSegment {
+                    vec_u64.push((pos, v1 as u64 * 2 + v2 as u64));
+                } else if *class == InputType::Link {
+                    let u1 = v1 * 2 + v2 as u32;
+                    let u2 = v3 * 2 + v4 as u32;
+                    vec_u64.push((pos, merge_u32_to_u64(u1, u2)));
+                }
+            }
+            vec_u64.sort();
+            return vec_u64;
+        }
+    }
+    Vec::new()
+}
+
+/// Find the closest reference node
+pub fn find_easy(
+    graph: &Gfa<u32, (), ()>,
+    class: &InputType,
+    data_input: Vec<u64>,
+    output: &str,
+) -> Result<(), std::io::Error> {
+    let file_out = File::create(output)?;
+    let mut output_reader = std::io::BufWriter::new(file_out);
+
+    for path in graph.paths.iter() {
+        let pos1 = pos(graph, path.name.clone(), class);
+        let mut i = 0;
+        let mut j = 0;
+        let mut last_node = 0;
+
+        while i < data_input.len() && j < pos1.len() {
+            if data_input[i] == pos1[j].1 {
+                if pos1[j].0 != last_node {
+                    last_node = pos1[j].0;
+                    j += 1;
+                    i += 1;
+                } else {
+                    j += 1;
+                }
+                writeln!(
+                    output_reader,
+                    "{}\t{}\t{}",
+                    path.name, data_input[i], pos1[j].1
+                );
+            } else if data_input[i] < pos1[j].1 {
+                i += 1;
+            } else {
+                j += 1;
+            }
+        }
+    }
+    Ok(())
+}

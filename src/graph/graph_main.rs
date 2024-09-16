@@ -13,7 +13,6 @@ use packing_lib::normalize::convert_helper::Method;
 use std::path::Path;
 use std::process;
 
-
 /// Function for 'gfa2bin graph'
 pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     // Check graph file
