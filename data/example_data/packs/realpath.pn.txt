@@ -1,0 +1,2 @@
+../gfa2bin/data/example_data/packs/9986.1k.seq.a3.pn
+../gfa2bin/data/example_data/packs/9986.1k.seq.a1.pn

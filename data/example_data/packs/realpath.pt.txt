@@ -1,0 +1,2 @@
+../gfa2bin/data/example_data/packs/9986.1k.node.a1.pt
+../gfa2bin/data/example_data/packs/9986.1k.node.a2.pt
