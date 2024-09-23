@@ -34,7 +34,7 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     // Read input files
-    let pack_list = matches.value_of("packlist");
+    let pack_list = matches.value_of("pack");
     let cpack = matches.value_of("pack compressed");
     let cpacklist = matches.value_of("pc-list");
     let output_prefix = matches.value_of("output").unwrap();
