@@ -48,7 +48,6 @@ pub fn nearest_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
     let graph = Gfa::parse_gfa_file(graph_file);
 
     requested_nodes = graph.segments.iter().map(|x| x.id).collect();
-    println!("aaa {:?}", requested_nodes);
     let p = read_nodes(
         &graph,
         &ref_list,
@@ -78,7 +77,7 @@ pub fn by_prefix(
             "No reference paths found",
         )));
     } else {
-        println!("{:?}", reference_paths);
+        info!("{:?}", reference_paths);
         Ok(reference_paths)
     }
 }
@@ -168,17 +167,14 @@ pub fn read_nodes(
     let mut reference_node = 0;
     let nodes_hs = get_ref_nodes(graph, names);
     let mut result_hm = init_hm(graph, checked_nodes);
-    println!("{:?}", checked_nodes);
     for path in graph.paths.iter() {
         if !names.contains(&path.name) {
             for node in path.nodes.iter() {
                 if nodes_hs.contains(&node) {
                     distance = 0;
                     reference_node = *node;
-                    info!("Reference node: {}", node);
                     *result_hm.get_mut(node).unwrap() = [*node as i64, -1]
                 } else {
-                    println!("dsjka {:?}", checked_nodes);
                     if checked_nodes.contains(&node) {
                         if result_hm[node][1] > distance {
                             *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
@@ -191,10 +187,8 @@ pub fn read_nodes(
                 if nodes_hs.contains(&node) {
                     distance = 0;
                     reference_node = *node;
-                    info!("Reference node: {}", node);
                     *result_hm.get_mut(node).unwrap() = [*node as i64, -1]
                 } else {
-                    println!("dsjka {:?}", checked_nodes);
                     if checked_nodes.contains(&node) {
                         if result_hm[node][1] > distance {
                             *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
@@ -218,7 +212,6 @@ pub fn read_nodes(
         .map(|(k, v)| (*k, v[0], v[1]))
         .collect::<Vec<_>>();
     pp.sort_by(|a, b| a.1.cmp(&b.1));
-    println!("pp {:?}", pp);
     pp
 }
 
@@ -246,7 +239,6 @@ pub fn write_file(
         let mut j = 0;
 
         while i < result.len() && j < pos1.len() {
-            println!("{:?} {:?}", result[i], pos1[j]);
             if result[i].1 == pos1[j].0 as i64 {
                 let value = result[i].1;
 
