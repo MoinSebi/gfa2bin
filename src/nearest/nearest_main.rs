@@ -230,7 +230,7 @@ pub fn write_file(
         output_reader,
         "{}\t{}\t{}\t{}\t{}",
         "node", "ref_node", "distance", "position", "path"
-    );
+    )?;
 
     for x in names.iter() {
         // Have multiple pos for a single node
@@ -261,7 +261,7 @@ pub fn write_file(
                             output_reader,
                             "{}\t{}\t{}\t{}\t{}",
                             result[index1].0, result[index1].1, result[index1].2, pos1[index2].1, x
-                        );
+                        )?;
                     }
                 }
             } else if result[i].1 < pos1[j].0 as i64 {

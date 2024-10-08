@@ -208,7 +208,7 @@ pub fn find_easy(
                     output_reader,
                     "{}\t{}\t{}",
                     path.name, data_input[i], pos1[j].1
-                );
+                )?;
             } else if data_input[i] < pos1[j].1 {
                 i += 1;
             } else {
