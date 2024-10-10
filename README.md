@@ -54,8 +54,8 @@ Tip: Use gretl or any other tool to get a list of samples or entries with a spec
 Filter entries or samples from a plink file. 
 
 **Samples can be filtered by:**
--  
-
+- Below certain sample number 
+- Above certain sample number
 
 **Genotypes can be filtered by:**
 - MAF (major allele frequency)
@@ -73,7 +73,7 @@ Merging multiple plink files back together. Either from the above computation or
 
 ### View 
 
-Convert a plink bed file to a vcf-like file format. This method might be useful for general checking of the genrated genotyes. File might of huge size dependent on input. 
+Convert a plink bed file to a vcf-like file format. This method might be useful for general checking of the generated genotypes. File might be of huge size dependent on input. 
 
 #### Example 
 
@@ -82,10 +82,41 @@ Convert a plink bed file to a vcf-like file format. This method might be useful 
 Given a list of genotypes (e.g. significant nodes or edges) and graph, return the position (in bed format) of those paths, where such genotypes can be found. Each genotype will be listed as additional information in the bed file. If users might need more than just the exact position, additional --length information can be added, which will return in bigger intervals, adding the additinal lengthg to each site.  
 The output is made for extracting the sequence from the initial sequence and blasting these back to a database to get more information about selected DNA segment (overlap with genes or other interesting regions). 
 
+#### Example usage
+````text
+./target/release/gfa2bin nearest -g graph.gfa -p 'a' -o output.table.txt
+````
+#### Example output
+| node | ref_node | distance | position | path     |
+|------|----------|----------|----------|----------|
+| 3    | 1        | 0        | 0        | a#1#Chr1 |
+| 1    | 1        | -1       | 0        | a#1#Chr1 |
+| 4    | 2        | 0        | 10       | a#1#Chr1 |
+| 2    | 2        | -1       | 10       | a#1#Chr1 |
+| 5    | 5        | -1       | 15       | a#1#Chr1 |
+Comment: Distance is the distance between the input node and the reference node in base pairs. Position is the position of the reference node in the reference path. Distance of -1 means that the node is a reference node and 0 means that the node is one node away from the reference node (no nodes, bp in between).
+
+
 ### Nearest node 
 
 Return the closest reference-node in resprect to the input node. A reference node is the clostest node which can be found on any given reference path. The result does additionally return reference position of this node, An example is shown shown below. 
 
 #### Example usage 
-
+````text
+./target/release/gfa2bin nearest -g graph.gfa -p 'a' -o output.table.txt
+````
 #### Example output
+| node | ref_node | distance | position | path     |
+|------|----------|----------|----------|----------|
+| 3    | 1        | 0        | 0        | a#1#Chr1 |
+| 1    | 1        | -1       | 0        | a#1#Chr1 |
+| 4    | 2        | 0        | 10       | a#1#Chr1 |
+| 2    | 2        | -1       | 10       | a#1#Chr1 |
+| 5    | 5        | -1       | 15       | a#1#Chr1 |
+Comment: Distance is the distance between the input node and the reference node in base pairs. Position is the position of the reference node in the reference path. Distance of -1 means that the node is a reference node and 0 means that the node is one node away from the reference node (no nodes, bp in between). 
+
+
+### Testing 
+````text
+cargo test
+````
