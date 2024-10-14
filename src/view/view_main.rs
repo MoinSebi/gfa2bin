@@ -84,7 +84,7 @@ fn read_first_column_from_tsv(file_path: &str) -> Result<Vec<String>, std::io::E
 
     for line in reader.lines() {
         let line = line?;
-        let columns: Vec<&str> = line.split('\t').collect();
+        let columns: Vec<&str> = line.split_whitespace().collect();
 
         if let Some(first_column) = columns.first() {
             first_columns.push((*first_column).to_string());
