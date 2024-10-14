@@ -53,7 +53,7 @@ pub fn write_vcf(
     let file_bim = File::open(format!("{}{}", filename_prefix, ".bim"))?;
     let reader_bim = BufReader::new(file_bim);
     let lines_bim = reader_bim.lines();
-    let index: usize = 0;
+    let mut index: usize = 0;
 
     for line_bim in lines_bim {
         let line1 = line_bim?;
@@ -67,6 +67,7 @@ pub fn write_vcf(
             "GT=".to_string() + &(b.len() / 2).to_string(),
             bitvec2vcf_string(b)
         )?;
+        index += 1
     }
 
     Ok(())
