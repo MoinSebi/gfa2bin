@@ -110,14 +110,15 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
 
     info!("Reading the input");
     if matches.is_present("pack") {
+        info!("Reading 'pack'");
         // Read the first data
         let files_list = read_file_lines(pack_list.unwrap()).unwrap();
-        let mut first_file = read_pack1(true, &files_list[0]);
+        let mut first_file = read_pack1(true, &files_list[0][1]);
         init_geno_names(&mut mw, &mut first_file, want_node, &vec![]);
         init_matrix(&mut mw, &mut first_file, want_node, bimbam, files_list.len());
 
         for (index, x) in files_list.iter().enumerate() {
-            let mut pc = PackCompact::parse_pack(&x);
+            let mut pc = PackCompact::parse_pack(&x[1]);
             matrick_pack_wrapper(
                 &mut mw,
                 &mut pc,
@@ -128,6 +129,7 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                 bimbam,
                 &vec![],
                 index,
+                &x[0],
             );
         }
         // Compressed back (bin/u16, seq/node)
@@ -136,12 +138,13 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         let index_file = read_index(matches.value_of("index").unwrap());
         // Compressed pack list
         if matches.is_present("pc-list") {
+            info!("Reading pc-list");
             let cpack_list = read_file_lines(cpacklist.unwrap()).unwrap();
-            let mut first_file = read_pack1(false, &cpack_list[0]);
+            let mut first_file = read_pack1(false, &cpack_list[0][1]);
             init_geno_names(&mut mw, &mut first_file, want_node, &index_file);
             init_matrix(&mut mw, &mut first_file, want_node, bimbam, cpack_list.len());
             for (index, x) in cpack_list.iter().enumerate() {
-                let mut pc = PackCompact::read_wrapper(&x);
+                let mut pc = PackCompact::read_wrapper(&x[1]);
                 matrick_pack_wrapper(
                     &mut mw,
                     &mut pc,
@@ -152,10 +155,11 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                     bimbam,
                     &index_file,
                     index,
+                    &x[0],
                 );
             }
         } else if matches.is_present("pack compressed") {
-            println!("dashkdjash");
+            info!("Reading 'pack compressed'");
             let file_pack = cpack.unwrap();
             let buffer = unpack_zstd_to_byte(file_pack);
             let (_kind, _include_all, _bin, _method, _relative, _std, _thresh, bytes, _length, _name) =
@@ -168,9 +172,8 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
             let mut chunks = buffer.chunks((bytes + 86) as usize);
 
             for (index, chunk) in chunks.into_iter().enumerate() {
-                println!("dasjkhdjkas");
                 let mut pc = wrapper_reader123(&chunk);
-                println!("joö {}", pc.normalized_coverage.len());
+                let name = pc.name.clone();
                 matrick_pack_wrapper(
                     &mut mw,
                     &mut pc,
@@ -181,6 +184,7 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                     bimbam,
                     &index_file,
                     index,
+                    &name,
                 );
             }
         }
@@ -217,20 +221,22 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
 /// Read a file and return a vector of lines
 ///
 /// They contains files
-fn read_file_lines(file_path: &str) -> io::Result<Vec<String>> {
+fn read_file_lines(file_path: &str) -> io::Result<Vec<[String; 2]>> {
     // Open the file
     let file = File::open(file_path)?;
     let reader = io::BufReader::new(file);
 
     // Create a vector to store the entries
-    let mut entries: Vec<String> = Vec::new();
+    let mut entries: Vec<[String; 2]> = Vec::new();
 
     // Iterate over each line in the file
     for line in reader.lines() {
         // Add the line to the vector
         if let Ok(entry) = line {
-            if Path::is_file(Path::new(&entry)) {
-                entries.push(entry);
+            let entry_split = entry.split_whitespace().collect::<Vec<&str>>();
+            if Path::is_file(Path::new(&entry_split[1])) {
+
+                entries.push([entry_split[0].to_string(), entry_split[1].to_string()]);
             } else {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,

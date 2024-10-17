@@ -117,8 +117,9 @@ pub fn matrick_pack_wrapper(
     bimbam: bool,
     index_file: &Vec<u32>,
     index: usize,
+    name: &String,
 ) {
-    mw.sample_names.push(pc.name.clone());
+    mw.sample_names.push(name.clone());
 
 
     if !index_file.is_empty() {

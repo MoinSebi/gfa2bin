@@ -1,2 +1,2 @@
-../gfa2bin/data/example_data/packs/9986.1k.txt
-../gfa2bin/data/example_data/packs/9986.1k.tail.header.txt
+9986.1k	../gfa2bin/data/example_data/packs/9986.1k.txt
+9986.1k.tail.header	../gfa2bin/data/example_data/packs/9986.1k.tail.header.txt

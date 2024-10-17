@@ -179,7 +179,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Arg::new("index")
                         .short('i')
                         .long("index")
-                        .about("Index file")
+                        .about("Index file is needed for compressed pack")
                         .takes_value(true),
                 )
 

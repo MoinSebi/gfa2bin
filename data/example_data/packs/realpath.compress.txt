@@ -1,2 +1,2 @@
-../gfa2bin/data/example_data/packs/9986.1k.tail.seq.pc
-../gfa2bin/data/example_data/packs/9986.1k.seq.pc
+9986.1k.tail.seq	../gfa2bin/data/example_data/packs/9986.1k.tail.seq.pc
+9986.1k.seq	../gfa2bin/data/example_data/packs/9986.1k.seq.pc
