@@ -1,0 +1,122 @@
+from snakemake.utils import min_version
+import pandas as pd
+min_version("6.0")
+
+
+###############################################################################
+# Global settings
+###############################################################################
+
+# Load the config file
+configfile: "config/config.yaml"
+
+#Load the samples
+samples = pd.read_csv(config["samples"], sep="\t|;|,").set_index("sample", drop=False)
+# samples = samples.drop_duplicates()
+# samples.index.names = ["sample_id"]
+
+wf_basedir = workflow.current_basedir
+
+
+###############################################################################
+# 01 Prepare the fasta reference file from genome graph
+###############################################################################
+module prepare_fasta_ref:
+    snakefile:
+        "01_prepare_fasta_ref/Snakefile"
+    config: config
+    # prefix: "01_fasta_ref"
+
+use rule * from prepare_fasta_ref as prepare_fasta_ref_*
+
+
+###############################################################################
+# 02 a/b make pack files (pc), either from a fasta reference or a graph
+###############################################################################
+# We import both worklfows here, but only one will be used
+module make_packs_align2fasta_ref:
+    snakefile:
+        "02a_make_packs_align2fasta_ref/Snakefile"
+    config: config
+    # prefix: "make_packs"
+
+module make_packs_align2graph:
+    snakefile:
+        "02b_make_packs_align2graph/Snakefile"
+    config: config
+    # prefix: "make_packs"
+
+# Decide which workflow to use, based on the config setting
+if config["use_fasta_ref"]:
+    use rule * from make_packs_align2fasta_ref as make_packs_*
+else:
+    use rule * from make_packs_align2graph as make_packs_*
+
+
+###############################################################################
+# 03 Make fams/beds/bims from packs
+###############################################################################
+module make_fambedbim:
+    snakefile:
+        "03_make_fambedbim/Snakefile"
+    config: config
+    # prefix: "make_fambedbim"
+
+use rule * from make_fambedbim as make_fambedbim_*
+
+
+###############################################################################
+# 04 Make or load the kinship matrix
+###############################################################################
+# We import the 2 workflow options, and use one, or use a provided 
+# kinship matrix file, depending on the config setting
+# 
+# We use a file kinship as default! (SNP should be removed, too much work to put it here)
+# Graph maybe, as a super advanced here be dragons mode
+module snp_kinship:
+    snakefile:
+        "04a_SNP_kinship/Snakefile"
+    config: config
+    # prefix: "kinship"
+
+module graph_kinship:
+    snakefile:
+        "04b_Graph_kinship/Snakefile"
+    config: config
+    # prefix: "kinship"
+
+module file_kinship:
+    snakefile:
+        "04c_File_kinship/Snakefile"
+    config: config
+    # prefix: "kinship"
+
+# Decide which workflow to use, or to load the kinship matrix as a file, 
+# based on the config setting
+if config["kinship_method"] == "snp":
+    use rule * from snp_kinship as kinship_*
+elif config["kinship_method"] == "graph":
+    use rule * from graph_kinship as kinship_*
+elif config["kinship_method"] == "file":
+    use rule * from file_kinship as kinship_*
+else:
+    raise ValueError("Unknown kinship method: " + config["kinship_method"])
+
+
+###############################################################################
+# 05 Run the GWAS
+###############################################################################
+module gwas:
+    snakefile:
+        "05_GWAS/Snakefile"
+    config: config
+    # prefix: "gwas"
+
+use rule * from gwas as gwas_*
+
+
+# Define the final target rule
+rule target:
+    input:
+        rules.gwas_target.input,
+    default_target: True

@@ -1,0 +1,85 @@
+import pandas as pd
+
+wf_basedir = workflow.current_basedir
+
+# TODO move to a common file for all modules
+##### Helper functions #####
+def get_fastq(wildcards):
+    """Get fastq files of given sample."""
+    print(wildcards)
+    fastqs = samples.loc[(wildcards.sample), ["fq1", "fq2"]].dropna()
+    if len(fastqs) == 2:
+        return {"r1": fastqs.fq1, "r2": fastqs.fq2}
+    return {"r1": fastqs.fq1}
+
+#Load the samples
+samples = pd.read_csv(config["samples"], sep="\t|;|,").set_index("sample", drop=False)
+print(samples.index)
+# samples = samples.drop_duplicates()
+# samples.index.names = ["sample_id"]
+
+
+rule target:
+    input:
+        pc_files=expand("results/02_packs/{reference_name}.{sample}.pc", reference_name=config["reference_name"], sample=samples.index),
+
+
+rule validate_sample_names:
+    input:
+        sample_names=samples.index
+    output:
+        validation_file="results/02_make_packs/sample_names_validation.txt"
+    shell:
+        """
+        echo "{input.sample_names}" > {output.validation_file}
+        """
+
+
+rule align_to_fasta_ref_with_bwa: # Copilot, check this rule
+    input:
+        r1=expand("results/00_fastq/{sample}.r1.fastq.gz", sample=samples.index),
+        r2=expand("results/00_fastq/{sample}.r2.fastq.gz", sample=samples.index),
+        fasta_ref="results/01_fasta_ref/{reference_name}.all.fasta.gz"
+    output:
+        bam_file="results/02_packs/{reference_name}.{sample}.bam"
+    shell:
+        "bwa mem {input.fasta_ref} {input.r1} {input.r2} | samtools view -b - > {output.sam_file}"
+
+
+rule inject_graph_with_bams: #copilot, check this rule
+    input:
+        bam_files=expand("results/02_packs/{reference_name}.{sample}.bam", reference_name=config["reference_name"], sample=samples.index),
+        graph_file=config["graph"]
+    output:
+        graph_with_bams="results/02_packs/{reference_name}.{sample}.gaf"
+    shell:
+        "touch -f {output.graph_with_bams}"
+
+
+rule create_pack_files:
+    input:
+        gaf_file:"results/02_packs/{reference_name}.{sample}.gaf",
+        fasta_ref="results/01_fasta_ref/{reference_name}.all.fasta.gz",
+        gfa: config["graph"]
+    output:
+        pack_file="results/02_packs/{reference_name}.{sample}.pack"
+    shell:
+        "touch -f {output.pack_file}"
+        # gaf2pack
+
+rule index_graph: #check this rule, used later for gfa2bin
+    input:
+        gfa_file=config["graph"],
+    output:
+        indexed_graph="results/02_packs/{reference_name}.pi"
+    shell:
+        "packing index -i {input.gfa_file} -o {output.indexed_graph}"
+
+# Optional?
+rule: compress_pack:
+    input:
+        pack_file="results/02_packs/{reference_name}.{sample}.pack"
+    output:
+        compressed_pack_file="results/02_packs/{reference_name}.{sample}.pc"
+    shell:
+        "packing -p {input.pack_file} -o {output.compressed_pack_file}"

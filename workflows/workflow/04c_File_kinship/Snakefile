@@ -1,0 +1,12 @@
+rule target:
+    input:
+        kinship_matrix=expand("results/04_kinship/{reference_name}.kinship", reference_name=config["reference_name"]),
+
+
+rule copy_kinship_matrix:
+    params:
+        source_kinship_matrix=config["kinship_matrix"],
+    output:
+        kinship_matrix="results/04_kinship/{reference_name}.kinship"
+    shell:
+        "touch -f {output.kinship_matrix}"

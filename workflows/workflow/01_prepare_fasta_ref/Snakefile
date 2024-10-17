@@ -1,0 +1,33 @@
+wf_basedir = workflow.current_basedir
+
+
+rule target:
+    input:
+        fasta_ref=expand("results/01_fasta_ref/{reference_name}.all.fasta.gz", reference_name=config["reference_name"]),
+
+rule validate_input_graph:
+    params:
+        delimiter=config["pan_sn_delimiter"],
+        wf_basedir=wf_basedir
+    input:
+        graph_file=config["graph"],
+    output:
+        validation_file="results/01_fasta_ref/{reference_name}.graph_validation.txt"
+    shell:
+        """
+        {params.wf_basedir}/scripts/check_graph.bash {input.graph_file} '{params.delimiter}' | tee {output.validation_file}
+        """
+
+rule create_fasta_reference:
+    input:
+        graph_file=config["graph"],
+        validation_file="results/01_fasta_ref/{reference_name}.graph_validation.txt"
+    output:
+        fasta_ref="results/01_fasta_ref/{reference_name}.all.fasta.gz"
+    conda:
+        "envs/main.yaml"
+    shell:
+        """
+        odgi paths -i {input.graph_file}  --fasta | gzip > {output.fasta_ref}
+        """
+

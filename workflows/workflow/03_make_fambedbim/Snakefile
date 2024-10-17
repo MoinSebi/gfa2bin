@@ -1,0 +1,22 @@
+import pandas as pd
+
+
+#Load the samples
+samples = pd.read_csv(config["samples"], sep="\t|;|,").set_index("sample", drop=False)
+# samples = samples.drop_duplicates()
+# samples.index.names = ["sample_id"]
+
+
+rule target:
+    input:
+        fam_file=expand("results/03_make_fambedbim/{reference_name}.{mode}.fam", reference_name=config["reference_name"], mode=config["threshold_mode"]),
+
+# gfa2bin cov
+rule create_fam_file:
+    input:
+        pc_file=expand("results/02_packs/{{reference_name}}.{sample}.pc", sample=samples.index),
+    output:
+        fam_file="results/03_make_fambedbim/{reference_name}.{mode}.fam"
+    shell:
+        "touch -f {output.fam_file}"
+

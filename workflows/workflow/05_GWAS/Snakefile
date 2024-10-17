@@ -1,0 +1,19 @@
+#wildcard_constraints:
+#    mode=config["threshold_mode"]
+
+rule target:
+    input:
+        assoc_file=expand("results/05_gwas/{reference_name}.{mode}.assoc.txt", reference_name=config["reference_name"], mode=config["threshold_mode"]),
+
+# + samples, phenotype values
+rule create_fam_file:
+    input:
+        kinship_matrix="results/04_kinship/{reference_name}.kinship",
+        fam_file="results/03_make_fambedbim/{reference_name}.{mode}.fam",
+
+    output:
+        assoc_file="results/05_gwas/{reference_name}.{mode}.assoc.txt"
+    shell:
+        "touch -f {output.assoc_file}"
+
+# No gwas as option?
