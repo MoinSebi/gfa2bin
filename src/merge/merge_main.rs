@@ -6,10 +6,11 @@ use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead, Read, Write};
 
-/// Window function
+/// Merge main
 ///
-/// Reading a ped file return "genotypes" which reflect windows over the entries
-/// We assume that the entries that in variation graphs we have some kind of pan-genomic order in the order of the entries which reflect haplotypes
+/// Merge multiple PLINK files togther. This includes BED, BIM and FAM files
+///
+/// Comment: Fam files are only checked if they contain the same content, bim files are simply concatenated, and BED files are trimmed ([3:]) and concatenated
 pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let plink_list = matches.value_of("plink").unwrap();
     let out_file = matches.value_of("output").unwrap();
@@ -33,6 +34,10 @@ pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
+
+/// Read a file which should include path to multiple other files (PLINK)
+///
+/// Each line one path
 pub fn read_list(file: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut list: Vec<String> = Vec::new();
     let file = fs::File::open(file).expect("Could not open file");
@@ -43,6 +48,9 @@ pub fn read_list(file: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> 
     Ok(list)
 }
 
+/// Remove suffix from the string (path)
+///
+/// Comment: If bed files are the input, remove those to get the prefix name
 pub fn clear_names(names: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut new_names: Vec<String> = Vec::new();
     for x in names.iter() {
@@ -54,6 +62,9 @@ pub fn clear_names(names: Vec<String>) -> Result<Vec<String>, Box<dyn std::error
     Ok(new_names)
 }
 
+/// Check if all fam files are the same
+///
+/// Does not work otherwise
 pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>> {
     if fams.is_empty() {
         return Ok(false);
@@ -68,6 +79,10 @@ pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>
     Ok(true)
 }
 
+
+/// Merge multiple plain-text files
+///
+/// Here - Merge bim (PLINK) file
 pub fn merge_bim(fams: &Vec<String>, output_file: &str) -> io::Result<()> {
     // Create or truncate the output file
     let mut output = fs::File::create(output_file)?;
@@ -85,6 +100,10 @@ pub fn merge_bim(fams: &Vec<String>, output_file: &str) -> io::Result<()> {
     Ok(())
 }
 
+
+/// Merge BED files
+///
+/// Start with the first entry as a base, then add the others as well. Adding the rest is done bz removing the three header bytes.
 pub fn bed_merge(files: &Vec<String>, output_file: &str) -> io::Result<()> {
     // Open the output file
     let mut output = File::create(output_file).expect("Failed to create output file");

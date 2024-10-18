@@ -69,7 +69,7 @@ Genotypes can be filtered by:
 Split a single plink file (bed, bim, fam), into multiple parts of the same size. This might be prefered if the testing data set is very big and performing GWAS takes a lot of time and multiprocessing not is possible. 
 
 #### Merge
-Merging multiple plink files back together. Either from the above computation or any other splitting operation. Entries in all input files, must be in same sample order (similar fam order and names). 
+Merging multiple plink files back together. Either from the above computation or any other splitting operation. Samples in all input files, must be in same order (similar fam order and names). Input is file of name of all bed files (fam and bim should have the same prefix).
 
 ### View 
 
