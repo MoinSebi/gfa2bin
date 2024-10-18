@@ -190,7 +190,7 @@ pub fn wrapper_blocks(
                 for (genome_id, path) in graph2.genomes.iter().enumerate() {
                     for (haplo_id, x1) in path.haplotypes.iter().enumerate() {
                         for (_path_id, x) in x1.paths.iter().enumerate() {
-                            //
+                            // s index, end index, total size
                             let mut block_array: [usize; 3] = [0; 3]; // Triple 0
                             let mut distance = 0;
                             for (i, node) in x.nodes.iter().enumerate() {

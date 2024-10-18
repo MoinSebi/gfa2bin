@@ -45,8 +45,8 @@ pub fn nearest_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
     }
 
     info!("Reading graph file");
-    let graph = Gfa::parse_gfa_file(graph_file);
-
+    let mut graph = Gfa::parse_gfa_file(graph_file);
+    graph.walk_to_path("#");
     requested_nodes = graph.segments.iter().map(|x| x.id).collect();
     let p = read_nodes(
         &graph,

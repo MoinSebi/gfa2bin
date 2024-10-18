@@ -66,20 +66,20 @@ Genotypes can be filtered by:
 
 ### Split and merge
 #### Split 
-Split a single plink file (bed, bim, fam), into multiple parts of the same size. This might be prefered if the testing data set is very big and performing GWAS takes a lot of time and multiprocessing not is possible. 
+Split a single plink file (bed, bim, fam), into multiple parts of the same size. This might be preferred if the testing data set is very big and performing GWAS takes a lot of time and multiprocessing not is possible. 
 
 #### Merge
 Merging multiple plink files back together. Either from the above computation or any other splitting operation. Samples in all input files, must be in same order (similar fam order and names). Input is file of name of all bed files (fam and bim should have the same prefix).
 
 ### View 
 
-Convert a plink bed file to a vcf-like file format. This method might be useful for general checking of the generated genotypes. File might be of huge size dependent on input. 
+Convert a plink bed file to a vcf-like file format. This method might be useful for general inspection of the generated genotypes. File might be of huge size dependent on input. 
 
 #### Example 
 
 ### Find 
 
-Given a list of genotypes (e.g. significant nodes or edges) and graph, return the position (in bed format) of those paths, where such genotypes can be found. Each genotype will be listed as additional information in the bed file. If users might need more than just the exact position, additional --length information can be added, which will return in bigger intervals, adding the additinal lengthg to each site.  
+Given a list of genotypes (e.g. significant nodes or edges) and graph, return the position (in bed format) of those paths, where such genotypes can be found. Each genotype will be listed as additional information in the bed file. If users might need more than just the exact position, additional --length information can be added, which will return in bigger intervals, adding the additional length to each site.  
 The output is made for extracting the sequence from the initial sequence and blasting these back to a database to get more information about selected DNA segment (overlap with genes or other interesting regions). 
 
 #### Example usage
@@ -94,12 +94,12 @@ The output is made for extracting the sequence from the initial sequence and bla
 | 4    | 2        | 0        | 10       | a#1#Chr1 |
 | 2    | 2        | -1       | 10       | a#1#Chr1 |
 | 5    | 5        | -1       | 15       | a#1#Chr1 |
-Comment: Distance is the distance between the input node and the reference node in base pairs. Position is the position of the reference node in the reference path. Distance of -1 means that the node is a reference node and 0 means that the node is one node away from the reference node (no nodes, bp in between).
+Comment: Distance is the distance between the input node and the reference node in base pairs. Position is the position of the reference node in the reference path. Distance of -1 means that the node is presence in the reference, and 0 interprets that the node is one node away from the reference node (no nodes (bp) inbetween).
 
 
 ### Nearest node 
 
-Return the closest reference-node in resprect to the input node. A reference node is the clostest node which can be found on any given reference path. The result does additionally return reference position of this node, An example is shown shown below. 
+Linking nodes to the closest node of a reference path. Requested node must be part of any other path. A reference node is the closest node which can be found on any given reference path. The result does additionally return reference position of this node, An example is shown below. 
 
 #### Example usage 
 ````text
