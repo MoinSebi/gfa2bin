@@ -16,7 +16,7 @@ use std::io::{BufReader, BufWriter};
 pub fn split_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let plink_file = matches.value_of("plink").unwrap();
     let out_file = matches.value_of("output").unwrap();
-    let number_splits = matches.value_of("splits").unwrap().parse::<usize>()?;
+    let number_splits = matches.value_of("splits").unwrap().parse::<usize>().expect("Error parsing splits");
 
     info!("Splitting bim file: {}", format!("{}.bim", plink_file));
 
@@ -46,6 +46,9 @@ pub fn split_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
+
+/// Split a file into n files
+/// Plain text - same length every file
 fn split_file(
     filename: &str,
     output_prefix: &str,
@@ -54,7 +57,6 @@ fn split_file(
 ) -> io::Result<()> {
     let input_file = File::open(filename)?;
     let reader = BufReader::new(input_file);
-    println!("dsajkdha");
     // Create the output files
     let mut output_files = Vec::with_capacity(n);
     for i in 0..n {
@@ -62,7 +64,6 @@ fn split_file(
         let output_file = BufWriter::new(File::create(file_name)?);
         output_files.push(output_file);
     }
-    println!("dsajkdha {:?}", output_files);
 
     // Write lines to the appropriate output file
     let mut current_file_index = 0;
@@ -86,6 +87,10 @@ fn split_file(
     Ok(())
 }
 
+
+/// "Split" fam file
+///
+/// Comment: We don't actually split the file, we just copy it n times
 pub fn split_fam(fam_file: &str, splits: usize, output_prefix: &str) -> io::Result<()> {
     for x in 1..=splits {
         let file_name = format!("{}.{}.fam", output_prefix, x);
@@ -94,6 +99,10 @@ pub fn split_fam(fam_file: &str, splits: usize, output_prefix: &str) -> io::Resu
     Ok(())
 }
 
+
+/// Split a bed file into n files
+///
+/// The bed file is split by the number of samples
 fn split_bed(
     filename: &str,
     n: usize,

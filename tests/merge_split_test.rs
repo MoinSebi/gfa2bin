@@ -37,8 +37,6 @@ fn split_test() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 /// Merge a split file
 fn merge_test() -> Result<(), Box<dyn std::error::Error>> {
-    println!("dashjdhas");
-
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("graph")
         .arg("-g")
@@ -60,7 +58,6 @@ fn merge_test() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-o")
         .arg("data/output/gfa2bin.split2.split");
     cmd.assert().success();
-    println!("dashjdhas");
 
     let status = Command::new("sh")
         .arg("-c")

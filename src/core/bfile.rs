@@ -10,7 +10,7 @@ use std::{fs, io};
 
 /// Read number of lines
 pub fn count_lines(file_path: &str) -> Result<usize, std::io::Error> {
-    let file = File::open(file_path).expect("ERROR: {} CAN NOT BE READ\n");
+    let file = File::open(file_path).expect(format!("ERROR: {} CAN NOT BE READ\n", file_path).as_str());
     let reader = BufReader::new(file);
 
     // Count the lines using iterator folding
