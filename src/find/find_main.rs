@@ -92,8 +92,6 @@ pub fn determine_type(input: &str) -> Result<InputType, Box<dyn std::error::Erro
         } else {
             return Ok(InputType::Block);
         }
-
-        println!("The first line is: {}", first_line);
     } else {
         println!("The file is empty.");
     }
