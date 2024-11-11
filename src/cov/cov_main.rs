@@ -1,15 +1,15 @@
-use crate::cov::pack::{bin2bin, f32_to_bin, f32_to_f32, init_geno_names, init_matrix, matrick_pack_wrapper, matrix_pack_wrapper, read_pack1, remove_duplicates, wrapper_reader123};
 use crate::core::core::MatrixWrapper;
-use crate::core::helper::{index2node_seq, Feature};
+use crate::core::helper::Feature;
+use crate::cov::pack::{
+    init_geno_names, init_matrix, matrick_pack_wrapper, read_pack1, wrapper_reader123,
+};
 use clap::ArgMatches;
 use log::{info, warn};
 
 use crate::core::helper::Feature::Alignment;
 
-use bitvec::order::Msb0;
-use bitvec::prelude::BitVec;
-use packing_lib::core::core::{DataType, PackCompact};
-use packing_lib::core::reader::{read_index, unpack_zstd_to_byte, wrapper_reader};
+use packing_lib::core::core::PackCompact;
+use packing_lib::core::reader::{read_index, unpack_zstd_to_byte};
 use packing_lib::normalize::convert_helper::Method;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -80,7 +80,6 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         panic!("Exiting");
     }
 
-
     let mut pheno = f64::MAX;
     if matches.is_present("pheno") {
         pheno = matches.value_of("pheno").unwrap().parse()?;
@@ -115,7 +114,13 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         let files_list = read_file_lines(pack_list.unwrap()).unwrap();
         let mut first_file = read_pack1(true, &files_list[0][1]);
         init_geno_names(&mut mw, &mut first_file, want_node, &vec![]);
-        init_matrix(&mut mw, &mut first_file, want_node, bimbam, files_list.len());
+        init_matrix(
+            &mut mw,
+            &mut first_file,
+            want_node,
+            bimbam,
+            files_list.len(),
+        );
 
         for (index, x) in files_list.iter().enumerate() {
             let mut pc = PackCompact::parse_pack(&x[1]);
@@ -142,7 +147,13 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
             let cpack_list = read_file_lines(cpacklist.unwrap()).unwrap();
             let mut first_file = read_pack1(false, &cpack_list[0][1]);
             init_geno_names(&mut mw, &mut first_file, want_node, &index_file);
-            init_matrix(&mut mw, &mut first_file, want_node, bimbam, cpack_list.len());
+            init_matrix(
+                &mut mw,
+                &mut first_file,
+                want_node,
+                bimbam,
+                cpack_list.len(),
+            );
             for (index, x) in cpack_list.iter().enumerate() {
                 let mut pc = PackCompact::read_wrapper(&x[1]);
                 matrick_pack_wrapper(
@@ -162,17 +173,27 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
             info!("Reading 'pack compressed'");
             let file_pack = cpack.unwrap();
             let buffer = unpack_zstd_to_byte(file_pack);
-            let (_kind, _include_all, _bin, _method, _relative, _std, _thresh, bytes, _length, _name) =
-                PackCompact::get_meta(&buffer);
+            let (
+                _kind,
+                _include_all,
+                _bin,
+                _method,
+                _relative,
+                _std,
+                _thresh,
+                bytes,
+                _length,
+                _name,
+            ) = PackCompact::get_meta(&buffer);
             let mut chunks = buffer.chunks((bytes + 86) as usize);
             let number_chunks = chunks.len();
-            let mut first_file = wrapper_reader123(&chunks.nth(0).unwrap());
+            let mut first_file = wrapper_reader123(chunks.next().unwrap());
             init_geno_names(&mut mw, &mut first_file, want_node, &index_file);
             init_matrix(&mut mw, &mut first_file, want_node, bimbam, number_chunks);
-            let mut chunks = buffer.chunks((bytes + 86) as usize);
+            let chunks = buffer.chunks((bytes + 86) as usize);
 
-            for (index, chunk) in chunks.into_iter().enumerate() {
-                let mut pc = wrapper_reader123(&chunk);
+            for (index, chunk) in chunks.enumerate() {
+                let mut pc = wrapper_reader123(chunk);
                 let name = pc.name.clone();
                 matrick_pack_wrapper(
                     &mut mw,
@@ -205,7 +226,6 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         .map(|x| x.iter().cloned().fold(0.0, f32::max))
         .collect();
 
-
     mw.write_wrapper(
         bimbam,
         1,
@@ -235,7 +255,6 @@ fn read_file_lines(file_path: &str) -> io::Result<Vec<[String; 2]>> {
         if let Ok(entry) = line {
             let entry_split = entry.split_whitespace().collect::<Vec<&str>>();
             if Path::is_file(Path::new(&entry_split[1])) {
-
                 entries.push([entry_split[0].to_string(), entry_split[1].to_string()]);
             } else {
                 return Err(io::Error::new(

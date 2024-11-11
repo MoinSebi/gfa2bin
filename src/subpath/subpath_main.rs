@@ -136,7 +136,7 @@ pub fn subpath_wrapper(
 
                 // !Thiis mmight be wring
                 let vec_bitvec = traversal2bitvec(result_vec, sample_size, &is_diploid, &mut block);
-                for x in 0..vec_bitvec.len() {
+                for (x, _item) in vec_bitvec.iter().enumerate() {
                     writeln!(
                         file_bim,
                         "graph\t{}\t{}",

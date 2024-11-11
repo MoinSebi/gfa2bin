@@ -2,10 +2,9 @@ use crate::core::core::MatrixWrapper;
 use crate::core::helper::{index2node_seq, merge_u32_to_u64};
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-use log::{info, warn};
+
 use packing_lib::core::core::{DataType, PackCompact};
 use packing_lib::normalize::convert_helper::Method;
-use std::thread::Thread;
 
 pub fn bin2bin(matrix_w: &mut MatrixWrapper, input: &PackCompact, index: usize) {
     for (i, y) in input.bin_coverage.iter().enumerate() {
@@ -39,7 +38,7 @@ pub fn f32_to_f32(matrix_w: &mut MatrixWrapper, input: &PackCompact, thresh: f32
     }
 }
 
-pub fn read_pack1(is_plain: bool, filename: &str) -> PackCompact{
+pub fn read_pack1(is_plain: bool, filename: &str) -> PackCompact {
     if is_plain {
         PackCompact::parse_pack(filename)
     } else {
@@ -49,60 +48,64 @@ pub fn read_pack1(is_plain: bool, filename: &str) -> PackCompact{
 
 pub fn wrapper_reader123(buffer: &[u8]) -> PackCompact {
     // total length 85 + len
-    let (_kind, _include_all, _bin, _method, _relative, _std, _thresh, bytes, _length, _name) =
+    let (_kind, _include_all, _bin, _method, _relative, _std, _thresh, _bytes, _length, _name) =
         PackCompact::get_meta(buffer);
     if _bin == DataType::TypeU16 {
         PackCompact::read_u16(buffer)
     } else if _bin == DataType::TypeBit {
-       PackCompact::read_bin_coverage(buffer)
+        PackCompact::read_bin_coverage(buffer)
     } else {
         PackCompact::read_f32(buffer)
     }
 }
-pub fn init_geno_names(mw: &mut MatrixWrapper, pc: &mut PackCompact, want_node: bool, index: &Vec<u32>){
+pub fn init_geno_names(
+    mw: &mut MatrixWrapper,
+    pc: &mut PackCompact,
+    want_node: bool,
+    index: &Vec<u32>,
+) {
     if pc.node_index.is_empty() {
         pc.node_index = index.clone();
     }
 
-    if !pc.is_sequence || (want_node && pc.is_sequence){
+    if !pc.is_sequence || (want_node && pc.is_sequence) {
         mw.geno_names = remove_duplicates(&pc.node_index);
     } else {
         mw.geno_names = index2node_seq(&pc.node_index)
     }
 }
-pub fn init_matrix(mw: &mut MatrixWrapper, pc: &mut PackCompact, want_node: bool, bimbam: bool, len1: usize){
+pub fn init_matrix(
+    mw: &mut MatrixWrapper,
+    pc: &mut PackCompact,
+    want_node: bool,
+    bimbam: bool,
+    len1: usize,
+) {
     // normalize coverage
     if pc.bin_coverage.is_empty() {
-        if pc.normalized_coverage.is_empty(){
+        if pc.normalized_coverage.is_empty() {
             if want_node {
                 pc.calc_node_cov();
             } else {
                 pc.normalized_coverage = pc.coverage.iter().map(|x| *x as f32).collect();
             }
-        } else {
-            if want_node {
-                pc.calc_node_cov();
-            }
+        } else if want_node {
+            pc.calc_node_cov();
         }
-
-
-
 
         // if bin_coverage is there
     } else {
         mw.matrix_bit = vec![BitVec::<u8, Lsb0>::repeat(false, len1 * 2); pc.bin_coverage.len()];
-        return
+        return;
     }
 
-
-    if bimbam{
+    if bimbam {
         mw.matrix_f32 = vec![vec![0.0; len1]; pc.normalized_coverage.len()];
     } else {
-        mw.matrix_bit = vec![BitVec::<u8, Lsb0>::repeat(false, len1 * 2); pc.normalized_coverage.len()];
+        mw.matrix_bit =
+            vec![BitVec::<u8, Lsb0>::repeat(false, len1 * 2); pc.normalized_coverage.len()];
     }
 }
-
-
 
 pub fn matrick_pack_wrapper(
     mw: &mut MatrixWrapper,
@@ -118,7 +121,6 @@ pub fn matrick_pack_wrapper(
 ) {
     mw.sample_names.push(name.clone());
 
-
     if !index_file.is_empty() {
         pc.node_index = index_file.clone();
     }
@@ -127,20 +129,18 @@ pub fn matrick_pack_wrapper(
     if pc.bin_coverage.is_empty() {
         if want_node {
             pc.calc_node_cov();
-        } else {
-            if pc.normalized_coverage.is_empty() {
-                pc.normalized_coverage = pc.coverage.iter().map(|x| *x as f32).collect();
-            }
+        } else if pc.normalized_coverage.is_empty() {
+            pc.normalized_coverage = pc.coverage.iter().map(|x| *x as f32).collect();
         }
 
-        let thresh = PackCompact::get_threshold(&pc, keep_zeros, fraction, 0.0, method);
+        let thresh = PackCompact::get_threshold(pc, keep_zeros, fraction, 0.0, method);
         if bimbam {
-            f32_to_f32(mw, &pc, thresh, index);
+            f32_to_f32(mw, pc, thresh, index);
         } else {
-            f32_to_bin(mw, &pc, thresh, index);
+            f32_to_bin(mw, pc, thresh, index);
         }
     } else {
-        bin2bin(mw, &pc, index);
+        bin2bin(mw, pc, index);
     }
 }
 
@@ -215,7 +215,7 @@ pub fn matrix_pack_wrapper(
 
 pub fn remove_duplicates(sorted_vec: &Vec<u32>) -> Vec<u64> {
     let mut unique_vec: Vec<u32> = Vec::new();
-    let mut result = Vec::new();
+    let result = Vec::new();
 
     // If the input vector is empty, return an empty vector
     if sorted_vec.is_empty() {
@@ -223,13 +223,13 @@ pub fn remove_duplicates(sorted_vec: &Vec<u32>) -> Vec<u64> {
     }
 
     // Add the first element of the sorted vector
-    unique_vec.push(sorted_vec[0] as u32);
+    unique_vec.push(sorted_vec[0]);
 
     // Iterate through the sorted vector and add only distinct elements
     for i in 1..sorted_vec.len() {
         // If the current element is different from the previous one, add it to the unique vector
         if sorted_vec[i] != sorted_vec[i - 1] {
-            unique_vec.push(sorted_vec[i] as u32);
+            unique_vec.push(sorted_vec[i]);
         }
     }
     let mut result = Vec::new();

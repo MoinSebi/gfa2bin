@@ -1,5 +1,5 @@
-mod cov;
 mod core;
+mod cov;
 mod filter;
 mod find;
 mod graph;
@@ -13,7 +13,6 @@ mod subpath;
 mod view;
 mod window;
 
-
 use crate::filter::filter_main::filter_main;
 use crate::find::find_main::find_main;
 use crate::graph::graph_main::graph_main;
@@ -26,9 +25,9 @@ use crate::view::view_main::view_main;
 use crate::window::window_main::window_main;
 use clap::{App, AppSettings, Arg};
 
+use crate::cov::cov_main::cov_main;
 use crate::nearest::nearest_main::nearest_main;
 use std::error::Error;
-use crate::cov::cov_main::cov_main;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("gfa2bin")

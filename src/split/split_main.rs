@@ -16,7 +16,11 @@ use std::io::{BufReader, BufWriter};
 pub fn split_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let plink_file = matches.value_of("plink").unwrap();
     let out_file = matches.value_of("output").unwrap();
-    let number_splits = matches.value_of("splits").unwrap().parse::<usize>().expect("Error parsing splits");
+    let number_splits = matches
+        .value_of("splits")
+        .unwrap()
+        .parse::<usize>()
+        .expect("Error parsing splits");
 
     info!("Splitting bim file: {}", format!("{}.bim", plink_file));
 
@@ -45,7 +49,6 @@ pub fn split_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     info!("Done");
     Ok(())
 }
-
 
 /// Split a file into n files
 /// Plain text - same length every file
@@ -87,7 +90,6 @@ fn split_file(
     Ok(())
 }
 
-
 /// "Split" fam file
 ///
 /// Comment: We don't actually split the file, we just copy it n times
@@ -98,7 +100,6 @@ pub fn split_fam(fam_file: &str, splits: usize, output_prefix: &str) -> io::Resu
     }
     Ok(())
 }
-
 
 /// Split a bed file into n files
 ///

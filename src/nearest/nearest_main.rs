@@ -3,7 +3,7 @@ use gfa_reader::Gfa;
 use hashbrown::{HashMap, HashSet};
 use log::info;
 use std::fs::File;
-use std::hash::Hash;
+
 use std::i64;
 use std::io::{self};
 use std::io::{BufRead, BufReader, Write};
@@ -71,11 +71,11 @@ pub fn by_prefix(
         .map(|x| x.name.clone())
         .filter(|x| x.starts_with(prefix))
         .collect::<Vec<_>>();
-    if reference_paths.len() == 0 {
-        return Err(Box::new(std::io::Error::new(
+    if reference_paths.is_empty() {
+        Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
             "No reference paths found",
-        )));
+        )))
     } else {
         info!("{:?}", reference_paths);
         Ok(reference_paths)
@@ -115,7 +115,7 @@ pub fn pos(graph: &Gfa<u32, (), ()>, name: String) -> Vec<(u32, usize)> {
 
             for node in path.nodes.iter() {
                 bb.push((*node, pos1));
-                pos1 = pos1 + graph.get_sequence_by_id(node).len();
+                pos1 += graph.get_sequence_by_id(node).len();
             }
             bb.sort_by(|a, b| a.0.cmp(&b.0));
             return bb;
@@ -170,31 +170,27 @@ pub fn read_nodes(
     for path in graph.paths.iter() {
         if !names.contains(&path.name) {
             for node in path.nodes.iter() {
-                if nodes_hs.contains(&node) {
+                if nodes_hs.contains(node) {
                     distance = 0;
                     reference_node = *node;
                     *result_hm.get_mut(node).unwrap() = [*node as i64, -1]
                 } else {
-                    if checked_nodes.contains(&node) {
-                        if result_hm[node][1] > distance {
-                            *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
-                        }
+                    if checked_nodes.contains(node) && result_hm[node][1] > distance {
+                        *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
                     }
-                    distance += graph.get_sequence_by_id(&node).len() as i64;
+                    distance += graph.get_sequence_by_id(node).len() as i64;
                 }
             }
             for node in path.nodes.iter().rev() {
-                if nodes_hs.contains(&node) {
+                if nodes_hs.contains(node) {
                     distance = 0;
                     reference_node = *node;
                     *result_hm.get_mut(node).unwrap() = [*node as i64, -1]
                 } else {
-                    if checked_nodes.contains(&node) {
-                        if result_hm[node][1] > distance {
-                            *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
-                        }
+                    if checked_nodes.contains(node) && result_hm[node][1] > distance {
+                        *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
                     }
-                    distance += graph.get_sequence_by_id(&node).len() as i64;
+                    distance += graph.get_sequence_by_id(node).len() as i64;
                 }
             }
         }
@@ -226,11 +222,7 @@ pub fn write_file(
 ) -> Result<(), std::io::Error> {
     let file_out = File::create(output)?;
     let mut output_reader = std::io::BufWriter::new(file_out);
-    writeln!(
-        output_reader,
-        "{}\t{}\t{}\t{}\t{}",
-        "node", "ref_node", "distance", "position", "path"
-    )?;
+    writeln!(output_reader, "node\tref_node\tdistance\tposition\tpath")?;
 
     for x in names.iter() {
         // Have multiple pos for a single node

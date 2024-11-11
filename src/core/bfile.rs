@@ -3,14 +3,15 @@ use crate::core::helper::Feature;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use gfa_reader::Pansn;
-use std::fmt::format;
+
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Read};
 use std::{fs, io};
 
 /// Read number of lines
 pub fn count_lines(file_path: &str) -> Result<usize, std::io::Error> {
-    let file = File::open(file_path).expect(format!("ERROR: {} CAN NOT BE READ\n", file_path).as_str());
+    let file =
+        File::open(file_path).unwrap_or_else(|_| panic!("ERROR: {} CAN NOT BE READ\n", file_path));
     let reader = BufReader::new(file);
 
     // Count the lines using iterator folding
@@ -49,7 +50,8 @@ impl MatrixWrapper {
         samples_number: usize,
         snp_number: usize,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let mut file = File::open(filename).expect(&format!("ERROR: {} CAN NOT BE READ", filename));
+        let mut file =
+            File::open(filename).unwrap_or_else(|_| panic!("ERROR: {} CAN NOT BE READ", filename));
         let metadata = fs::metadata(filename)?;
         let mut buffer = vec![0; metadata.len() as usize];
 

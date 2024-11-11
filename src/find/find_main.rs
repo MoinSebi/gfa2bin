@@ -1,5 +1,4 @@
-use crate::core::core::MatrixWrapper;
-use crate::core::helper::{merge_u32_to_u64, Feature};
+use crate::core::helper::merge_u32_to_u64;
 use clap::ArgMatches;
 use gfa_reader::Gfa;
 use std::cmp::PartialEq;
@@ -12,7 +11,7 @@ pub fn find_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>>
     let graph_file = matches.value_of("gfa").unwrap();
     let feature_file = matches.value_of("features").unwrap();
     let output = matches.value_of("output").unwrap();
-    let length = matches
+    let _length = matches
         .value_of("length")
         .unwrap()
         .parse::<usize>()
@@ -39,10 +38,10 @@ enum InputType {
 
 pub fn to_string(dig: u64, input_type: InputType) -> String {
     if input_type == InputType::Segment {
-        return dig.to_string();
+        dig.to_string()
     } else if input_type == InputType::DirSegment {
-        let mut dig1 = dig / 2;
-        let mut dig2 = dig % 2;
+        let dig1 = dig / 2;
+        let dig2 = dig % 2;
         return format!("{}{}", dig1, if dig2 == 0 { "+" } else { "-" });
     } else if input_type == InputType::Link {
         let dig1 = dig / 2;
@@ -57,7 +56,7 @@ pub fn to_string(dig: u64, input_type: InputType) -> String {
             if dig2 % 2 == 0 { "+" } else { "-" }
         );
     } else {
-        format!("help")
+        "help".to_string()
     }
 }
 
@@ -71,9 +70,9 @@ pub fn determine_type(input: &str) -> Result<InputType, Box<dyn std::error::Erro
     let mut lines = reader.lines();
     if let Some(line) = lines.next() {
         let first_line = line.unwrap();
-        if first_line.starts_with("A") {
+        if first_line.starts_with('A') {
             return Ok(InputType::Segment);
-        } else if first_line.starts_with("G") {
+        } else if first_line.starts_with('G') {
             // Count + and - in the firstline
             let mut pm = 0;
             for c in first_line.chars() {
@@ -88,7 +87,7 @@ pub fn determine_type(input: &str) -> Result<InputType, Box<dyn std::error::Erro
             } else {
                 return Ok(InputType::DirSegment);
             }
-        } else if first_line.starts_with("S") {
+        } else if first_line.starts_with('S') {
             return Ok(InputType::Subgraph);
         } else {
             return Ok(InputType::Block);
@@ -101,7 +100,7 @@ pub fn determine_type(input: &str) -> Result<InputType, Box<dyn std::error::Erro
     Ok(InputType::Block)
 }
 
-pub fn read_file_lines(file_path: &str, class: &InputType) -> std::io::Result<Vec<u64>> {
+pub fn read_file_lines(_file_path: &str, class: &InputType) -> std::io::Result<Vec<u64>> {
     let file = File::open("example.txt")?;
 
     // Create a buffered reader for efficient reading.
@@ -125,8 +124,8 @@ pub fn read_file_lines(file_path: &str, class: &InputType) -> std::io::Result<Ve
             }
             index += 1;
         }
-        if line.chars().last().unwrap() == '+' || line.chars().last().unwrap() == '-' {
-            bools[1] = line.chars().last().unwrap() == '+';
+        if line.ends_with('+') || line.ends_with('-') {
+            bools[1] = line.ends_with('+');
             jj[1] = line[index..line.len() - 2].parse().unwrap();
         } else {
             jj[1] = line[index..line.len() - 1].parse().unwrap();

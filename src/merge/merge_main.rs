@@ -34,7 +34,6 @@ pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
-
 /// Read a file which should include path to multiple other files (PLINK)
 ///
 /// Each line one path
@@ -79,7 +78,6 @@ pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>
     Ok(true)
 }
 
-
 /// Merge multiple plain-text files
 ///
 /// Here - Merge bim (PLINK) file
@@ -99,7 +97,6 @@ pub fn merge_bim(fams: &Vec<String>, output_file: &str) -> io::Result<()> {
 
     Ok(())
 }
-
 
 /// Merge BED files
 ///

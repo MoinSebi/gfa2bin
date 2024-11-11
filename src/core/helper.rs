@@ -112,12 +112,12 @@ impl Feature {
         } else if *self == Feature::DirNode {
             return format_unsigned_as_string(input);
         } else if *self == Feature::Edge {
-            let (left, right) = split_u64_to_u32s(input);
+            let (left, _right) = split_u64_to_u32s(input);
 
-            return format_unsigned_as_string(left)
+            return format_unsigned_as_string(left);
         } else {
             let (left, _right) = split_u64_to_u32s(input);
-            return left.to_string()
+            return left.to_string();
         }
     }
 

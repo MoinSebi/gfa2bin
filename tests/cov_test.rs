@@ -27,7 +27,6 @@ fn cov_v1() -> Result<(), Box<dyn std::error::Error>> {
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 67);
 
-
     let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pt.bim")?;
     assert_eq!(content.lines().count(), 67);
 
@@ -59,7 +58,6 @@ fn cov_pn() -> Result<(), Box<dyn std::error::Error>> {
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 999);
 
-
     let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.bim")?;
     assert_eq!(content.lines().count(), 999);
 
@@ -68,7 +66,6 @@ fn cov_pn() -> Result<(), Box<dyn std::error::Error>> {
     // Buffer should be 8 samples + header
     Ok(())
 }
-
 
 #[test]
 /// Test cov pn
@@ -88,7 +85,6 @@ fn cov_pack_pn() -> Result<(), Box<dyn std::error::Error>> {
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 999);
 
-
     let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.bim")?;
     assert_eq!(content.lines().count(), 999);
 
@@ -97,7 +93,6 @@ fn cov_pack_pn() -> Result<(), Box<dyn std::error::Error>> {
     // Buffer should be 8 samples + header
     Ok(())
 }
-
 
 #[test]
 /// Test cov pn
@@ -114,7 +109,6 @@ fn cov_pack1_pn() -> Result<(), Box<dyn std::error::Error>> {
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 999);
-
 
     let content = fs::read_to_string("data/output/gfa2bin.cov.pack.bim")?;
     assert_eq!(content.lines().count(), 999);
@@ -143,7 +137,6 @@ fn cov_pc() -> Result<(), Box<dyn std::error::Error>> {
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 999);
 
-
     let content = fs::read_to_string("data/output/gfa2bin.cov.pc.bim")?;
     assert_eq!(content.lines().count(), 999);
 
@@ -170,7 +163,6 @@ fn cov_pc2() -> Result<(), Box<dyn std::error::Error>> {
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 999);
-
 
     let content = fs::read_to_string("data/output/gfa2bin.cov2.pc.bim")?;
     assert_eq!(content.lines().count(), 999);
