@@ -56,7 +56,6 @@ pub fn wrapper_reader123(buffer: &[u8]) -> PackCompact {
     } else if _bin == DataType::TypeBit {
        PackCompact::read_bin_coverage(buffer)
     } else {
-        println!("pppp");
         PackCompact::read_f32(buffer)
     }
 }
@@ -64,8 +63,6 @@ pub fn init_geno_names(mw: &mut MatrixWrapper, pc: &mut PackCompact, want_node: 
     if pc.node_index.is_empty() {
         pc.node_index = index.clone();
     }
-    println!("{:?}", !pc.is_sequence );
-    println!("{:?}", !want_node);
 
     if !pc.is_sequence || (want_node && pc.is_sequence){
         mw.geno_names = remove_duplicates(&pc.node_index);
@@ -131,16 +128,12 @@ pub fn matrick_pack_wrapper(
         if want_node {
             pc.calc_node_cov();
         } else {
-            println!("ppp1");
             if pc.normalized_coverage.is_empty() {
                 pc.normalized_coverage = pc.coverage.iter().map(|x| *x as f32).collect();
             }
         }
-        println!("{:?}", pc.normalized_coverage.len());
-        println!("{:?}", pc.coverage.len());
 
         let thresh = PackCompact::get_threshold(&pc, keep_zeros, fraction, 0.0, method);
-        println!("{:?}", method.to_string());
         if bimbam {
             f32_to_f32(mw, &pc, thresh, index);
         } else {

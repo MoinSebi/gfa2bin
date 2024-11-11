@@ -95,6 +95,32 @@ impl Feature {
         }
     }
 
+    /// Convert the "index"-u64 to a String
+    pub fn to_string_u64_numeric(&self, input: u64) -> String {
+        if *self == Feature::PWindow {
+            let (left, right) = split_u64_to_u32s(input);
+
+            format_unsigned_as_string(left) + &format_unsigned_as_string(right)
+        } else if *self == Feature::MWindow {
+            let (left, right) = split_u64_to_u32s(input);
+            return format_unsigned_as_string(left) + &format_unsigned_as_string(right);
+        } else if *self == Feature::Block {
+            let (left, right) = split_u64_to_u32s(input);
+            return format_unsigned_as_string(left) + &format_unsigned_as_string(right);
+        } else if Feature::Node == *self {
+            input.to_owned().to_string()
+        } else if *self == Feature::DirNode {
+            return format_unsigned_as_string(input);
+        } else if *self == Feature::Edge {
+            let (left, right) = split_u64_to_u32s(input);
+
+            return format_unsigned_as_string(left)
+        } else {
+            let (left, _right) = split_u64_to_u32s(input);
+            return left.to_string()
+        }
+    }
+
     pub fn identify_feature(pp: &str) -> (Feature, Option<Feature>) {
         let parts: Vec<&str> = pp
             .split(|c| c == '+' || c == '-')

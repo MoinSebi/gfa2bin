@@ -115,7 +115,7 @@ pub fn pos(graph: &Gfa<u32, (), ()>, name: String) -> Vec<(u32, usize)> {
 
             for node in path.nodes.iter() {
                 bb.push((*node, pos1));
-                pos1 = pos1 + graph.get_node_by_id(node).length as usize;
+                pos1 = pos1 + graph.get_sequence_by_id(node).len();
             }
             bb.sort_by(|a, b| a.0.cmp(&b.0));
             return bb;
@@ -180,7 +180,7 @@ pub fn read_nodes(
                             *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
                         }
                     }
-                    distance += graph.get_node_by_id(&node).length as i64;
+                    distance += graph.get_sequence_by_id(&node).len() as i64;
                 }
             }
             for node in path.nodes.iter().rev() {
@@ -194,7 +194,7 @@ pub fn read_nodes(
                             *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
                         }
                     }
-                    distance += graph.get_node_by_id(&node).length as i64;
+                    distance += graph.get_sequence_by_id(&node).len() as i64;
                 }
             }
         }

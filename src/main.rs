@@ -1,5 +1,4 @@
 mod cov;
-mod block;
 mod core;
 mod filter;
 mod find;
@@ -15,7 +14,6 @@ mod view;
 mod window;
 
 
-use crate::block::block_main::block_main;
 use crate::filter::filter_main::filter_main;
 use crate::find::find_main::find_main;
 use crate::graph::graph_main::graph_main;
@@ -426,77 +424,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 
 
-        // .subcommand(
-        //     App::new("block")
-        //         .version("1.0.1")
-        //         .about("Genotyping by pan-genomic blocks")
-        //
-        //         .help_heading("Input parameters")
-        //         .arg(
-        //             Arg::new("gfa")
-        //                 .short('g')
-        //                 .long("graph")
-        //                 .about("GFA input file")
-        //                 .takes_value(true)
-        //                 .required(true),
-        //         )
-        //         .arg(
-        //             Arg::new("PanSN")
-        //                 .long("PanSN")
-        //                 .about("PanSN-spec separator")
-        //                 .takes_value(true),
-        //         )
-        //
-        //
-        //         .help_heading("Parameter")
-        //         .arg(
-        //             Arg::new("window")
-        //                 .short('w')
-        //                 .long("window")
-        //                 .about("Window size (in nodes)")
-        //                 .takes_value(true)
-        //                 .default_value("1000"),
-        //         )
-        //         .arg(
-        //             Arg::new("step")
-        //                 .short('s')
-        //                 .long("step")
-        //                 .about("Step")
-        //                 .takes_value(true)
-        //                 .default_value("1000"),
-        //         )
-        //         .arg(Arg::new("distance")
-        //             .short('d')
-        //             .long("distance")
-        //             .about("Distance till breaking the block")
-        //             .takes_value(true)
-        //             .default_value("10000"))
-        //
-        //
-        //         .help_heading("Output parameter")
-        //         .arg(
-        //             Arg::new("output")
-        //                 .short('o')
-        //                 .long("output")
-        //                 .about("Output prefix for the new plink file")
-        //                 .takes_value(true)
-        //                 .required(true),
-        //         )
-        //         .arg(
-        //             Arg::new("threads")
-        //                 .long("threads")
-        //                 .short('t')
-        //                 .about("Number of threads")
-        //                 .takes_value(true)
-        //                 .default_value("1")
-        //         )
-        //         .arg(
-        //             Arg::new("blocks")
-        //                 .long("blocks")
-        //                 .short('b')
-        //                 .about("Output blocks [default: false]")
-        //         ),
-        // )
+
 
         // This is fine
         .subcommand(
@@ -681,8 +609,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         window_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("subpath") {
         subpath_main(matches)
-    } else if let Some(matches) = matches.subcommand_matches("block") {
-        block_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("view") {
         view_main(matches)
     } else if let Some(matches) = matches.subcommand_matches("filter") {

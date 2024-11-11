@@ -324,7 +324,7 @@ impl MatrixWrapper {
                     "graph\t{}\t{}\t{}\tA\tT",
                     feature.to_string_u64(*x),
                     0,
-                    feature.to_string_u64(*x)
+                    feature.to_string_u64_numeric(*x)
                 )
                 .expect("Can not write file");
             }

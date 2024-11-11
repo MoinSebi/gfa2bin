@@ -156,7 +156,7 @@ pub fn pos(graph: &Gfa<u32, (), ()>, name: String, class: &InputType) -> Vec<(u3
             let mut pos: u32 = 0;
             let mut vec_u64 = Vec::new();
             for i in 0..path.nodes.len() - 1 {
-                pos += graph.get_node_by_id(&path.nodes[i]).length as u32;
+                pos += graph.get_sequence_by_id(&path.nodes[i]).len() as u32;
                 let v1 = path.nodes[i];
                 let v2 = path.dir[i];
                 let v3 = path.nodes[i + 1];
