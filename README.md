@@ -33,13 +33,25 @@ gfa2bin graph -g input.gfa -o output -f node --bimbam
 gfa2bin graph -g input.gfa -o output -f dirnode -m mean -r 50 --pansn '#'
 ````
 
-### align - Using graph alignment
+   
+     
+### cov - Using graph coverage
 
-Convert coverage information from sequence to graph alignments to plink bed files. Either can use plain pack files directly (which will consume large amount of memory) or use one of the custom coverage file formats from packiong repository as input. The packing repository helps to reduce storage and can perform pre-processing on sample level.  
-Comparable to graph subcommand, we offer additional normalization can be run when using value based input. THis normalization is then run on feature level (e.g. nodes or edges). 
+Convert coverage information from sequence-to-graph alignments to plink bed files. Either can use plain pack files directly or use one of the custom coverage file formats from [packing repository](https://github.com/MoinSebi/packing) as input. The packing repository helps to reduce storage and can perform pre-processing on sample level.  
+Comparable to graph subcommand, we offer additional normalization can be run when using value based input. This normalization is then run on feature level (e.g. nodes or edges). 
+
+Inputs: 
+- packlist -> (```-p```)
+- *compressed pack files (tab-sep sample_name and path/to/file) (```--pack-list```)
+- *compressed pack files (concatenated) -> (```-c```)
+
+**Comment:**
+Those with "*" need an additional index, that can be created using the packing repository.
 
 #### Example usage: 
-
+````text
+./target/release/gfa2bin cov --pack-list pack.list.txt -o output.plink
+````
 
 ### Remove
 Remove samples or entries from the plink files (bed, bim, fam). 
@@ -60,8 +72,6 @@ Filter entries or samples from a plink file.
 **Genotypes can be filtered by:**
 - MAF (major allele frequency)
 - maf (minor allele frequency)
-
-Genotypes can be filtered by:
 
 
 ### Split and merge
@@ -91,10 +101,10 @@ The output is made for extracting the sequence from the initial sequence and bla
 |------|----------|----------|----------|----------|
 | 3    | 1        | 0        | 0        | a#1#Chr1 |
 | 1    | 1        | -1       | 0        | a#1#Chr1 |
-| 4    | 2        | 0        | 10       | a#1#Chr1 |
+| 4    | 2        | 0        | 10       | a#1#Chr1 |k
 | 2    | 2        | -1       | 10       | a#1#Chr1 |
 | 5    | 5        | -1       | 15       | a#1#Chr1 |
-Comment: Distance is the distance between the input node and the reference node in base pairs. Position is the position of the reference node in the reference path. Distance of -1 means that the node is presence in the reference, and 0 interprets that the node is one node away from the reference node (no nodes (bp) inbetween).
+**Comment:** Distance is the distance between the input node and the reference node in base pairs. Position is the position of the reference node in the reference path. Distance of -1 means that the node is presence in the reference, and 0 interprets that the node is one node away from the reference node (no nodes (bp) inbetween).
 
 
 ### Nearest node 

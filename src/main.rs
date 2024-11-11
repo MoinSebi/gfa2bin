@@ -146,7 +146,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         .subcommand(
             App::new("cov")
-                .about("Conversion from a covment (pack or compressed pack)")
+                .about("Conversion from a coverage information (plain-text or compressed)")
                 .version("0.1.0")
                 .setting(AppSettings::ArgRequiredElseHelp)
 
@@ -156,20 +156,21 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Arg::new("pack")
                         .short('p')
                         .long("packlist")
-                        .about("List of pack files")
+                        .about("List of plain-text pack files (one per line). Tab separated with sample name. Example [tair10   /path/to/file]")
                         .takes_value(true),
                 )
                 .arg(
                     Arg::new("pack compressed")
                         .short('c')
-                        .long("packcompressed")
-                        .about("concatenated bpack file")
+                        .long("cp")
+                        .about("Concatenated bpack file (packing)")
                         .takes_value(true),
                 )
                 .arg(
                     Arg::new("pc-list")
-                        .long("pc-list")
-                        .about("File with pc files (one per line)")
+                        .short('l')
+                        .long("cp-list")
+                        .about("List of compressed pack files (one per line). Tab separated with sample name. Example [tair10   /path/to/file]")
                         .takes_value(true),
                 )
                 .arg(
