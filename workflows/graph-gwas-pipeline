@@ -7,7 +7,7 @@ SCRIPT_PATH=$(realpath $0)
 WORKFLOW_DIR=$(dirname $SCRIPT_PATH)
 CORES=6
 
-
+# set -xv
 ###############################################################################
 # Check for command line arguments
 # If the user provides a different number of cores, use that instead of the default
@@ -120,14 +120,14 @@ if [[ -n ${PROFILE} ]]; then
             --configfile ${WORKFLOW_CONFIG} \
             --use-conda \
             --profile ${PROFILE} \
-            --cores ${CORES}
+            --cores ${CORES} \
             $@
   exit $?
 else
   snakemake -s ${WORKFLOW_DIR}/workflow/Snakefile \
             --configfile ${WORKFLOW_CONFIG} \
             --use-conda \
-            --cores ${CORES}
+            --cores ${CORES} \
             $@
   exit $?
 fi
