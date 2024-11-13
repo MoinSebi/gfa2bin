@@ -114,9 +114,20 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-snakemake -s ${WORKFLOW_DIR}/workflow/Snakefile \
-          --configfile ${WORKFLOW_CONFIG} \
-          --use-conda \
-          --cores ${CORES}
-          $@
-exit $?
+# Check if a profile was provided
+if [[ -n ${PROFILE} ]]; then
+  snakemake -s ${WORKFLOW_DIR}/workflow/Snakefile \
+            --configfile ${WORKFLOW_CONFIG} \
+            --use-conda \
+            --profile ${PROFILE} \
+            --cores ${CORES}
+            $@
+  exit $?
+else
+  snakemake -s ${WORKFLOW_DIR}/workflow/Snakefile \
+            --configfile ${WORKFLOW_CONFIG} \
+            --use-conda \
+            --cores ${CORES}
+            $@
+  exit $?
+fi
