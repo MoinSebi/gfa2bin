@@ -1,0 +1,3 @@
+sample,fq1,fq2
+6909,testdata/fastq/6909.1001G.PE.1.250k.fastq.gz,testdata/fastq/6909.1001G.PE.2.250k.fastq.gz
+9741,testdata/fastq/9741.1001G.PE.1.250k.fastq.gz,testdata/fastq/9741.1001G.PE.2.250k.fastq.gz

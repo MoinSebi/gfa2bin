@@ -19,6 +19,18 @@ wf_basedir = workflow.current_basedir
 
 
 ###############################################################################
+# 00 Validate inputs
+###############################################################################
+module validate_inputs:
+    snakefile:
+        "00_validate_inputs/Snakefile"
+    config: config
+    # prefix: "00_validate_inputs"
+
+use rule * from validate_inputs as validate_inputs_*
+
+
+###############################################################################
 # 01 Prepare the fasta reference file from genome graph
 ###############################################################################
 module prepare_fasta_ref:
@@ -33,13 +45,14 @@ use rule * from prepare_fasta_ref as prepare_fasta_ref_*
 ###############################################################################
 # 02 a/b make pack files (pc), either from a fasta reference or a graph
 ###############################################################################
-# We import both worklfows here, but only one will be used
+# We import both workflows here, but only one will be used
 module make_packs_align2fasta_ref:
     snakefile:
         "02a_make_packs_align2fasta_ref/Snakefile"
     config: config
     # prefix: "make_packs"
 
+# Not checked/done yet
 module make_packs_align2graph:
     snakefile:
         "02b_make_packs_align2graph/Snakefile"
@@ -72,18 +85,18 @@ use rule * from make_fambedbim as make_fambedbim_*
 # kinship matrix file, depending on the config setting
 # 
 # We use a file kinship as default! (SNP should be removed, too much work to put it here)
-# Graph maybe, as a super advanced here be dragons mode
-module snp_kinship:
-    snakefile:
-        "04a_SNP_kinship/Snakefile"
-    config: config
-    # prefix: "kinship"
+# Graph maybe, as a super advanced here be dragons mode. Commented out for now.
+# module snp_kinship:
+#     snakefile:
+#         "04a_SNP_kinship/Snakefile"
+#     config: config
+#     # prefix: "kinship"
 
-module graph_kinship:
-    snakefile:
-        "04b_Graph_kinship/Snakefile"
-    config: config
-    # prefix: "kinship"
+# module graph_kinship:
+#     snakefile:
+#         "04b_Graph_kinship/Snakefile"
+#     config: config
+#     # prefix: "kinship"
 
 module file_kinship:
     snakefile:

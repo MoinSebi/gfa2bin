@@ -1,19 +1,112 @@
-#wildcard_constraints:
+wildcard_constraints:
+    reference_name=config["reference_name"]
 #    mode=config["threshold_mode"]
 
+# TODO Check phenotype naming of files, and phenotype handling -- so far we have only one phenotype
+# Name should be provided somewhere, and we should include a workflow for multiple phenotypes processing
+
+wf_basedir = workflow.current_basedir
+mode = f"{config['normalization_method']}_{config['normalization_method_fraction']}"
+# phenotype_id=config["phenotype_id"]
+print(config["phenotypes"])
+print([list(k.keys())[0] for k in config["phenotypes"]])
 rule target:
     input:
-        assoc_file=expand("results/05_gwas/{reference_name}.{mode}.assoc.txt", reference_name=config["reference_name"], mode=config["threshold_mode"]),
+        assoc_file=expand("results/05_gwas/{phenotype_id}/{reference_name}.{mode}.assoc.txt", reference_name=config["reference_name"], mode=mode, phenotype_id=[list(k.keys())[0] for k in config["phenotypes"]]),
+        # qq_plot=expand("results/05_gwas/output/{phenotype_id}/{reference_name}.{mode}.qq.png", reference_name=config["reference_name"], mode=mode, phenotype_id=phenotype_id)
 
-# + samples, phenotype values
-rule create_fam_file:
+# Fill the fam file with the phenotype values
+# Here, we can have multiple phenotypes, so it is a one to many rule
+
+# Prepare phenotype#phenotype file pair for use as a wild card
+
+rule create_phenotype_names_file:
+    params:
+        phenotypes=expand("{phenotype_id}", phenotype_id=[list(k.keys())[0] for k in config["phenotypes"]])
+    output:
+        phenotype_info_file="results/05_gwas/{phenotype_id}/phenotype_file.txt"
+    run:
+        with open(output.phenotype_info_file, "w") as f:
+            for p in config["phenotypes"]:
+                if list(p.keys())[0] == wildcards.phenotype_id:
+                    f.write(f"{list(p.keys())[0]}#{list(p.values())[0]}\n")
+
+
+rule fill_fam_files:
+    conda:
+        "../envs/main.yaml"
+    params:
+        wf_basedir=wf_basedir
+        
+    input:
+        fam_file="results/03_make_fambedbim/{reference_name}.{mode}.fam",
+        phenotype_info_file="results/05_gwas/{phenotype_id}/phenotype_file.txt"
+    output:
+        filled_fam_file="results/05_gwas/{phenotype_id}/{reference_name}.{mode}.fam"
+    shell:
+        """
+        PHENOTYPE_FILE=$(cat {input.phenotype_info_file} | cut -d "#" -f 2)
+        {params.wf_basedir}/scripts/create_phenotype_fam_file.py \
+            {input.fam_file} \
+            $PHENOTYPE_FILE \
+            {output.filled_fam_file}       
+        """
+
+rule copy_bed_bims:
+    input:
+        bed_file="results/03_make_fambedbim/{reference_name}.{mode}.bed",
+        bim_file="results/03_make_fambedbim/{reference_name}.{mode}.bim"
+    output:
+        bed_file="results/05_gwas/{phenotype_id}/{reference_name}.{mode}.bed",
+        bim_file="results/05_gwas/{phenotype_id}/{reference_name}.{mode}.bim"
+    shell:
+        "cp {input.bed_file} {output.bed_file} && cp {input.bim_file} {output.bim_file}"
+
+# run gemma and create the assoc file
+rule run_gemma:
+    conda:
+        "../envs/main.yaml"
+    params:
+        bfile_prefix="results/05_gwas/{phenotype_id}/{reference_name}.{mode}",
+        output_gemma_dir="results/05_gwas",
+        gemma_output_prefix="{phenotype_id}/{reference_name}.{mode}"
     input:
         kinship_matrix="results/04_kinship/{reference_name}.kinship",
-        fam_file="results/03_make_fambedbim/{reference_name}.{mode}.fam",
-
+        filled_fam_file="results/05_gwas/{phenotype_id}/{reference_name}.{mode}.fam",
+        bed_file="results/05_gwas/{phenotype_id}/{reference_name}.{mode}.bed",
+        bim_file="results/05_gwas/{phenotype_id}/{reference_name}.{mode}.bim"
     output:
-        assoc_file="results/05_gwas/{reference_name}.{mode}.assoc.txt"
+        assoc_file="results/05_gwas/{phenotype_id}/{reference_name}.{mode}.assoc.txt"
     shell:
-        "touch -f {output.assoc_file}"
+       # -lmm2
+        """
+        cd {params.output_gemma_dir}
+        mkdir -p output/{wildcards.phenotype_id}
+        gemma -k ../../{input.kinship_matrix} \
+              -km 1 \
+              -bfile ../../{params.bfile_prefix} \
+              -lmm 2 \
+              -o {params.gemma_output_prefix} \
+              -lmin 0.0000001 -lmax 0.001
+        # Move the gemma outputs
+        mv output/{wildcards.phenotype_id}/*.txt {wildcards.phenotype_id}/
+        """
 
-# No gwas as option?
+# Create qq plot
+rule create_qq_plot:
+    conda:
+        "../envs/main.yaml"
+    params:
+        wf_basedir=wf_basedir
+    input:
+        assoc_file="results/05_gwas/{phenotype_id}/{reference_name}.{mode}.assoc.txt"
+    output:
+        qq_plot="results/05_gwas/{phenotype_id}/{reference_name}.{mode}.qq.png"
+    shell:
+        """
+        {params.wf_basedir}/scripts/qqplot.py \
+            --input {input.assoc_file} \
+            --output {output.qq_plot}
+        """
+
+# TODO the cool Chr manhattan plot?

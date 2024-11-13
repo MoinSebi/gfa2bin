@@ -1,0 +1,12 @@
+name: graph-gwas-pipeline
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - pandas
+  - odgi=0.8.2
+  - bwa=0.7.17
+  - vg=1.33.0 #Or the newest, 1.60.0?
+  - gemma=0.98.3
+  - matplotlib

@@ -1,6 +1,8 @@
 # General configuration for all modules
-samples: "config/samples.csv"
-phenotypes: "config/phenotypes.csv"
+samples: "testdata/config/samples.csv"
+phenotypes: 
+  - "test": "testdata/config/phenotypes.csv"
+  - "test2": "testdata/config/phenotypes2.csv"
 graph: "testdata/graphs/2155413.gfa"
 reference_name: "1001g_plus_pan"
 pan_sn_delimiter: "#"
@@ -10,17 +12,19 @@ pan_sn_delimiter: "#"
 
 # 02 - make pack files
 use_fasta_ref: true
-
+# gfainject: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/gfainject/target/release/gfainject"
 
 # 03 - make fambedbims
-threshold_mode: "p0.1"
+normalization_method: "percentile"
+normalization_method_fraction: "0.1"
+gfa2bin: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/gfa2bin/target/release/gfa2bin"
 
 
 # 04 - make kinship
 kinship_method: "file"
 use_snp_kinship: false
 use_graph_kinship: false
-kinship_matrix: "kinship_matrix.kinship"
+kinship_matrix: "testdata/config/testdata.kinship"
 
 
 # 05 - gwas

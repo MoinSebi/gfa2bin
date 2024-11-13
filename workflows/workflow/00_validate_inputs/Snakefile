@@ -1,0 +1,42 @@
+wf_basedir = workflow.current_basedir
+
+rule target:
+    input:
+        graph_validation_file=expand("results/00_validate_inputs/{reference_name}.graph_validation.txt", reference_name=config["reference_name"]),
+        sample_names_validation_file="results/00_validate_inputs/sample_names_validation.txt"
+
+rule validate_input_graph:
+    params:
+        delimiter=config["pan_sn_delimiter"],
+        wf_basedir=wf_basedir
+    input:
+        graph_file=config["graph"],
+    output:
+        validation_file="results/00_validate_inputs/{reference_name}.graph_validation.txt"
+    shell:
+        """
+        {params.wf_basedir}/scripts/check_graph.bash {input.graph_file} '{params.delimiter}' | tee {output.validation_file}
+        """
+
+
+rule validate_sample_names:
+    params:
+        wf_basedir=wf_basedir
+    input:
+        samples_file=config["samples"],
+        phenotype_files=[list(k.values())[0] for k in config["phenotypes"]]
+    output:
+        validation_file="results/00_validate_inputs/sample_names_validation.txt"
+    conda:
+        "../envs/main.yaml"
+    shell:
+        """
+        echo "Validation of sample names in phenotype files" > {output.validation_file}
+        for PHENOTYPE_FILE in {input.phenotype_files}; do
+            echo "--- $PHENOTYPE_FILE ---" >> {output.validation_file}
+            {params.wf_basedir}/scripts/validate_sample_names.py \
+                --samples_file {input.samples_file} \
+                --phenotypes_file $PHENOTYPE_FILE \
+                >> {output.validation_file}
+        done
+        """
