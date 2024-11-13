@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+
+###############################################################################
+# Environment settings -- adjust as needed
+###############################################################################
+SCRIPT_PATH=$(realpath $0)
+WORKFLOW_DIR=$(dirname $SCRIPT_PATH)
+CORES=6
+
+
+###############################################################################
+# Check for command line arguments
+# If the user provides a different number of cores, use that instead of the default
+# The user can provide a cluster profile to use with snakemake
+# The cores argument can be provided as -c or --cores
+# The profile argument can be provided as -p or --profile
+# All further arguments are forwarded to snakemake
+# Additionally, a --help or -h argument can be provided to show a help message
+###############################################################################
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
+    -c|--cores)
+      CORES="$2"
+      shift
+      shift
+      ;;
+    -p|--profile)
+      PROFILE="$2"
+      shift
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: $0 [-c|--cores <cores>] [-p|--profile <profile>] [snakemake arguments]"
+      echo "  -c|--cores <cores>     Number of cores to use for the workflow (default: 6)"
+      echo "  -p|--profile <profile> Cluster profile to use with snakemake"
+      echo "  [snakemake arguments]  Additional arguments to pass to snakemake"
+      exit 0
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+###############################################################################
+# Check for conda availability
+###############################################################################
+CONDA=$(command -v conda)
+if [[ $? -ne 0 ]]; then
+  echo "Conda not available in PATH!"
+  echo "Please install conda, preferably using miniforge."
+  echo "To install conda via miniforge, run:"
+  echo "   'wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh'"
+  echo "   'bash Miniforge3-$(uname)-$(uname -m).sh'"
+  echo "See https://github.com/conda-forge/miniforge for more details."
+  exit 1
+fi
+
+
+###############################################################################
+# Check for snakemake executable and version
+# Check if snakemake is installed and if the version is at least 6.1.0
+###############################################################################
+SNAKEMAKE=$(command -v snakemake)
+if [[ $? -ne 0 ]]; then
+  echo "Snakemake not available in PATH!"
+  echo "Please install snakemake, version 6.1.0 or higher, preferably using conda."
+  echo "To install snakemake using conda, run:"
+  echo "  'conda create -n snakemake -c bioconda -c conda-forge snakemake'"
+  echo "Then activate the environment with 'conda activate snakemake' or 'source activate snakemake'."
+  exit 1
+fi
+
+
+#CONDA_ENV=/tmp/global2/ibezrukov2/conda/envs/snakemake610
+
+
+###############################################################################
+# Find config file
+# Check the following order:
+# ./config/config.yaml
+# ./config.yaml
+# If config file is not found, copy the default config directory,
+# inform the user to edit it, and exit.
+###############################################################################
+if [[ -f ${WORKFLOW_DIR}/config/config.yaml ]]; then
+  WORKFLOW_CONFIG=${WORKFLOW_DIR}/config/config.yaml
+elif [[ -f ${WORKFLOW_DIR}/config.yaml ]]; then
+  WORKFLOW_CONFIG=${WORKFLOW_DIR}/config.yaml
+else
+  echo 'Config file not found in either ./config/ or ./'
+  echo 'Copying the default config template to ./config/'
+  cp -r ${WORKFLOW_DIR}/config_template ${WORKFLOW_DIR}/config
+  echo 'Please edit the config file and run the workflow again.'
+  echo 'You need to edit at least the following points:'
+  echo ' - config/samples.csv for the list of samples and their corresponding fastq files'
+  echo ' - phenotype file(s) and IDs. At least one phenotype file is required.'
+  echo ' - graph file -- the graph file should be in gfa format, contain paths, no walks.'
+  echo '                 The path names should confirm to the PanSN specification:'
+  echo '                 [sample_name][delim][haplotype_id][delim][contig_or_scaffold_name]'
+  echo ' - reference_name -- a meaningful name for the reference, e.g. the same as the graph file.'
+  echo ' - kinship_matrix -- a kinship matrix file in the format of the GEMMA kinship matrix.'
+  exit 1
+fi
+
+
+###############################################################################
+# Run the workflow
+###############################################################################
+# source activate ${CONDA_ENV}
+if [[ $? -ne 0 ]]; then
+  echo 'Could not activate conda enviroment ${CONDA_ENV}!'
+  exit 1
+fi
+
+# Check if a profile was provided
+if [[ -n ${PROFILE} ]]; then
+  snakemake -s ${WORKFLOW_DIR}/workflow/Snakefile \
+            --configfile ${WORKFLOW_CONFIG} \
+            --use-conda \
+            --profile ${PROFILE} \
+            --cores ${CORES}
+            $@
+  exit $?
+else
+  snakemake -s ${WORKFLOW_DIR}/workflow/Snakefile \
+            --configfile ${WORKFLOW_CONFIG} \
+            --use-conda \
+            --cores ${CORES}
+            $@
+  exit $?
+fi
