@@ -1,0 +1,80 @@
+###############################################################################
+# General configuration for all modules
+###############################################################################
+
+# Path to the samples file. An example file is provided and included here in the
+# bootstrap config directory, so you can check the format, but you need to modify
+# it with your data, or provide your own.
+samples: "config/samples.csv"
+
+# Path to the phenotype files. You can provide multiple phenotypes, each with a
+# unique key. An example file is provided and included here in the bootstrap
+# config directory, but you need to modify it with your data, or provide your own.
+# The key is used to identify the phenotype in the workflow configuration, and for
+# the output files.
+# The phenotype values should correspond to the plink fam format, see
+#    https://www.cog-genomics.org/plink/1.9/formats#fam
+phenotypes: 
+  - "CHANGETHIS_AND_THE_PATH_TO_THE_FILE": "config/phenotypes.csv"
+
+# Path the graph in .gfa format. The graph should only contain paths, no walks.
+# The path names should confirm to the PanSN specification:
+#    [sample_name][delim][haplotype_id][delim][contig_or_scaffold_name]
+# The delimiter is specified in the pan_sn_delimiter field below.
+graph: "!!!CHANGETHIS!!!/to/your/graph.gfa"
+
+# Reference name, which is used in output files of the workflow.
+# This is useful if you are running multiple workflows with different references.
+# It can correspond to the name of the reference genome.
+reference_name: "!!!CHANGETHIS_TO_YOUR_REFERENCE_NAME!!!"
+pan_sn_delimiter: "#"
+
+
+##############################################################################
+# 01 - Prepare reference genome
+##############################################################################
+
+# Nothing to set (yet)
+
+
+##############################################################################
+# 02 - make pack files
+##############################################################################
+
+# If set to true, the the graph is converted to a linear fasta reference for
+# mapping. The mappings are then injected back into the graph.
+# This is the default behavior.
+use_fasta_ref: true
+
+
+##############################################################################
+# 03 - make fambedbims
+##############################################################################
+
+# Method for normalization of the coverage values. The settings below are
+# the recommended values, but can be changed if needed.
+normalization_method: "percentile"
+normalization_method_fraction: "0.1"
+
+# Path to the gfa2bin tool.
+# If you have compiled the tool in the cloned repository, the path set below
+# does not need to be changed. If you have compiled the tool elsewhere, or
+# if you are using a different version, you need to adjust it.
+# If not set, or empty, it is assumed that the tool is in the PATH.
+gfa2bin: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/gfa2bin/target/release/gfa2bin"
+
+
+##############################################################################
+# 04 - make kinship
+##############################################################################
+
+# Kinship matrix settings. A kinship matrix is needed for the GWAS analysis.
+# Currently, the "file" method is the only one supported, where the kinship
+# matrix is provided as a file in the GEMMA format. You need to adapt the path
+# to the location of your kinship matrix file.
+kinship_method: "file"
+kinship_matrix: "!!!CHANGETHIS!!!/to/your/kinship/file.kinship"
+
+
+# 05 - gwas
+# Nothing to set (yet)

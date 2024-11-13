@@ -1,5 +1,9 @@
 wf_basedir = workflow.current_basedir
 
+from snakemake.utils import validate
+
+validate(config, "../../schemas/config.schema.yaml")
+
 rule target:
     input:
         graph_validation_file=expand("results/00_validate_inputs/{reference_name}.graph_validation.txt", reference_name=config["reference_name"]),

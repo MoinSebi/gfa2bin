@@ -22,8 +22,6 @@ gfa2bin: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/gfa2bin/target/rel
 
 # 04 - make kinship
 kinship_method: "file"
-use_snp_kinship: false
-use_graph_kinship: false
 kinship_matrix: "testdata/config/testdata.kinship"
 
 

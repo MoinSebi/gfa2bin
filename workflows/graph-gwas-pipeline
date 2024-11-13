@@ -14,6 +14,7 @@ CORES=6
 # The user can provide a cluster profile to use with snakemake
 # The cores argument can be provided as -c or --cores
 # The profile argument can be provided as -p or --profile
+# -b or --bootstrap can be used to bootstrap the workflow.
 # All further arguments are forwarded to snakemake
 # Additionally, a --help or -h argument can be provided to show a help message
 ###############################################################################
@@ -25,6 +26,10 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -b|--bootstrap)
+      BOOTSTRAP="true"
+      shift
+      ;;
     -p|--profile)
       PROFILE="$2"
       shift
@@ -34,6 +39,7 @@ while [[ $# -gt 0 ]]; do
       echo "Usage: $0 [-c|--cores <cores>] [-p|--profile <profile>] [snakemake arguments]"
       echo "  -c|--cores <cores>     Number of cores to use for the workflow (default: 6)"
       echo "  -p|--profile <profile> Cluster profile to use with snakemake"
+      echo "  -b|--bootstrap         Bootstrap the workflow"
       echo "  [snakemake arguments]  Additional arguments to pass to snakemake"
       exit 0
       ;;
@@ -75,23 +81,19 @@ fi
 
 #CONDA_ENV=/tmp/global2/ibezrukov2/conda/envs/snakemake610
 
+###############################################################################
+# Bootstrap the workflow?
+###############################################################################
+if [[ -n ${BOOTSTRAP} ]]; then
+  # Check if config/config.yaml or ./config.yaml is already present, if so exit
+  if [[ -f config/config.yaml || -f config.yaml ]]; then
+    echo 'Config file config.yaml already exists in either ./config/ or ./'
+    echo 'Remove this first, if you want to run a fresh bootstrap.'
+    exit 1
+  fi
 
-###############################################################################
-# Find config file
-# Check the following order:
-# ./config/config.yaml
-# ./config.yaml
-# If config file is not found, copy the default config directory,
-# inform the user to edit it, and exit.
-###############################################################################
-if [[ -f ${WORKFLOW_DIR}/config/config.yaml ]]; then
-  WORKFLOW_CONFIG=${WORKFLOW_DIR}/config/config.yaml
-elif [[ -f ${WORKFLOW_DIR}/config.yaml ]]; then
-  WORKFLOW_CONFIG=${WORKFLOW_DIR}/config.yaml
-else
-  echo 'Config file not found in either ./config/ or ./'
   echo 'Copying the default config template to ./config/'
-  cp -r ${WORKFLOW_DIR}/config_template ${WORKFLOW_DIR}/config
+  cp -r ${WORKFLOW_DIR}/config_template config
   echo 'Please edit the config file and run the workflow again.'
   echo 'You need to edit at least the following points:'
   echo ' - config/samples.csv for the list of samples and their corresponding fastq files'
@@ -101,6 +103,25 @@ else
   echo '                 [sample_name][delim][haplotype_id][delim][contig_or_scaffold_name]'
   echo ' - reference_name -- a meaningful name for the reference, e.g. the same as the graph file.'
   echo ' - kinship_matrix -- a kinship matrix file in the format of the GEMMA kinship matrix.'
+  exit 0
+fi
+
+
+###############################################################################
+# Find config file
+# Check the following order:
+# ./config/config.yaml
+# ./config.yaml
+# If config file is not found, copy the default config directory,
+# inform the user to edit it, and exit.
+###############################################################################
+if [[ -f config/config.yaml ]]; then
+  WORKFLOW_CONFIG=config/config.yaml
+elif [[ -f config.yaml ]]; then
+  WORKFLOW_CONFIG=config.yaml
+else
+  echo 'Config file config.yaml not found in either ./config/ or ./'
+  echo "Please run $0 --bootstrap to create a template for the config file."
   exit 1
 fi
 
