@@ -46,11 +46,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .about("Convert GFA file (v1) to plink (bed, bim, fam). \n \
                                 Threshold modifier are used used to create a (1) presence-absence matrix or (2) scaling in bimbam format.")
 
-                .version("0.1.0")
                 .setting(AppSettings::ArgRequiredElseHelp)
 
 
-                .help_heading("Input parameters")
+                .help_heading("Input options")
                 .arg(
                     Arg::new("gfa")
                         .short('g')
@@ -147,7 +146,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .subcommand(
             App::new("cov")
                 .about("Conversion from a coverage information (plain-text or compressed)")
-                .version("0.1.0")
                 .setting(AppSettings::ArgRequiredElseHelp)
 
 
@@ -248,7 +246,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .subcommand(
             App::new("remove")
                 .about("Remove samples or genotypes from you graph/covment-based plink file")
-                .version("0.1.0")
                 .help_heading("Input parameters")
                 .arg(
                     Arg::new("plink")
@@ -306,7 +303,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Will work on this later
         .subcommand(
             App::new("find")
-                .version("1.0.1")
                 .about("Find features in the graph and return a BED file for further analysis")
                 .arg(
                     Arg::new("gfa")
@@ -343,7 +339,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .subcommand(
             App::new("window")
-                .version("1.0.1")
                 .about("Find features in the graph and return a BED file for further analysis")
                 .arg(
                     Arg::new("plink")
@@ -379,7 +374,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .subcommand(
             App::new("subpath")
-                .version("1.0.1")
                 .about("Find features in the graph and return a BED file for further analysis")
                 .arg(
                     Arg::new("gfa")
@@ -429,7 +423,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         // This is fine
         .subcommand(
             App::new("view")
-                .version("1.0.0")
                 .about("Convert BED to VCF")
                 .arg(
                     Arg::new("plink")
@@ -452,7 +445,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         .subcommand(
             App::new("filter")
-                .version("1.0.0")
                 .about("Filter a PLINK file. (1) 'SNPs' by allele frequency or (2) path/samples by matrix coverage")
                 .arg(
                     Arg::new("plink")
@@ -503,7 +495,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .subcommand(
             App::new("merge")
-                .version("1.0.0")
                 .about("Merge the multiple plink files into one. Must be the same samples (fam).")
                 .arg(
                     Arg::new("plink")
@@ -526,8 +517,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         .subcommand(
             App::new("split")
-                .version("1.0.0")
                 .about("Split PLINK files into multiple files")
+                .help_heading("Input options")
                 .arg(
                     Arg::new("plink")
                         .short('p')
@@ -537,6 +528,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .required(true)
 
                 )
+
+                .help_heading("Split pParameter")
                 .arg(
                     Arg::new("splits")
                         .short('s')
@@ -546,6 +539,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .required(true)
                 )
 
+                .help_heading("Output options")
                 .arg(
                     Arg::new("output")
                         .short('o')
@@ -558,8 +552,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         .subcommand(
             App::new("nearest")
-                .version("1.0.0")
                 .about("Nearest node to reference node")
+
+                .help_heading("Input options")
                 .arg(
                     Arg::new("gfa")
                         .short('g')
@@ -568,6 +563,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true),
                 )
+
+                .help_heading("Reference options")
                 .arg(Arg::new("prefix")
                     .short('p')
                     .long("prefix")
@@ -577,10 +574,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .long("references")
                     .about("Reference nodes")
                     .takes_value(true))
+
+                .help_heading("Node options ")
                 .arg(Arg::new("nodes")
                     .long("nodes")
                     .about("Nodes to find the nearest reference node")
                     .takes_value(true))
+
+                .help_heading("Output options")
                 .arg(
                     Arg::new("output")
                         .short('o')
