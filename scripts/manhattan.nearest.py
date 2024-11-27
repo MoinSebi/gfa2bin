@@ -26,7 +26,8 @@ def read_assoc(f: str) -> pd.DataFrame:
     :return:
     """
     df = pd.read_csv(f, sep = "\t")
-    df["log"] = - np.log10(df["p_lrt"])
+    last_col = df.columns[-1]
+    df["log"] = - np.log10(df[last_col])
     df["node"] = df["ps"]
     return df
 

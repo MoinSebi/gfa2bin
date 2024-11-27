@@ -21,7 +21,8 @@ def read_assoc(filename: str) -> pd.DataFrame:
     :return: Data in pandas Dataframe
     """
     df = pd.read_csv(filename, sep = "\t")
-    df["log"] = - np.log10(df["p_lrt"])
+    last_col = df.columns[-1]
+    df["log"] = - np.log10(df[last_col])
 
     return df
 
