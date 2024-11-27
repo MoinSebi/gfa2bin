@@ -28,6 +28,7 @@ use clap::{App, AppSettings, Arg};
 use crate::cov::cov_main::cov_main;
 use crate::nearest::nearest_main::nearest_main;
 use std::error::Error;
+use std::ops::Index;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("gfa2bin")
@@ -41,6 +42,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .long("verbose")
                 .about("verbose "),
         )
+
+
         .subcommand(
             App::new("graph")
                 .about("Convert GFA file (v1) to plink (bed, bim, fam). \n \
@@ -134,7 +137,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                          .about("Phenotype value")
                          .takes_value(true)
                 )
-
                 .arg(
                     Arg::new("bimbam")
                         .long("bimbam")
@@ -180,7 +182,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 )
 
 
-                .help_heading("thresholds")
+                .help_heading("Threshold modifier")
                 .arg(Arg::new("absolute-threshold")
                     .long("absolute-threshold")
                     .about("Set a absolute threshold")
@@ -245,8 +247,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         .subcommand(
             App::new("remove")
-                .about("Remove samples or genotypes from you graph/covment-based plink file")
-                .help_heading("Input parameters")
+                .about("Remove samples or genotypes from you graph/coverage-based plink file")
+                .help_heading("Input options")
                 .arg(
                     Arg::new("plink")
                         .short('p')
@@ -304,6 +306,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .subcommand(
             App::new("find")
                 .about("Find features in the graph and return a BED file for further analysis")
+                .help_heading("Input options")
                 .arg(
                     Arg::new("gfa")
                         .short('g')
@@ -320,6 +323,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true),
                 )
+
+                .help_heading("Output options")
                 .arg(
                     Arg::new("output")
                         .short('o')
@@ -340,6 +345,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .subcommand(
             App::new("window")
                 .about("Find features in the graph and return a BED file for further analysis")
+
+                .help_heading("Input options")
                 .arg(
                     Arg::new("plink")
                         .short('p')
@@ -348,14 +355,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true),
                 )
-                .arg(
-                    Arg::new("output")
-                        .short('o')
-                        .long("output")
-                        .about("Output prefix for the new plink file")
-                        .takes_value(true)
-                        .required(true),
-                )
+
+                .help_heading("Window options")
                 .arg(
                     Arg::new("length")
                         .short('l')
@@ -369,12 +370,23 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .long("blocks")
                         .short('b')
                         .about("Output blocks [default: false]")
-                        .takes_value(true),
+                        .takes_value(true),)
+
+                .help_heading("Output options")
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
                 ),
         )
         .subcommand(
             App::new("subpath")
                 .about("Find features in the graph and return a BED file for further analysis")
+
+                .help_heading("Input options")
                 .arg(
                     Arg::new("gfa")
                         .short('g')
@@ -383,14 +395,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true),
                 )
-                .arg(
-                    Arg::new("output")
-                        .short('o')
-                        .long("output")
-                        .about("Output prefix for the new plink file")
-                        .takes_value(true)
-                        .required(true),
-                )
+
+                .help_heading("Subpath options")
                 .arg(
                     Arg::new("length")
                         .short('l')
@@ -413,7 +419,17 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .about("Number of threads")
                         .takes_value(true)
                         .default_value("1")
-                ),
+                )
+
+                .help_heading("Output options")
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
+                )
         )
 
 
@@ -424,6 +440,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .subcommand(
             App::new("view")
                 .about("Convert BED to VCF")
+
+                .help_heading("Input options")
                 .arg(
                     Arg::new("plink")
                         .short('p')
@@ -432,6 +450,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true),
                 )
+
+                .help_heading("Output options")
                 .arg(
                     Arg::new("output")
                         .short('o')
@@ -446,6 +466,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .subcommand(
             App::new("filter")
                 .about("Filter a PLINK file. (1) 'SNPs' by allele frequency or (2) path/samples by matrix coverage")
+
+                .help_heading("Input options")
                 .arg(
                     Arg::new("plink")
                         .short('p')
@@ -454,14 +476,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true),
                 )
-                .arg(
-                    Arg::new("output")
-                        .short('o')
-                        .long("output")
-                        .about("Output prefix for the new plink file")
-                        .takes_value(true)
-                        .required(true),
-                )
+
+                .help_heading("Filter options")
                 .arg(
                     Arg::new("maf")
                         .short('m')
@@ -492,10 +508,24 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .about("Maximum amount of entries")
                         .takes_value(true),
                 )
+
+                .help_heading("Output options")
+                .arg(
+                    Arg::new("output")
+                        .short('o')
+                        .long("output")
+                        .about("Output prefix for the new plink file")
+                        .takes_value(true)
+                        .required(true),
+                )
         )
+
+
         .subcommand(
             App::new("merge")
                 .about("Merge the multiple plink files into one. Must be the same samples (fam).")
+
+                .help_heading("Input options")
                 .arg(
                     Arg::new("plink")
                         .short('p')
@@ -505,6 +535,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .required(true)
 
                 )
+
+                .help_heading("Output options")
                 .arg(
                     Arg::new("output")
                         .short('o')
@@ -529,7 +561,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 )
 
-                .help_heading("Split pParameter")
+                .help_heading("Split Parameter")
                 .arg(
                     Arg::new("splits")
                         .short('s')
