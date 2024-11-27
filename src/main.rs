@@ -28,7 +28,7 @@ use clap::{App, AppSettings, Arg};
 use crate::cov::cov_main::cov_main;
 use crate::nearest::nearest_main::nearest_main;
 use std::error::Error;
-use std::ops::Index;
+
 
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("gfa2bin")
@@ -561,7 +561,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 )
 
-                .help_heading("Split Parameter")
+                .help_heading("Split parameter")
                 .arg(
                     Arg::new("splits")
                         .short('s')
@@ -579,6 +579,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .about("Output prefix for the new plink files")
                         .takes_value(true)
                         .required(true),
+                )
+
+                .help_heading("Performance")
+                .arg(
+                    Arg::new("threads")
+                        .short('t')
+                        .long("threads")
+                        .about("Number of threads")
+                        .takes_value(true)
+                        .default_value("1")
                 )
         )
 

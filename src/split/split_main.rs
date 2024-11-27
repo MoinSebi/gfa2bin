@@ -5,15 +5,19 @@ use crate::remove::remove_main::copy_file;
 use clap::ArgMatches;
 use log::info;
 
+use rayon::iter::*;
+use rayon::ThreadPoolBuilder;
 use std::fs::File;
-use std::io::{self, BufRead, Read, Write};
+use std::io::{self, BufRead, Read, Seek, Write};
 use std::io::{BufReader, BufWriter};
 
-/// Window function
+/// # Window function
 ///
 /// Reading a ped file return "genotypes" which reflect windows over the entries
 /// We assume that the entries that in variation graphs we have some kind of pan-genomic order in the order of the entries which reflect haplotypes
 pub fn split_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Running 'gfa2bin split'");
+
     let plink_file = matches.value_of("plink").unwrap();
     let out_file = matches.value_of("output").unwrap();
     let number_splits = matches
@@ -21,24 +25,42 @@ pub fn split_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
         .unwrap()
         .parse::<usize>()
         .expect("Error parsing splits");
+    let threads = matches
+        .value_of("threads")
+        .unwrap()
+        .parse::<usize>()
+        .expect("Error parsing threads");
 
-    info!("Splitting bim file: {}", format!("{}.bim", plink_file));
+    info!("Splitting file: {}", plink_file);
+    info!("Number of splits: {}", number_splits);
+    info!("Output prefix: {}\n", out_file);
 
     let lines = count_lines(&format!("{}.bim", plink_file))?;
     let fam_lines = count_lines(&format!("{}.fam", plink_file))?;
     info!("Number of samples: {}", fam_lines);
     info!("Number of variants: {}", lines);
-    // split bim
-    info!("Splitting bim file: {}", format!("{}.bim", plink_file));
+
+    info!(
+        "Splitting PLINK BIM file: {}",
+        format!("{}.bim", plink_file)
+    );
     split_file(
         &format!("{}.bim", plink_file),
         out_file,
         number_splits,
-        lines,
+        "bim",
+        threads,
     )?;
-    info!("Splitting fam file: {}", format!("{}.fam", plink_file));
-    split_fam(&format!("{}.fam", plink_file), number_splits, out_file)?;
-    info!("Splitting bed file: {}", format!("{}.bed", plink_file));
+    info!(
+        "Splitting PLINK FAM file: {}",
+        format!("{}.fam", plink_file)
+    );
+    split_fam(&format!("{}.fam", plink_file), number_splits, out_file)
+        .expect("Error splitting FAM file");
+    info!(
+        "Splitting PLINK BED file: {}",
+        format!("{}.bed", plink_file)
+    );
     split_bed(
         &format!("{}.bed", plink_file),
         number_splits,
@@ -50,60 +72,67 @@ pub fn split_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
+/// # Split a plain-text file
+///
 /// Split a file into n files
 /// Plain text - same length every file
 fn split_file(
     filename: &str,
     output_prefix: &str,
-    n: usize,
-    number_lines: usize,
+    splits: usize,
+    output_suffix: &str,
+    threads: usize,
 ) -> io::Result<()> {
-    let input_file = File::open(filename)?;
-    let reader = BufReader::new(input_file);
-    // Create the output files
-    let mut output_files = Vec::with_capacity(n);
-    for i in 0..n {
-        let file_name = format!("{}.{}.bim", output_prefix, i + 1);
-        let output_file = BufWriter::new(File::create(file_name)?);
-        output_files.push(output_file);
-    }
+    let index = index_file(filename, splits);
 
-    // Write lines to the appropriate output file
-    let mut current_file_index = 0;
-    let mut line_count = 0;
-    let lines_per_file = (number_lines + n - 1) / n; // Ceiling division
+    // rayon number of threads pool
+    let pool = ThreadPoolBuilder::new()
+        .num_threads(threads) // Limit to 4 threads
+        .build()
+        .unwrap();
 
-    for line in reader.lines() {
-        let line = line?;
-        writeln!(output_files[current_file_index], "{}", line)?;
+    pool.install(|| {
+        index.par_iter().enumerate().for_each(|(i, x)| {
+            let file_name = format!("{}.{}.{}", output_prefix, i + 1, output_suffix);
+            let mut output_file =
+                BufWriter::new(File::create(file_name).expect("Error creating file"));
 
-        line_count += 1;
-        if line_count >= lines_per_file {
-            line_count = 0;
-            current_file_index += 1;
-            if current_file_index >= n {
-                break;
+            let input_file = File::open(filename).expect("Error opening file");
+            let mut buffer_input = BufReader::new(input_file);
+            // Seek to the correct position in the input file
+            buffer_input
+                .seek(std::io::SeekFrom::Start(x[0] as u64))
+                .expect("Error seeking file");
+
+            let mut pos = x[0];
+            for line in buffer_input.lines() {
+                let l = line.unwrap();
+                pos += l.len() + 1;
+                if pos > x[1] {
+                    break;
+                }
+                writeln!(output_file, "{}", l).expect("Error writing to file");
             }
-        }
-    }
+        });
+    });
 
     Ok(())
 }
 
-/// "Split" fam file
+/// # Split plink fam file
 ///
-/// Comment: We don't actually split the file, we just copy it n times
+/// **Comment: We don't actually split the file, we just copy it n times**
 pub fn split_fam(fam_file: &str, splits: usize, output_prefix: &str) -> io::Result<()> {
-    for x in 1..=splits {
-        let file_name = format!("{}.{}.fam", output_prefix, x);
+    for split_number in 1..=splits {
+        let file_name = format!("{}.{}.fam", output_prefix, split_number);
         copy_file(fam_file, &file_name)?;
     }
     Ok(())
 }
 
-/// Split a bed file into n files
+/// # Split a bed file
 ///
-/// The bed file is split by the number of samples
+/// The bed file is split by n
 fn split_bed(
     filename: &str,
     n: usize,
@@ -127,9 +156,13 @@ fn split_bed(
     // Prepare a buffer for reading from the input file
     let sample_size = (sample_size as f64 / 4_f64).ceil() as usize;
     let mut bytes_per_file = sample_size * (var_size as f64 / n as f64).ceil() as usize;
-    info!("Bytes per new file: {}", bytes_per_file);
     let mut start = 0;
-    let total_len = File::open(filename)?.metadata()?.len() - 3;
+    let total_len = File::open(filename)
+        .expect("Not able to open file")
+        .metadata()
+        .expect("Metadata now working")
+        .len()
+        - 3;
     // Read from the input file and write to the output files
     for x in 0..n {
         if (total_len - start) < bytes_per_file as u64 {
@@ -143,4 +176,30 @@ fn split_bed(
     }
 
     Ok(())
+}
+
+/// # Index a file in equal part
+///
+/// By lines
+/// In Bytes
+pub fn index_file(file: &str, number: usize) -> Vec<[usize; 2]> {
+    let file = File::open(file).expect("Error opening file");
+    let buffreader = BufReader::new(file);
+
+    let mut result = vec![0];
+    let mut pos = 0;
+    for line in buffreader.lines() {
+        pos += line.unwrap().len() + 1;
+        result.push(pos);
+    }
+    let step_size = result.len() / number;
+
+    let oo = (0..number + 1)
+        .map(|x| result[x * step_size])
+        .collect::<Vec<usize>>();
+    
+
+    (1..oo.len())
+        .map(|x| [oo[x - 1], oo[x]])
+        .collect::<Vec<[usize; 2]>>()
 }
