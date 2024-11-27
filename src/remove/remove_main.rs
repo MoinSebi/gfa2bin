@@ -6,18 +6,23 @@ use log::{info, warn};
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Error, Write};
+use std::fs;
+use std::io;
+use crate::merge::merge_main::read_list;
 
-/// Function for "gfa2bin remove"
+/// Function for 'gfa2bin remove'
 ///
 /// This function removed entries (SNPs) or path by name or index.
 ///
 /// Input is a single plink (bed, bim, fam) file.
 pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Running 'gfa2bin remove'");
     // Input parameters
     let plink_file = matches.value_of("plink").unwrap();
 
     // Output parameters
-    let output_prefix = matches.value_of("output").unwrap_or("gfa2bin.remove");
+    let output_prefix = matches.value_of("output").unwrap();
+
 
     let mut mw = MatrixWrapper::new();
     let bim_count = count_lines(&format!("{}{}", plink_file, ".bim"))?;
@@ -26,39 +31,45 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     // Read the plink file
     mw.read_bed(&format!("{}{}", plink_file, ".bed"), fam_count, bim_count)?;
 
-    if !(matches.is_present("genotypes")
-        || matches.is_present("samples")
-        || matches.is_present("index"))
+    if !(matches.is_present("genotypes") || matches.is_present("samples") || matches.is_present("genotype-index"))
+        || (matches.is_present("sample-index"))
     {
-        warn!("One of the required parameters is present.");
+        panic!("You need to provide either genotypes or samples to remove.");
     }
 
-    // Feature based removement
-    if matches.is_present("gindex") || matches.is_present("genotypes") {
-        if matches.is_present("gindex") && matches.is_present("genotypes") {
-            panic!("You can't use both index and feature at the same time.");
-        } else if matches.is_present("gindex") {
-            info!("Removing by index.");
-            let index = read_file_to_vector(matches.value_of("gindex").unwrap()).unwrap();
-            let aa = index.iter().map(|x| x.parse::<usize>().unwrap()).collect();
-            process_file2(
+    // Sample-based removal
+    if matches.is_present("genotype-index") || matches.is_present("genotypes") {
+        if matches.is_present("genotype-index") && matches.is_present("genotypes") {
+            panic!("You can't use both 'genotype-index' and 'genotypes' at the same time.");
+        } else if matches.is_present("genotype-index") {
+            info!("Removing by sample genotype");
+            let index_vec_string = read_list(matches.value_of("genotype-index").unwrap()).expect("Error: Could not read genotype index file");
+            let index_vec_usize = index_vec_string.iter().map(|x| x.parse::<usize>().unwrap()).collect();
+            // Filter by index
+            read_write_filter_index(
                 &format!("{}{}", plink_file, ".bim"),
                 &format!("{}{}", output_prefix, ".bim"),
-                &aa,
+                &index_vec_usize,
             )?;
-            mw.remove_by_index(&aa);
+            mw.remove_by_index(&index_vec_usize);
+
+
         } else if matches.is_present("genotypes") {
-            info!("Removing by genotype name.");
-            let index = read_file_to_vector(matches.value_of("genotypes").unwrap())?;
-            let f = process_file(
+            info!("Removing by genotype id");
+            let index = read_list(matches.value_of("genotypes").unwrap())?;
+
+            // Filter by id - Remove from bim
+            let f = read_write_filter_id(
                 &format!("{}{}", plink_file, ".bim"),
                 &format!("{}{}", output_prefix, ".bim"),
                 &index.iter().cloned().collect(),
                 3,
             )?;
+            // Remove in internal matrix
             mw.remove_by_index(&f);
         }
 
+        // Do nothing with fam file
         copy_file(
             &format!("{}{}", plink_file, ".fam"),
             &format!("{}{}", output_prefix, ".fam"),
@@ -66,30 +77,30 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     }
 
     // If samples are to be removed
-    if matches.is_present("samples") || matches.is_present("sindex") {
-        if matches.is_present("samples") && matches.is_present("sindex") {
-            panic!("You can't use both paths and pindex at the same time.");
+    if matches.is_present("samples") || matches.is_present("sample-index") {
+        if matches.is_present("samples") && matches.is_present("sample-index") {
+            panic!("You can't use both 'samples' and 'sample-index' at the same time.");
         } else if matches.is_present("samples") {
-            let index = read_file_to_vector(matches.value_of("samples").unwrap())?;
-            let f = process_file(
+            let index = read_list(matches.value_of("samples").unwrap()).expect("Error: Could not read sample index file");
+            let f = read_write_filter_id(
                 &format!("{}{}", plink_file, ".fam"),
                 &format!("{}{}", output_prefix, ".fam"),
                 &index.iter().cloned().collect(),
                 0,
             )?;
             mw.remove_index_samples(&f);
-        } else if matches.is_present("sindex") {
-            let index = read_file_to_vector(matches.value_of("sindex").unwrap()).unwrap();
-            let aa = index.iter().map(|x| x.parse::<usize>().unwrap()).collect();
-            process_file2(
+        } else if matches.is_present("sample-index") {
+            let index = read_list(matches.value_of("sample-index").unwrap()).expect("Error: Could not read sample index file");
+            let removal_index = index.iter().map(|x| x.parse::<usize>().unwrap()).collect();
+            read_write_filter_index(
                 &format!("{}{}", plink_file, ".fam"),
                 &format!("{}{}", output_prefix, ".fam"),
-                &aa,
+                &removal_index,
             )?;
-            mw.remove_by_index(&aa);
+            mw.remove_by_index(&removal_index);
         }
 
-        if !matches.is_present("genotypes") && !matches.is_present("gindex") {
+        if !matches.is_present("genotypes") && !matches.is_present("genotype-index") {
             copy_file(
                 &format!("{}{}", plink_file, ".bim"),
                 &format!("{}{}", output_prefix, ".bim"),
@@ -100,10 +111,11 @@ pub fn remove_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error
     mw.write_bed(0, output_prefix, Feature::Node, 1);
     Ok(())
 }
-use std::fs;
-use std::io;
 
-/// Copy a file from filename1 to filename2
+
+/// # Copy file
+///
+/// From filename1 to filename2
 pub fn copy_file(filename1: &str, filename2: &str) -> io::Result<()> {
     // Read the contents of filename1
     let contents = fs::read(filename1)?;
@@ -114,17 +126,16 @@ pub fn copy_file(filename1: &str, filename2: &str) -> io::Result<()> {
     Ok(())
 }
 
-/// Read a file to a vector of strings
-fn read_file_to_vector(file_path: &str) -> Result<Vec<String>, Error> {
-    let file = File::open(file_path)?;
-    let lines: Result<Vec<String>, _> = BufReader::new(file).lines().collect();
-    lines
-}
 
-pub fn process_file(
+/// # Read input and write to file
+///
+/// - No overhead
+/// - Don't write if present in remove hashset
+/// - Return a vector of indices removed
+pub fn read_write_filter_id(
     input_file: &str,
     output_file: &str,
-    hs: &HashSet<String>,
+    remove_hashset: &HashSet<String>,
     index_check: usize,
 ) -> Result<Vec<usize>, std::io::Error> {
     // Open input file for reading
@@ -141,14 +152,12 @@ pub fn process_file(
         let line = line?; // unwrap the line or propagate error
         let line_split = line.split_whitespace().collect::<Vec<&str>>();
         // 3 for bim, 0 for fam
-        if !hs.contains(line_split[index_check]) {
+        if !remove_hashset.contains(line_split[index_check]) {
             writeln!(writer, "{}", line)?;
         } else {
             index1.push(index);
         }
     }
-    info!("{:?} entries have been removed.\n", index1);
-
     // Flush the buffer to ensure all data is written to file
     writer.flush()?;
 
@@ -156,7 +165,7 @@ pub fn process_file(
 }
 
 /// Remove entries by index from the matrix
-pub fn process_file2(
+pub fn read_write_filter_index(
     input_file: &str,
     output_file: &str,
     index_vec: &Vec<usize>,
@@ -213,9 +222,9 @@ impl MatrixWrapper {
     //---------------------------------------------------------------------------------------------
     // Remove samples
 
-    /// Remove samples by name
-
-    /// Remove samples by index
+    /// # Remove samples by index
+    ///
+    /// Removed from matrix itself
     pub fn remove_index_samples(&mut self, to_be_removed: &Vec<usize>) {
         let mut i = 0;
         while i < self.matrix_bit.len() {
@@ -233,7 +242,7 @@ impl MatrixWrapper {
     //---------------------------------------------------------------------------------------------
     // Remove entries
 
-    /// Remove entries by index from the matrix
+    /// # Remove genotypes by index from the matrix
     ///
     /// Removed in:
     /// - genome names

@@ -267,8 +267,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::new("gindex")
-                        .long("gindex")
+                    Arg::new("genotype-index")
+                        .long("genotype-index")
                         .takes_value(true)
                         .about("List of index (genotypes) to remove (one per line, (0-based))"),
                 )
@@ -279,27 +279,20 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::new("sindex")
-                        .long("sindex")
+                    Arg::new("sample-index")
+                        .long("sample-index")
                         .takes_value(true)
                         .about("List of index (samples) to remove (one per line, (0-based))"),
                 )
 
-                .arg(
-                    Arg::new("non-info")
-                        .long("non-info")
-                        .about(
-                            "Remove all genotypes which hold no information (all true or all false)",
-                        )
-                        .takes_value(true),
-                )
                 .help_heading("Output parameter")
                 .arg(
                     Arg::new("output")
                         .short('o')
                         .long("output")
                         .about("Output prefix for the new plink file")
-                        .takes_value(true),
+                        .takes_value(true)
+                        .required(true),
                 )
         )
         // Will work on this later
