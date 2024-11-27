@@ -1,3 +1,4 @@
+use std::fmt::format;
 use crate::remove::remove_main::copy_file;
 
 use clap::ArgMatches;
@@ -5,15 +6,21 @@ use log::info;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead, Read, Write};
+use crate::split::split_main::index_file;
 
-/// Merge main
+/// # Merge main
 ///
 /// Merge multiple PLINK files togther. This includes BED, BIM and FAM files
 ///
 /// Comment: Fam files are only checked if they contain the same content, bim files are simply concatenated, and BED files are trimmed ([3:]) and concatenated
 pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
-    let plink_list = matches.value_of("plink").unwrap();
+    info!("Running 'gfa2bin merge'");
+
+    let plink_list = matches.value_of("bed-list").unwrap();
     let out_file = matches.value_of("output").unwrap();
+
+    info!("BED file list: {}", plink_list);
+    info!("Output prefix: {}\n", out_file);
 
     let input_list = read_list(plink_list)?;
     let names = clear_names(input_list)?;
@@ -23,18 +30,23 @@ pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     if !fams {
         panic!("Fam files are not the same");
     }
+
+    info!("Merging files");
     copy_file(
         &format!("{}{}", names[0], ".fam"),
         &format!("{}{}", out_file, ".fam"),
     )?;
+
+    info!("Merge BIM files");
     merge_bim(&names, &(out_file.to_string() + ".bim"))?;
 
-    bed_merge(&names, &(out_file.to_string() + ".bed"))?;
+    info!("Merge BED files");
+    merge_bed(&names, &(out_file.to_string() + ".bed"))?;
 
     Ok(())
 }
 
-/// Read a file which should include path to multiple other files (PLINK)
+/// # Read a file (line by line
 ///
 /// Each line one path
 pub fn read_list(file: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
@@ -47,7 +59,7 @@ pub fn read_list(file: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> 
     Ok(list)
 }
 
-/// Remove suffix from the string (path)
+/// # Remove suffix from the string
 ///
 /// Comment: If bed files are the input, remove those to get the prefix name
 pub fn clear_names(names: Vec<String>) -> Result<Vec<String>, Box<dyn std::error::Error>> {
@@ -61,29 +73,30 @@ pub fn clear_names(names: Vec<String>) -> Result<Vec<String>, Box<dyn std::error
     Ok(new_names)
 }
 
-/// Check if all fam files are the same
-///
-/// Does not work otherwise
+/// # FAM file checker
 pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>> {
     if fams.is_empty() {
         return Ok(false);
     }
-    let a = fs::read_to_string(fams[0].to_string() + ".fam")?;
-    for x in fams.iter().skip(1) {
-        let b = fs::read_to_string(x.to_string() + ".fam")?;
-        if a != b {
+    let mut fam_content_first = "".to_string();
+    if fams.len() > 0 {
+        fam_content_first += &fs::read_to_string(fams[0].to_string() + ".fam").expect(format!("Could not read FAM file {}", fams[0].to_string() + ".fam").as_str());
+    }
+    for fam_entry in fams.iter().skip(1) {
+        let fam_content = fs::read_to_string(fam_entry.to_string() + ".fam")?;
+        if fam_content_first != fam_content {
             return Ok(false);
         }
     }
     Ok(true)
 }
 
-/// Merge multiple plain-text files
+/// # Merge multiple plain-text files
 ///
 /// Here - Merge bim (PLINK) file
 pub fn merge_bim(fams: &Vec<String>, output_file: &str) -> io::Result<()> {
     // Create or truncate the output file
-    let mut output = fs::File::create(output_file)?;
+    let mut output = fs::File::create(output_file).expect("Failed to create output file");
 
     // Read each file and write its content to the output file
     for file in fams {
@@ -98,10 +111,10 @@ pub fn merge_bim(fams: &Vec<String>, output_file: &str) -> io::Result<()> {
     Ok(())
 }
 
-/// Merge BED files
+/// # Merge BED files
 ///
 /// Start with the first entry as a base, then add the others as well. Adding the rest is done bz removing the three header bytes.
-pub fn bed_merge(files: &Vec<String>, output_file: &str) -> io::Result<()> {
+pub fn merge_bed(files: &Vec<String>, output_file: &str) -> io::Result<()> {
     // Open the output file
     let mut output = File::create(output_file).expect("Failed to create output file");
 

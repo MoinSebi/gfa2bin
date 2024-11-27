@@ -71,7 +71,7 @@ fn merge_test() -> Result<(), Box<dyn std::error::Error>> {
     println!("dashjdhas");
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("merge")
-        .arg("-p")
+        .arg("--bed-list")
         .arg("data/output/gfa2bin.split2.split.list")
         .arg("-o")
         .arg("data/output/gfa2bin.merge");

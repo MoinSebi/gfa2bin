@@ -180,8 +180,8 @@ fn split_bed(
 
 /// # Index a file in equal part
 ///
-/// By lines
-/// In Bytes
+/// - By lines
+/// - In Bytes
 pub fn index_file(file: &str, number: usize) -> Vec<[usize; 2]> {
     let file = File::open(file).expect("Error opening file");
     let buffreader = BufReader::new(file);

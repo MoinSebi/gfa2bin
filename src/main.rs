@@ -527,9 +527,8 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 .help_heading("Input options")
                 .arg(
-                    Arg::new("plink")
-                        .short('p')
-                        .long("plink")
+                    Arg::new("bed-list")
+                        .long("bed-list")
                         .about("List of BED files (one per line). Bim and Fam files should have the same prefix.")
                         .takes_value(true)
                         .required(true)
