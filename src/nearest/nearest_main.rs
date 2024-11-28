@@ -5,7 +5,7 @@ use log::info;
 use std::fs::File;
 
 use std::i64;
-use std::io::{self};
+use std::io::{self, BufWriter};
 use std::io::{BufRead, BufReader, Write};
 use std::str::FromStr;
 
@@ -13,14 +13,52 @@ use std::str::FromStr;
 ///
 /// Find the closest reference node for each node in the graph
 pub fn nearest_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Running 'gfa2bin nearest'");
+
     // Graph file
     let graph_file = matches.value_of("gfa").unwrap();
 
     // Output file
     let output_file = matches.value_of("output").unwrap();
 
+    let threads = matches.value_of("threads").unwrap();
+
+    info!("GFA file: {}", graph_file);
+    info!(
+        "Node file: {}",
+        if matches.is_present("nodes") {
+            matches.value_of("nodes").unwrap()
+        } else {
+            "All nodes"
+        }
+    );
+    info!(
+        "Reference file: {}",
+        if matches.is_present("references") {
+            matches.value_of("references").unwrap()
+        } else {
+            "None"
+        }
+    );
+    info!(
+        "Prefix: {}",
+        if matches.is_present("prefix") {
+            matches.value_of("prefix").unwrap()
+        } else {
+            "None"
+        }
+    );
+    info!("Threads: {}", threads);
+    info!("Output file: {}\n", output_file);
+
+    info!("Read GFA file");
+    let mut graph = Gfa::parse_gfa_file_multi(graph_file, threads.parse().unwrap());
+
+    info!("Convert walks to path with '#' separator");
+    graph.walk_to_path("#");
+
     // Requested nodes
-    let mut requested_nodes: Vec<u32> = Vec::new();
+    let mut requested_nodes: Vec<u32>;
     if matches.is_present("nodes") {
         info!(
             "Reading requested nodes from {}",
@@ -28,7 +66,8 @@ pub fn nearest_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
         );
         requested_nodes = read_input(matches.value_of("nodes").unwrap()).unwrap();
     } else {
-        info!("No nodes provided, all nodes will be considered")
+        info!("No nodes provided, all nodes will be considered");
+        requested_nodes = graph.segments.iter().map(|x| x.id).collect();
     }
 
     // Which path are "reference" paths
@@ -36,34 +75,30 @@ pub fn nearest_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
     if matches.is_present("references") {
         ref_list = read_input(matches.value_of("references").unwrap())?;
     } else if matches.is_present("prefix") {
-        ref_list = by_prefix(
-            matches.value_of("prefix").unwrap(),
-            Gfa::parse_gfa_file(graph_file),
-        )?;
+        ref_list = by_prefix(matches.value_of("prefix").unwrap(), &graph)?;
     } else {
         panic!("You need to provide either a reference list or a prefix")
     }
 
-    info!("Reading graph file");
-    let mut graph = Gfa::parse_gfa_file(graph_file);
-    graph.walk_to_path("#");
-    requested_nodes = graph.segments.iter().map(|x| x.id).collect();
-    let p = read_nodes(
+    info!("Finding closest reference node for each node");
+    let closest_node_vec = read_nodes(
         &graph,
         &ref_list,
         &requested_nodes.iter().cloned().collect::<HashSet<u32>>(),
     );
 
-    // Overlap and write to file
-    write_file(p, output_file, &graph, &ref_list).unwrap();
+    info!("Writing output to {}", output_file);
+    write_file(closest_node_vec, output_file, &graph, &ref_list).unwrap();
 
     Ok(())
 }
 
-/// Get reference paths by prefix
+/// # Extract reference paths by prefix
+///
+/// - .startswith(prefix) on all path
 pub fn by_prefix(
     prefix: &str,
-    graph: Gfa<u32, (), ()>,
+    graph: &Gfa<u32, (), ()>,
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let reference_paths = graph
         .paths
@@ -86,7 +121,7 @@ pub fn by_prefix(
 ///
 /// Read input by line and return a vector of the type T
 pub fn read_input<T: FromStr>(input: &str) -> Result<Vec<T>, io::Error> {
-    let file = File::open(input)?;
+    let file = File::open(input).unwrap_or_else(|_| panic!("Can not open file: {}", input));
     let reader = BufReader::new(file);
 
     let mut lines_vec: Vec<T> = Vec::new();
@@ -98,7 +133,7 @@ pub fn read_input<T: FromStr>(input: &str) -> Result<Vec<T>, io::Error> {
             Err(_) => {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
-                    "Failed to parse line",
+                    "Failed to parse node (line)",
                 ))
             }
         }
@@ -124,10 +159,10 @@ pub fn pos(graph: &Gfa<u32, (), ()>, name: String) -> Vec<(u32, usize)> {
     Vec::new()
 }
 
-/// Collect reference nodes
+/// # Collect reference nodes
 ///
-/// All nodes in reference paths\
-/// Collection is a hashset for better testing
+/// - All nodes in reference paths
+/// - Collection is a hashset for better testing
 pub fn get_ref_nodes(graph: &Gfa<u32, (), ()>, names: &Vec<String>) -> HashSet<u32> {
     let mut nodes_hashset = HashSet::new();
     for path in graph.paths.iter() {
@@ -138,7 +173,7 @@ pub fn get_ref_nodes(graph: &Gfa<u32, (), ()>, names: &Vec<String>) -> HashSet<u
     nodes_hashset
 }
 
-/// Initialize a hashmap of node -> [ref_node, distance]
+/// # Initialize a hashmap of node -> [ref_node, distance]
 ///
 /// This can only be run for one reference at once
 pub fn init_hm(graph: &Gfa<u32, (), ()>, checked_nodes: &HashSet<u32>) -> HashMap<u32, [i64; 2]> {
@@ -195,6 +230,8 @@ pub fn read_nodes(
             }
         }
     }
+
+    // for reference nodes
     for path in graph.paths.iter() {
         if names.contains(&path.name) {
             for node in path.nodes.iter() {
@@ -203,30 +240,32 @@ pub fn read_nodes(
         }
     }
 
-    let mut pp = result_hm
+    // Write result
+    let mut result_vec = result_hm
         .iter()
         .map(|(k, v)| (*k, v[0], v[1]))
         .collect::<Vec<_>>();
-    pp.sort_by(|a, b| a.1.cmp(&b.1));
-    pp
+    result_vec.sort_by(|a, b| a.1.cmp(&b.1));
+    result_vec
 }
 
-/// Write file a file
+/// # Write 'nearest' output to file
 ///
-///
+/// Double index approach for fast processing
 pub fn write_file(
     result: Vec<(u32, i64, i64)>,
     output: &str,
     graph: &Gfa<u32, (), ()>,
     names: &Vec<String>,
 ) -> Result<(), std::io::Error> {
-    let file_out = File::create(output)?;
-    let mut output_reader = std::io::BufWriter::new(file_out);
+    // Create file
+    let file_out = File::create(output).expect("Unable to create file");
+    let mut output_reader = BufWriter::new(file_out);
     writeln!(output_reader, "node\tref_node\tdistance\tposition\tpath")?;
 
-    for x in names.iter() {
+    for reference_name in names.iter() {
         // Have multiple pos for a single node
-        let pos1 = pos(graph, x.to_string());
+        let pos1 = pos(graph, reference_name.to_string());
         let mut i = 0;
         let mut j = 0;
 
@@ -252,7 +291,11 @@ pub fn write_file(
                         writeln!(
                             output_reader,
                             "{}\t{}\t{}\t{}\t{}",
-                            result[index1].0, result[index1].1, result[index1].2, pos1[index2].1, x
+                            result[index1].0,
+                            result[index1].1,
+                            result[index1].2,
+                            pos1[index2].1,
+                            reference_name
                         )?;
                     }
                 }
