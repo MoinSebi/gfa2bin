@@ -1,8 +1,8 @@
 # General configuration for all modules
-samples: "testdata/config/samples.csv"
-phenotypes: 
+phenotypes:
   - "test": "testdata/config/phenotypes.csv"
   - "test2": "testdata/config/phenotypes2.csv"
+input_mode: "packs"
 graph: "testdata/graphs/2155413.gfa"
 reference_name: "1001g_plus_pan"
 pan_sn_delimiter: "#"
@@ -11,8 +11,7 @@ pan_sn_delimiter: "#"
 # Nothing to set (yet)
 
 # 02 - make pack files
-use_fasta_ref: true
-# gfainject: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/gfainject/target/release/gfainject"
+packlist:  "testdata/packs/packlist.csv"
 
 # 03 - make fambedbims
 normalization_method: "percentile"
@@ -20,10 +19,23 @@ normalization_method_fraction: "0.1"
 gfa2bin: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/gfa2bin/target/release/gfa2bin"
 
 
-# 04 - make kinship
-kinship_method: "file"
+# 04 - gwas
+#kinship_method: "file"
+kinship_method: "graph"
 kinship_matrix: "testdata/config/testdata.kinship"
 
+create_qq_plots: true
+create_manhattan_node_plots: true
 
-# 05 - gwas
-# Nothing to set (yet)
+# Manhattan plot for nearest node on a path
+create_manhattan_nearest_plots: true
+prefix_nearest: "TAIR10"
+
+
+# Extra settings to produce output despite having actually meaningless inputs
+gemma_model_parameters: "-lmm 3 -km 1 -lmin 0.0000001 -lmax 0.001"
+
+
+
+# Mock GEMMA output file for testing
+mock_gemma_output: "testdata/gemma/mock.assoc.txt"

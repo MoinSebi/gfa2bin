@@ -21,7 +21,10 @@ def main(fam_file_name, phenotype_file_name, output_fam_file_name):
         #    try:
         #        row[5] = float(phenotype_data[row[0]])
         #    except ValueError:
-        row[5] = phenotype_data[row[0]]
+        if row[0] in phenotype_data:
+            row[5] = phenotype_data[row[0]]
+        else:
+            row[5] = -9
 
     # Write the updated data back to a new fam file
     with open(output_fam_file_name, 'w', newline='') as updated_fam_file:

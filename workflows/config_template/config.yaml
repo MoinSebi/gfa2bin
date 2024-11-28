@@ -2,10 +2,14 @@
 # General configuration for all modules
 ###############################################################################
 
-# Path to the samples file. An example file is provided and included here in the
-# bootstrap config directory, so you can check the format, but you need to modify
-# it with your data, or provide your own.
-samples: "config/samples.csv"
+# Pipeline input mode. There are two options -- "reads" and "packs".
+# - reads: The pipeline will expect reads in fastq and a graph in GFA format,
+#          and will perform read mapping to the graph and create the pack
+#          files.
+# - packs: The pipeline will expect prepared pack files, and will skip the
+#          read mapping step. This is useful if you have your own mapping
+#          pipeline.
+input_mode: "reads"
 
 # Path to the phenotype files. You can provide multiple phenotypes, each with a
 # unique key. An example file is provided and included here in the bootstrap
@@ -17,18 +21,49 @@ samples: "config/samples.csv"
 phenotypes: 
   - "CHANGETHIS_AND_THE_PATH_TO_THE_FILE": "config/phenotypes.csv"
 
+# Reference name, which is used in output files of the workflow.
+# This is useful if you are running multiple workflows with different references.
+# It can correspond to the name of the reference genome.
+reference_name: "!!!CHANGETHIS_TO_YOUR_REFERENCE_NAME!!!"
+
+
+###############################################################################
+# Settings for "reads" input mode
+###############################################################################
+# Only relevant if input_mode is set to "reads".
+
+# Path to the samples file with sample IDs and corresponding fastq reads. 
+# An example file is provided and included here in the bootstrap config 
+# directory, so you can check the format, but you need to modify it with your 
+# data, or provide your own.
+samples: "config/samples.csv"
+
 # Path the graph in .gfa format. The graph should only contain paths, no walks.
 # The path names should confirm to the PanSN specification:
 #    [sample_name][delim][haplotype_id][delim][contig_or_scaffold_name]
 # The delimiter is specified in the pan_sn_delimiter field below.
 graph: "!!!CHANGETHIS!!!/to/your/graph.gfa"
-
-# Reference name, which is used in output files of the workflow.
-# This is useful if you are running multiple workflows with different references.
-# It can correspond to the name of the reference genome.
-reference_name: "!!!CHANGETHIS_TO_YOUR_REFERENCE_NAME!!!"
 pan_sn_delimiter: "#"
 
+
+###############################################################################
+# Settings for "packs" input mode
+###############################################################################
+# Only relevant if input_mode is set to "packs".
+
+# The path to the pack list file. The pack list file is a text file that 
+# contains the sample IDs and the paths to the pack files, one per line and 
+# separated by a tab. An example file is provided and included here in the
+# bootstrap config directory, so you can check the format, but you need to
+# modify it with your data, or provide your own.
+packlist: "config/packlist.csv"
+
+
+###############################################################################
+###############################################################################
+# Module-specific settings
+###############################################################################
+###############################################################################
 
 ##############################################################################
 # 01 - Prepare reference genome
@@ -65,16 +100,27 @@ gfa2bin: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/gfa2bin/target/rel
 
 
 ##############################################################################
-# 04 - make kinship
+# 05 - GWAS
 ##############################################################################
 
 # Kinship matrix settings. A kinship matrix is needed for the GWAS analysis.
-# Currently, the "file" method is the only one supported, where the kinship
-# matrix is provided as a file in the GEMMA format. You need to adapt the path
-# to the location of your kinship matrix file.
+# The supported methods are "file" and "graph".
+# - "file": The kinship matrix is provided as a file in the GEMMA format.
+# - "graph": The kinship matrix is calculated from the graph by running gemma.
 kinship_method: "file"
+# If set to "file", provide the path to the kinship matrix file.
 kinship_matrix: "!!!CHANGETHIS!!!/to/your/kinship/file.kinship"
 
+# Gemma model parameters.
+# The default values are the recommended values, but can be changed if needed.
+gemma_model_parameters: "-lmm 2"
 
-# 05 - gwas
-# Nothing to set (yet)
+# Plots
+create_qq_plots: true
+create_manhattan_node_plots: true
+
+# Manhattan plot for nearest node on a path
+create_manhattan_nearest_plots: true
+# Prefix for the nearest node on a path. If PAN-SN is used, this should correspond to a 
+# reference genome name. For example, for Arabidopsis thaliana, this could be "TAIR10".
+prefix_nearest: "TAIR10"

@@ -30,6 +30,8 @@ rule target:
 rule align_to_fasta_ref_with_bwa:
     params:
         threads=8
+    conda:
+        "../envs/main.yaml"
     input:
         validation_file="results/00_validate_inputs/sample_names_validation.txt",
         fasta_ref="results/01_fasta_ref/{reference_name}.all.fasta.gz",
@@ -99,5 +101,5 @@ rule create_pack_files:
 #     output:
 #         compressed_pack_file="results/02_packs/{reference_name}.{sample}.pc"
 #     shell:
-#         "packing -p {input.pack_file} -o {output.compressed_pack_file}"
+#         "packing compress -p {input.pack_file} -o {output.compressed_pack_file}"
 

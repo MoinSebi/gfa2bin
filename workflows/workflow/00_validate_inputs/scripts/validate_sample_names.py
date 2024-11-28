@@ -40,25 +40,35 @@ def validate_sample_names(samples_file, phenotypes_file):
     
 
     # Check if the sample names in the samples file are the same as in the phenotypes file
-    samples_not_in_phenotypes = set(samples['sample']) - set(phenotypes['sample'])
+    # All samples in the phenotypes file should be present in the samples file, but not necessarily vice versa
+    samples_not_in_phenotypes = set(phenotypes['sample']) - set(samples['sample'])
     if samples_not_in_phenotypes:
-        print(f"Error: The following samples are not in the phenotypes file: {samples_not_in_phenotypes}")
+        print(f"Error: The following samples are in phenotypes but not in samples file: {samples_not_in_phenotypes}")
         sys.exit(1)
-    print ('✓ Sample names in the phenotypes file are the same as in the samples file')
+    print ('✓ Sample names in the phenotypes file are present in the samples file')
 
-
-    # Check if the fastq files exist
-    for fq in samples['fq1']:
-        if not os.path.exists(fq):
-            print(f"Error: The fastq file {fq} does not exist")
-            sys.exit(1)
-    # If fq2 is provided, check if it exists
-    if 'fq2' in samples.columns:
-        for fq in samples['fq2']:
+    if 'pack' in samples.columns:
+        for pack in samples['pack']:
+            if not os.path.exists(pack):
+                print(f"Error: The pack file {pack} does not exist")
+                sys.exit(1)
+        print ('✓ Pack files exist')
+    elif 'fq1' in samples.columns:
+        # Check if the fastq files exist
+        for fq in samples['fq1']:
             if not os.path.exists(fq):
                 print(f"Error: The fastq file {fq} does not exist")
                 sys.exit(1)
-    print ('✓ Fastq files exist')
+        # If fq2 is provided, check if it exists
+        if 'fq2' in samples.columns:
+            for fq in samples['fq2']:
+                if not os.path.exists(fq):
+                    print(f"Error: The fastq file {fq} does not exist")
+                    sys.exit(1)
+        print ('✓ Fastq files exist')
+    else:
+        print("Error: The samples file should contain either 'pack' or 'fq1'/'fq2' columns!")
+        sys.exit(1)
 
     
     # Check for duplicates in the samples file

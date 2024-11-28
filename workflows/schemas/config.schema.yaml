@@ -1,13 +1,19 @@
 $schema: "https://json-schema.org/draft-06/schema#"
 type: object
 required:
-  - samples
   - phenotypes
   - graph
   - reference_name
   - normalization_method
   - normalization_method_fraction
 properties:
+  input_mode:
+    type: string
+    enum:
+      - reads
+      - packs
+    default: "reads"
+    description: "Mode for input data."
   samples:
     type: string
     description: "Path to the samples file."
@@ -48,6 +54,9 @@ properties:
     type: string
     pattern: "^(0(\\.\\d+)?|1(\\.0+)?)$"
     description: "Fraction for normalization, as a string between '0' and '1'."
+  packlist:
+    type: string
+    description: "Path to the packlist file."
   gfa2bin:
     type: string
     default: ""
@@ -56,10 +65,27 @@ properties:
     type: string
     enum:
       - file
-      - other_method
+      - graph
     default: "file"
     description: "Method used for kinship calculation."
   kinship_matrix:
     type: string
     default: ""
     description: "Path to the kinship matrix file."
+  gemma_model_parameters:
+    type: string
+    default: "-lmm 2"
+    description: "Parameters for the GEMMA model."
+  create_qq_plots:
+    type: boolean
+    default: false
+    description: "Flag to indicate if QQ plots are created."
+  create_manhattan_node_plots:
+    type: boolean
+    default: false
+    description: "Flag to indicate if Manhattan plots with nodes on X axis are created."
+
+  mock_gemma_output:
+    type: string
+    default: ""
+    description: "Path to the mock GEMMA output file."

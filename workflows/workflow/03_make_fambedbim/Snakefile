@@ -2,7 +2,13 @@ import pandas as pd
 
 
 #Load the samples
-samples = pd.read_csv(config["samples"], sep="\t|;|,").set_index("sample", drop=False)
+#samples = pd.read_csv(config["samples"], sep="\t|;|,").set_index("sample", drop=False)
+#Load the samples
+if config["input_mode"] == "reads":
+    samples = pd.read_csv(config["samples"], sep="\t|;|,",dtype=str).set_index("sample", drop=False)
+else:
+    samples = pd.read_csv(config["packlist"], sep="\t|;|,",dtype=str).set_index("sample", drop=False)
+
 # samples = samples.drop_duplicates()
 # samples.index.names = ["sample_id"]
 
@@ -43,6 +49,7 @@ rule create_fam_bed_files:
     shell:
         """
         {params.gfa2bin} cov --packlist {input.pack_list_file} \
+        --node \
         --output {params.output_prefix} \
         --method {params.normalization_method} \
         --fraction {params.normalization_method_fraction}

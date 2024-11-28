@@ -10,11 +10,6 @@ min_version("6.0")
 # Load the config file
 configfile: "config/config.yaml"
 
-#Load the samples
-samples = pd.read_csv(config["samples"], sep="\t|;|,").set_index("sample", drop=False)
-# samples = samples.drop_duplicates()
-# samples.index.names = ["sample_id"]
-
 wf_basedir = workflow.current_basedir
 
 
@@ -38,12 +33,14 @@ module prepare_fasta_ref:
         "01_prepare_fasta_ref/Snakefile"
     config: config
     # prefix: "01_fasta_ref"
-
-use rule * from prepare_fasta_ref as prepare_fasta_ref_*
+# Decide whether a fasta reference file should be created from the graph
+if config["input_mode"] == "reads" and config["use_fasta_ref"]:
+    use rule * from prepare_fasta_ref as prepare_fasta_ref_*
 
 
 ###############################################################################
-# 02 a/b make pack files (pc), either from a fasta reference or a graph
+# 02 a/b/c make/use pack files (pack), either from a fasta reference, a graph,
+# or from a provided pack file list
 ###############################################################################
 # We import both workflows here, but only one will be used
 module make_packs_align2fasta_ref:
@@ -52,18 +49,35 @@ module make_packs_align2fasta_ref:
     config: config
     # prefix: "make_packs"
 
-# Not checked/done yet
-module make_packs_align2graph:
+module make_packs_align2fasta_ref:
     snakefile:
-        "02b_make_packs_align2graph/Snakefile"
+        "02a_make_packs_align2fasta_ref/Snakefile"
+    config: config
+
+module make_packs_from_list:
+    snakefile:
+        "02b_make_packs_from_list/Snakefile"
     config: config
     # prefix: "make_packs"
 
+# Not checked/done yet
+module make_packs_align2graph:
+    snakefile:
+        "02c_make_packs_align2graph/Snakefile"
+    config: config
+    # prefix: "make_packs"
+
+
 # Decide which workflow to use, based on the config setting
-if config["use_fasta_ref"]:
-    use rule * from make_packs_align2fasta_ref as make_packs_*
+if config["input_mode"] == "reads":
+    if config["use_fasta_ref"]:
+        use rule * from make_packs_align2fasta_ref as make_packs_*
+    else:
+        use rule * from make_packs_align2graph as make_packs_*
+elif config["input_mode"] == "packs":
+    use rule * from make_packs_from_list as make_packs_*
 else:
-    use rule * from make_packs_align2graph as make_packs_*
+    raise ValueError("Unknown input mode: " + config["input_mode"])
 
 
 ###############################################################################
@@ -79,49 +93,11 @@ use rule * from make_fambedbim as make_fambedbim_*
 
 
 ###############################################################################
-# 04 Make or load the kinship matrix
-###############################################################################
-# We import the 2 workflow options, and use one, or use a provided 
-# kinship matrix file, depending on the config setting
-# 
-# We use a file kinship as default! (SNP should be removed, too much work to put it here)
-# Graph maybe, as a super advanced here be dragons mode. Commented out for now.
-# module snp_kinship:
-#     snakefile:
-#         "04a_SNP_kinship/Snakefile"
-#     config: config
-#     # prefix: "kinship"
-
-# module graph_kinship:
-#     snakefile:
-#         "04b_Graph_kinship/Snakefile"
-#     config: config
-#     # prefix: "kinship"
-
-module file_kinship:
-    snakefile:
-        "04c_File_kinship/Snakefile"
-    config: config
-    # prefix: "kinship"
-
-# Decide which workflow to use, or to load the kinship matrix as a file, 
-# based on the config setting
-if config["kinship_method"] == "snp":
-    use rule * from snp_kinship as kinship_*
-elif config["kinship_method"] == "graph":
-    use rule * from graph_kinship as kinship_*
-elif config["kinship_method"] == "file":
-    use rule * from file_kinship as kinship_*
-else:
-    raise ValueError("Unknown kinship method: " + config["kinship_method"])
-
-
-###############################################################################
-# 05 Run the GWAS
+# 04 Run the GWAS
 ###############################################################################
 module gwas:
     snakefile:
-        "05_GWAS/Snakefile"
+        "04_gwas/Snakefile"
     config: config
     # prefix: "gwas"
 

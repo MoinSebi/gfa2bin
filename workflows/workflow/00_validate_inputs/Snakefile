@@ -25,9 +25,10 @@ rule validate_input_graph:
 
 rule validate_sample_names:
     params:
-        wf_basedir=wf_basedir
+        wf_basedir=wf_basedir,
+        kinship_method=config["kinship_method"]
     input:
-        samples_file=config["samples"],
+        samples_file=lambda wildcards: config["samples"] if config["input_mode"] == "reads" else config["packlist"],
         phenotype_files=[list(k.values())[0] for k in config["phenotypes"]]
     output:
         validation_file="results/00_validate_inputs/sample_names_validation.txt"
@@ -35,12 +36,21 @@ rule validate_sample_names:
         "../envs/main.yaml"
     shell:
         """
-        echo "Validation of sample names in phenotype files" > {output.validation_file}
+        echo "Validation of sample names in phenotype files" | tee {output.validation_file}
         for PHENOTYPE_FILE in {input.phenotype_files}; do
             echo "--- $PHENOTYPE_FILE ---" >> {output.validation_file}
             {params.wf_basedir}/scripts/validate_sample_names.py \
                 --samples_file {input.samples_file} \
                 --phenotypes_file $PHENOTYPE_FILE \
-                >> {output.validation_file}
+                | tee -a {output.validation_file}
         done
+
+        if [[ "{params.kinship_method}" == "file" ]]; then
+            echo "Validation of kinship matrix file" >> {output.validation_file}
+            {params.wf_basedir}/scripts/validate_kinship_matrix.py \
+                --samples_file {input.samples_file} \
+                --kinship_matrix {config[kinship_matrix]} \
+                | tee -a {output.validation_file}
+        fi
+
         """

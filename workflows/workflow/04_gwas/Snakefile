@@ -1,0 +1,213 @@
+wildcard_constraints:
+    reference_name=config["reference_name"],
+    nearest=config.get("prefix_nearest", "")
+#    mode=config["threshold_mode"]
+
+# TODO Check phenotype naming of files, and phenotype handling -- so far we have only one phenotype
+# Name should be provided somewhere, and we should include a workflow for multiple phenotypes processing
+
+wf_basedir = workflow.current_basedir
+mode = f"{config['normalization_method']}_{config['normalization_method_fraction']}"
+# phenotype_id=config["phenotype_id"]
+print(config["phenotypes"])
+print([list(k.keys())[0] for k in config["phenotypes"]])
+rule target:
+    input:
+        assoc_file=expand("results/04_gwas/{phenotype_id}/{reference_name}.{mode}.assoc.txt", reference_name=config["reference_name"], mode=mode, phenotype_id=[list(k.keys())[0] for k in config["phenotypes"]]),
+        qq_plot=lambda wildcards: expand("results/04_gwas/{phenotype_id}/{reference_name}.{mode}.qq.png", reference_name=config["reference_name"], mode=mode, phenotype_id=[list(k.keys())[0] for k in config["phenotypes"]]) if config.get("create_qq_plots", False) else [],
+        manhattan_node_plot=lambda wildcards: expand("results/04_gwas/{phenotype_id}/{reference_name}.{mode}.manhattan_nodes.png", reference_name=config["reference_name"], mode=mode, phenotype_id=[list(k.keys())[0] for k in config["phenotypes"]]) if config.get("create_manhattan_node_plots", False) else [],
+        manhattan_nearest_plot=lambda wildcards: expand("results/04_gwas/{phenotype_id}/{reference_name}.{mode}.manhattan_nearest_{nearest}.png", reference_name=config["reference_name"], mode=mode, phenotype_id=[list(k.keys())[0] for k in config["phenotypes"]], nearest=config["prefix_nearest"]) if config.get("create_manhattan_nearest_plots", False) else []
+ 
+
+# Fill the fam file with the phenotype values
+# Here, we can have multiple phenotypes, so it is a one to many rule
+
+# Prepare phenotype#phenotype file pair for use as a wild card
+
+rule create_phenotype_names_file:
+    params:
+        phenotypes=expand("{phenotype_id}", phenotype_id=[list(k.keys())[0] for k in config["phenotypes"]])
+    output:
+        phenotype_info_file="results/04_gwas/{phenotype_id}/phenotype_file.txt"
+    run:
+        with open(output.phenotype_info_file, "w") as f:
+            for p in config["phenotypes"]:
+                if list(p.keys())[0] == wildcards.phenotype_id:
+                    f.write(f"{list(p.keys())[0]}#{list(p.values())[0]}\n")
+
+
+rule fill_fam_files:
+    conda:
+        "../envs/main.yaml"
+    params:
+        wf_basedir=wf_basedir
+        
+    input:
+        fam_file="results/03_make_fambedbim/{reference_name}.{mode}.fam",
+        phenotype_info_file="results/04_gwas/{phenotype_id}/phenotype_file.txt"
+    output:
+        filled_fam_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.fam"
+    shell:
+        """
+        PHENOTYPE_FILE=$(cat {input.phenotype_info_file} | cut -d "#" -f 2)
+        {params.wf_basedir}/scripts/create_phenotype_fam_file.py \
+            {input.fam_file} \
+            $PHENOTYPE_FILE \
+            {output.filled_fam_file}       
+        """
+
+rule copy_bed_bims:
+    input:
+        bed_file="results/03_make_fambedbim/{reference_name}.{mode}.bed",
+        bim_file="results/03_make_fambedbim/{reference_name}.{mode}.bim"
+    output:
+        bed_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.bed",
+        bim_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.bim"
+    shell:
+        "cp {input.bed_file} {output.bed_file} && cp {input.bim_file} {output.bim_file}"
+
+
+rule create_or_copy_kinship_matrix:
+    conda:
+        "../envs/main.yaml"
+    params:
+        bfile_prefix="results/04_gwas/{phenotype_id}/{reference_name}.{mode}",
+        output_gemma_dir="results/04_gwas",
+        gemma_output_prefix="{phenotype_id}/{reference_name}.{mode}",
+    input:
+        # Kinship matrix is either from a file, or is created here, depending on the kinship_method
+        kinship_matrix=lambda wildcards: config["kinship_matrix"] if config["kinship_method"] == "file" else [],
+        filled_fam_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.fam",
+
+    output:
+        kinship_matrix="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.kinship"
+    shell:
+        """
+        if [[ {config[kinship_method]} == "file" ]]; then
+            cp {input.kinship_matrix} {output.kinship_matrix}
+        else
+            echo "Creating the kinship matrix with GEMMA"
+            CURR_DIR=$(pwd)
+            cd {params.output_gemma_dir}
+            mkdir -p output/{wildcards.phenotype_id}
+            gemma -bfile ../../{params.bfile_prefix} \
+                  -o {params.gemma_output_prefix} \
+                  -gk 1
+            cp output/{wildcards.phenotype_id}/*cXX.txt ../../{output.kinship_matrix}
+        fi
+        """
+
+
+# run gemma and create the assoc file
+rule run_gemma:
+    conda:
+        "../envs/main.yaml"
+    params:
+        bfile_prefix="results/04_gwas/{phenotype_id}/{reference_name}.{mode}",
+        output_gemma_dir="results/04_gwas",
+        gemma_output_prefix="{phenotype_id}/{reference_name}.{mode}",
+        gemma_model_parameters=config["gemma_model_parameters"],
+        mock_gemma_output=config["mock_gemma_output"]
+    input:
+        kinship_matrix="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.kinship",
+        filled_fam_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.fam",
+        bed_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.bed",
+        bim_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.bim"
+    output:
+        assoc_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.assoc.txt"
+    shell:
+        """
+        CURR_DIR=$(pwd)
+        cd {params.output_gemma_dir}
+        mkdir -p output/{wildcards.phenotype_id}
+        gemma -k ../../{input.kinship_matrix} \
+              -bfile ../../{params.bfile_prefix} \
+              -o {params.gemma_output_prefix} \
+              {params.gemma_model_parameters}
+        # Move the gemma outputs
+        # We can mock the gemma output for testing purposes
+        if [[ "{params.mock_gemma_output}" != "" ]]; then
+            echo "!!!! Mocking gemma output !!!!"
+            cd $CURR_DIR
+            cp {params.mock_gemma_output} {output.assoc_file}
+        else        
+            mv output/{wildcards.phenotype_id}/*.txt {wildcards.phenotype_id}/
+        fi
+        """
+
+# Create qq plot
+rule create_qq_plot:
+    conda:
+        "../envs/main.yaml"
+    params:
+        wf_basedir=wf_basedir
+    input:
+        assoc_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.assoc.txt"
+    output:
+        qq_plot="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.qq.png"
+    shell:
+        """
+        {params.wf_basedir}/scripts/qq.py \
+            --input {input.assoc_file} \
+            --output {output.qq_plot}
+        """
+
+# Create manhattan plot with nodes on X axis
+rule create_manhattan_node_plot:
+    conda:
+        "../envs/main.yaml"
+    params:
+        wf_basedir=wf_basedir
+    input:
+        assoc_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.assoc.txt"
+    output:
+        manhattan_plot="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.manhattan_nodes.png"
+    shell:
+        """
+        {params.wf_basedir}/scripts/manhattan.nodes.py \
+            --input {input.assoc_file} \
+            --output {output.manhattan_plot}
+        """
+
+# Create manhattan plot with nearest node ID on y axis (good for chromosomal plots)
+
+rule create_distance_file:
+    params:
+        gfa2bin=config["gfa2bin"],
+        prefix_nearest=config["prefix_nearest"],
+    input:
+        assoc_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.assoc.txt",
+        graph_file=config["graph"]
+    output:
+        node_list=temp("results/04_gwas/{phenotype_id}/{reference_name}.{mode}.{nearest}.node_list.txt"),
+        nearest_output_table="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.{nearest}",
+    shell:
+        """
+        # get the node list from the assoc file
+        cat {input.assoc_file} | awk 'NR>1 {{print $3}}' > {output.node_list}
+        # Run gfa2bin nearest
+        {params.gfa2bin} nearest --gfa {input.graph_file} \
+            --nodes {output.node_list} \
+            --prefix {params.prefix_nearest} \
+            --output {output.nearest_output_table}
+        """
+
+rule create_manhattan_nearest_plot:
+    conda:
+        "../envs/main.yaml"
+    params:
+        wf_basedir=wf_basedir,
+        prefix_nearest=config["prefix_nearest"],
+        gfa2bin=config["gfa2bin"]
+    input:
+        assoc_file="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.assoc.txt",
+        nearest_output_table="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.{nearest}",
+    output:        
+        manhattan_plot="results/04_gwas/{phenotype_id}/{reference_name}.{mode}.manhattan_nearest_{nearest}.png",
+    shell:
+        """
+        {params.wf_basedir}/scripts/manhattan.nearest.py \
+            --input {input.assoc_file} \
+            --distance {input.nearest_output_table} \
+            --output {output.manhattan_plot}
+        """
