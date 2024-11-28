@@ -1,59 +1,67 @@
 use bitvec::order::Lsb0;
-
 use std::fs::File;
 use std::io::{BufWriter, Write};
-
 use bitvec::prelude::BitVec;
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
 use hashbrown::HashMap;
 use log::info;
 use rayon::prelude::*;
+use crate::core::bfile::write_dummy_fam;
+use std::io::{self, BufReader, Read};
+use std::path::Path;
 
 /// Subpath main function
 ///
 /// Extract the subpath from a graph for each node
 pub fn subpath_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Running 'gfa2bin subpath'");
+
     // Read the arguments from the command line
     let graph_file = matches.value_of("gfa").unwrap();
     let output_prefix = matches.value_of("output").unwrap();
-    let window: usize = matches.value_of("length").unwrap().parse().unwrap();
+    let window: usize = matches.value_of("step").unwrap().parse().unwrap();
     let threads: usize = matches.value_of("threads").unwrap().parse().unwrap();
-    let mut block = None;
-    if let Some(blocks_path) = matches.value_of("blocks") {
-        let file = File::create(blocks_path).unwrap();
-        block = Some(BufWriter::new(file));
-    }
-
-    /// Check the arguments
-    info!("Subpath subcommand");
+    let mut pansn = matches.value_of("PanSN").unwrap();
+    // Check the arguments
     info!("Graph file: {}", graph_file);
-    info!("Output prefix: {}", output_prefix);
+    info!("PanSN: {}", pansn);
     info!("Window length: {}", window);
+    info!("Threads: {}", threads);
+    info!("Output prefix: {}\n", output_prefix);
 
-    info!("Reading graph file");
-    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
-    graph.walk_to_path("#");
-    let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, "#");
+
+    info!("Read graph file");
+    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file_multi(graph_file, threads);
+
+    info!("Convert walks to paths");
+    if graph.paths.is_empty() && pansn == "\n" {
+        pansn = "#";
+    }
+    graph.walk_to_path(pansn);
+
+
+    let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, pansn);
 
     info!("Indexing graph");
-    let a = gfa_index(&wrapper);
+    let index_gfa_pos = gfa_index(&wrapper);
 
     info!("Extracting subpath");
     subpath_wrapper(
         &wrapper,
         &graph,
         window,
-        a,
+        index_gfa_pos,
         matches.is_present("blocks"),
         output_prefix,
         threads,
     )?;
     write_dummy_fam(&wrapper, &format!("{}.fam", output_prefix))?;
+    info!("Done");
     Ok(())
 }
 
-/// Node to position index (hashmap)
+/// # Node to position index (hashmap)
 ///
 /// For each path: Iterate over all nodes and store the index of each node
 ///
@@ -115,12 +123,11 @@ pub fn subpath_wrapper(
                     .expect("Not able to create bim file"),
             );
             let mut block = None;
-            if blocks {
-                block = Some(BufWriter::new(
-                    File::create(format!("{}_{}.block", out_prefix, i))
-                        .expect("Not able to create block file"),
-                ));
-            }
+            block = Some(BufWriter::new(
+                File::create(format!("{}_{}.block", out_prefix, i))
+                    .expect("Not able to create block file"),
+            ));
+
 
             for node_id in chunks {
                 // Result vec
@@ -135,20 +142,27 @@ pub fn subpath_wrapper(
                 }
 
                 // !Thiis mmight be wring
-                let vec_bitvec = traversal2bitvec(result_vec, sample_size, &is_diploid, &mut block);
+                let vec_bitvec = traversal2bitvec(result_vec, sample_size, &is_diploid, &mut block, node_id);
                 for (x, _item) in vec_bitvec.iter().enumerate() {
                     writeln!(
                         file_bim,
-                        "graph\t{}\t{}",
-                        node_id.to_string() + &window.to_string() + &x.to_string(),
-                        x
+                        "{}\t{}\t{}\t{}\t{}\t{}",
+                        "graph",
+                        node_id.to_string() + "_" + &window.to_string() + "_" + &x.to_string(),
+                        "0",
+                        node_id.to_string(),
+                        "A",
+                        "T",
                     )
                     .unwrap();
+
                     let buff = vec_bitvec[x].as_raw_slice();
                     file_bed.write_all(buff).expect("Not able to write ")
                 }
             }
         });
+
+
     info!("Concatenating files");
     let filenames1 = make_filename(out_prefix, threads);
     concatenate_files_and_cleanup(
@@ -167,26 +181,26 @@ pub fn subpath_wrapper(
         format!("{}.bed", out_prefix),
         &vec![108, 27, 1],
     )?;
-    if blocks {
-        concatenate_files_and_cleanup(
-            &filenames1
-                .iter()
-                .map(|a1| format!("{}.block", a1))
-                .collect::<Vec<String>>(),
-            format!("{}.block", out_prefix),
-            &Vec::new(),
-        )?;
-    }
-    info!("Done");
+    concatenate_files_and_cleanup(
+        &filenames1
+            .iter()
+            .map(|a1| format!("{}.block", a1))
+            .collect::<Vec<String>>(),
+        format!("{}.block", out_prefix),
+        &Vec::new(),
+    )?;
+
     Ok(())
 }
 
+/// # Create multiple names for new files
 pub fn make_filename(output_prefix: &str, num: usize) -> Vec<String> {
     (0..num)
         .map(|x| format!("{}_{}", output_prefix, x))
         .collect()
 }
 
+/// # Get traversals for each node
 pub fn get_traversals<'a>(
     node_id: u32,
     node2index_hm: &Vec<(usize, usize, usize, usize, HashMap<u32, Vec<usize>>)>,
@@ -220,7 +234,7 @@ pub fn get_traversals<'a>(
     result_vec
 }
 
-/// Convert collection of traversals to collection of samples with similar traversals
+/// # Convert collection of traversals to collection of samples with similar traversals
 ///
 /// Genome_id, haplotype_id, path_id, &[u32]
 ///
@@ -228,19 +242,20 @@ pub fn get_traversals<'a>(
 pub fn traversal2bitvec(
     traversals: Vec<(usize, usize, &[u32])>,
     number_of_samples: usize,
-    ppl: &Vec<bool>,
+    is_diploid: &Vec<bool>,
     blocks: &mut Option<BufWriter<File>>,
+    node_id: &u32,
 ) -> Vec<BitVec<u8>> {
     let mut sample_list: Vec<Vec<[usize; 2]>> = group_traversal(traversals);
 
     // If you want blocks written into extra
     if let Some(bufw) = blocks {
-        writeln!(bufw, "{}\t{:?}", 0, sample_list).unwrap();
+        writeln!(bufw, "{}\t{:?}", node_id, sample_list).unwrap();
     }
-    get_bitvector(&mut sample_list, number_of_samples, ppl)
+    get_bitvector(&mut sample_list, number_of_samples, is_diploid)
 }
 
-/// Group traversals with similar traversals
+/// # Group traversals with similar traversals
 ///
 /// One group contains all samples with the same traversal
 /// Collected into one vector
@@ -296,10 +311,10 @@ pub fn get_bitvector(
     }
     bitvec_collection
 }
-use crate::core::bfile::write_dummy_fam;
-use std::io::{self, BufReader, Read};
-use std::path::Path;
 
+
+
+/// Concatenate files and cleanup
 pub fn concatenate_files_and_cleanup<P: AsRef<Path>>(
     input_files: &[P],
     output_file: P,

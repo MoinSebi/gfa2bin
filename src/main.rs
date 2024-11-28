@@ -382,7 +382,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
         .subcommand(
             App::new("subpath")
-                .about("Find features in the graph and return a BED file for further analysis")
+                .about("Extract node-neighbourhood genotypes. Move X steps away from each node and compare traversing paths.")
 
                 .help_heading("Input options")
                 .arg(
@@ -393,27 +393,27 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .takes_value(true)
                         .required(true),
                 )
+                .arg(Arg::new("PanSN")
+                    .long("pansn")
+                    .about("PanSN-spec separator")
+                    .takes_value(true)
+                    .default_value("\n")
+                )
 
                 .help_heading("Subpath options")
                 .arg(
-                    Arg::new("length")
-                        .short('l')
-                        .long("length")
-                        .about("Length of the feature")
+                    Arg::new("step")
+                        .short('s')
+                        .long("step")
+                        .about("Step size of the feature")
                         .takes_value(true)
                         .default_value("5"),
                 )
-                .arg(
-                    Arg::new("blocks")
-                        .long("blocks")
-                        .short('b')
-                        .about("Output blocks [default: false]")
-                        .takes_value(true),
-                )
+                .help_heading("Performance options")
                 .arg(
                     Arg::new("threads")
-                        .long("threads")
                         .short('t')
+                        .long("threads")
                         .about("Number of threads")
                         .takes_value(true)
                         .default_value("1")
