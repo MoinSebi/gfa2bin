@@ -4,19 +4,32 @@ use clap::ArgMatches;
 use log::info;
 use std::fs::File;
 use std::io::Write;
+use crate::core::bfile::count_lines;
+use std::io::{BufRead, BufReader};
 
-/// View main function
+/// # View main function
 ///
 /// Convert a bed file to VCF file
+/// Vcf is bim + bed
 pub fn view_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Running 'gfa2bin view'");
     let plink_file = matches.value_of("plink").unwrap();
     let output_prefix = matches.value_of("output").unwrap();
     // Read the bed file
+
+    info!("Plink file: {}", plink_file);
+    info!("Output file: {}", output_prefix);
 
     info!("Writing output (vcf)");
     write_vcf(plink_file, output_prefix)?;
     Ok(())
 }
+
+/// Read the plink and write a vcf-like file
+///
+/// All-in-one function
+/// Does represent haplotypes
+/// Not sure of version vcf format 4.2
 pub fn write_vcf(
     filename_prefix: &str,
     output_prefix: &str,
@@ -28,7 +41,7 @@ pub fn write_vcf(
     writeln!(
         writer,
         "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">"
-    )?;
+    ).expect("Error writing to file");
 
     // Read the bim file
     let fam = read_first_column_from_tsv(&format!("{}{}", filename_prefix, ".fam"))?;
@@ -38,7 +51,7 @@ pub fn write_vcf(
         "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t".to_string()
             + &fam.join("\t")
             + "\n"
-    )?;
+    ).expect("Error writing to file");
 
     let mut mw = MatrixWrapper::new();
     let bim_count = count_lines(&format!("{}{}", filename_prefix, ".bim"))?;
@@ -48,7 +61,7 @@ pub fn write_vcf(
         &format!("{}{}", filename_prefix, ".bed"),
         fam_count,
         bim_count,
-    )?;
+    ).expect("Error reading bed file");
 
     let file_bim = File::open(format!("{}{}", filename_prefix, ".bim"))?;
     let reader_bim = BufReader::new(file_bim);
@@ -71,9 +84,9 @@ pub fn write_vcf(
     Ok(())
 }
 
-use crate::core::bfile::count_lines;
-use std::io::{BufRead, BufReader};
-
+/// # Read the first column from a tsv file
+///
+/// - Samples of a fam file
 fn read_first_column_from_tsv(file_path: &str) -> Result<Vec<String>, std::io::Error> {
     let file = File::open(file_path)?;
     let reader = BufReader::new(file);
@@ -93,7 +106,9 @@ fn read_first_column_from_tsv(file_path: &str) -> Result<Vec<String>, std::io::E
 }
 
 impl MatrixWrapper {
-    /// Write a VCF file with dumb header
+
+
+    /// # Write a VCF file with dumb header
     pub fn write_vcf(&self, filename: &str) {
         let file = File::create(filename).unwrap();
         let mut writer = std::io::BufWriter::new(file);
@@ -139,6 +154,9 @@ impl MatrixWrapper {
     }
 }
 
+/// # Convert bitvector to string to 0 and 1 string
+///
+/// - Using chunks in pairs of two
 // Convert bitvec to vcf string
 pub fn bitvec2vcf_string(bitvec: &BitVec<u8>) -> String {
     let mut s = String::new();
