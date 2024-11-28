@@ -54,6 +54,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .help_heading("Input options")
                 .arg(
                     Arg::new("gfa")
+                        .display_order(0)
                         .short('g')
                         .long("gfa")
                         .about("Input GFA file")
@@ -64,37 +65,36 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Arg::new("feature")
                         .short('f')
                         .long("feature")
-                        .about("Specific the observed feature (node, dirnode, edge)")
+                        .about("Specify the feature you want to count. Examples: node, dirnode, edge")
                         .takes_value(true)
                         .default_value("node"),
                 )
                 .arg(
-                    Arg::new("pansn")
+                    Arg::new("PanSN")
+                        .display_order(1)
                         .long("pansn")
                         .about("PanSN-spec separator")
-                        .takes_value(true),
+                        .takes_value(true)
+                        .default_value("\n")
                 )
 
-                .help_heading("Modifier")
-                .arg(
-                    Arg::new("paths")
-                        .long("paths")
-                        .about("Ignore these paths (one per line)")
-                        .takes_value(true),
-                )
 
-                .help_heading("Thresholds")
+                .help_heading("Absolute thresholds")
                 .arg(Arg::new("absolute-threshold")
                     .short('a')
                     .long("absolute-threshold")
                     .about("Set a absolute threshold")
                     .takes_value(true)
+                    .default_value("1")
                     .display_order(0))
+
+                .help_heading("Dynamic thresholds")
                 .arg(Arg::new("method")
                     .short('m')
                     .long("method")
-                    .about("Normalization method (mean|median|percentile|nothing) [default: nothing]")
+                    .about("Normalization method (mean|median|percentile|nothing)")
                     .takes_value(true)
+                    .default_value("nothing")
                     .display_order(1)
                 )
                 .arg(Arg::new("fraction")
@@ -103,21 +103,15 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .takes_value(true)
                     .display_order(2)
                 )
-                .arg(Arg::new("standard-deviation")
-                    .short('s')
-                    .long("std")
-                    .about("Adjust your threshold by decreasing if by X * standard deviation")
-                    .takes_value(true)
-                    .display_order(2))
                 .arg(Arg::new("keep-zeros")
                     .long("keep-zeros")
                     .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean) [default: false]")
-                    .display_order(4)
+                    .display_order(3)
                 )
                 .arg(Arg::new("max")
                     .long("max")
                     .about("Use max value for scaling (only in BIMBAM)")
-                    .display_order(5)
+                    .display_order(4)
                 )
 
 
@@ -139,7 +133,19 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .arg(
                     Arg::new("bimbam")
                         .long("bimbam")
-                        .about("Output in BIMBAM format [default: plink]"),),
+                        .about("Output in BIMBAM format [default: off] -> PLINK"),
+                )
+                .help_heading("Performance")
+                .arg(
+                    Arg::new("threads")
+                        .short('t')
+                        .long("threads")
+                        .about("Number of threads")
+                        .takes_value(true)
+                        .default_value("1")
+                )
+
+
         )
 
 
@@ -246,7 +252,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         .subcommand(
             App::new("remove")
-                .about("Remove samples or genotypes from you graph/coverage-based plink file")
+                .about("Remove samples or genotypes from your PLINK file")
                 .help_heading("Input options")
                 .arg(
                     Arg::new("plink")

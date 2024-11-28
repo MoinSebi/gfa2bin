@@ -133,7 +133,6 @@ pub fn gfa_reader(
 
                     while i < iter1.len() && j < hm.len() {
                         if iter1[i] == hm[j] {
-                            println!("{} {}", c, j);
                             matrix.matrix_u16[j][c] += 1;
                             lastentry = iter1[i];
                             i += 1;
@@ -177,7 +176,7 @@ pub fn what_together(graph_wrapper: &Pansn<u32, (), ()>) -> Vec<[usize; 2]> {
 }
 
 /// Add weight using the c-index
-pub fn weight_add<T: Clone>(u: &[[usize; 2]], a: &mut Vec<T>) {
+pub fn diploid_adder<T: Clone>(u: &[[usize; 2]], a: &mut Vec<T>) {
     for (index, ibool) in u.iter().enumerate() {
         if ibool[0] == ibool[1] {
             a.push(a[index].clone());

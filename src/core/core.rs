@@ -60,7 +60,7 @@ impl MatrixWrapper {
     /// Initialize the "SNP" index
     ///
     /// The SNP index is used for fast insertion of data
-    pub fn make_index(&mut self, data: &Gfa<u32, (), ()>, t: Feature) {
+    pub fn create_index(&mut self, data: &Gfa<u32, (), ()>, t: Feature) {
         //let mut bb = HashMap::with_hasher(BuildHasherDefault::<NoHashHasher<u32>>::default());
         let mut geno_names = Vec::new();
         match t {
@@ -168,21 +168,11 @@ impl MatrixWrapper {
             info!("Writing the bimbam");
 
             if self.matrix_f32.is_empty() {
-                let chunk_size = (self.matrix_u16.len() / split) + 1;
-                let chunks = self.matrix_u16.chunks(chunk_size);
-                let len = chunks.len();
-                for (index, y) in chunks.enumerate() {
-                    self.write_bimbam(index, output_prefix, len, &thresh, y);
-                    self.write_phenotype_bimbam(index, output_prefix, len, pheno);
-                }
+                self.write_bimbam(0, output_prefix, 1, &thresh, &self.matrix_u16);
+                self.write_phenotype_bimbam(0, output_prefix, 1, pheno);
             } else {
-                let chunk_size = (self.matrix_f32.len() / split) + 1;
-                let chunks = self.matrix_f32.chunks(chunk_size);
-                let len = chunks.len();
-                for (index, y) in chunks.enumerate() {
-                    self.write_bimbam(index, output_prefix, len, &thresh, y);
-                    self.write_phenotype_bimbam(index, output_prefix, len, pheno);
-                }
+                self.write_bimbam(0, output_prefix, 1, &thresh, &self.matrix_f32);
+                self.write_phenotype_bimbam(0, output_prefix, 1, pheno);
             }
 
             // if plink bed
@@ -203,14 +193,14 @@ impl MatrixWrapper {
                 }
             }
             info!(
-                "Matrix [SNPs X Samples] (before remove): {}, {}",
+                "Matrix [Genotypes X Samples] (before remove): {}, {}",
                 self.matrix_bit.len(),
                 self.matrix_bit[0].len()
             );
             if remove_non_info {
                 //self.remove_non_info();
                 info!(
-                    "Matrix [SNPs X Samples] (after remove): {}, {}",
+                    "Matrix [Genotypes X Samples] (after remove): {}, {}",
                     self.matrix_bit.len(),
                     self.matrix_bit[0].len()
                 );

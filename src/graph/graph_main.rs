@@ -3,7 +3,7 @@ use crate::core::helper::Feature;
 use std::fs::File;
 use std::io::Read;
 
-use crate::graph::parser::{gfa_reader, weight_add};
+use crate::graph::parser::{diploid_adder, gfa_reader};
 
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
@@ -13,66 +13,45 @@ use packing_lib::normalize::convert_helper::Method;
 use std::path::Path;
 use std::process;
 
-/// Function for 'gfa2bin graph'
+/// # Main function for 'gfa2bin graph'
 pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Running 'gfa2bin graph'");
+
     // Check graph file
-    let graph_file: &str = if Path::new(matches.value_of("gfa").unwrap()).exists() {
-        matches.value_of("gfa").unwrap()
-    } else {
-        warn!("No file with such name");
-        process::exit(0x0100);
-    };
+    let graph_file: &str = matches.value_of("gfa").unwrap();
 
     // Input parameters
     let feature1 = matches.value_of("feature").unwrap_or("node");
     let output_feature = if ["node", "dirnode", "edge"].contains(&feature1) {
         feature1
     } else {
-        "node"
+        warn!("Feature {} is not supported", feature1);
+        warn!("Only node, dirnode and edge are supported");
+        process::exit(1);
     };
-    let feature_enum = Feature::from_str(output_feature);
-    let sep = matches.value_of("pansn").unwrap_or(" ");
-    let _need_edges = output_feature != "node"; // If you something else than a node, you need to parse the edges
 
-    // Output
-    let split = matches
-        .value_of("split")
-        .unwrap_or("1")
-        .parse::<usize>()
-        .unwrap();
+    let feature_enum = Feature::from_str(output_feature);
+    let mut sep = matches.value_of("PanSN").unwrap();
+
     let bimbam_output = matches.is_present("bimbam");
     let output_prefix = matches.value_of("output").unwrap();
 
     // Threshold
     let mut absolute_thresh = matches
         .value_of("absolute-threshold")
-        .unwrap_or("0")
+        .unwrap()
         .parse::<u32>()
-        .unwrap();
-    let fraction = matches
-        .value_of("fraction")
-        .unwrap_or("1.0")
-        .parse::<f32>()
-        .unwrap();
-    let method = Method::from_str(matches.value_of("method").unwrap_or("nothing"));
-    let std = matches
-        .value_of("std")
-        .unwrap_or("0.0")
-        .parse::<f32>()
-        .unwrap();
+        .expect("Error: Absolute threshold is not a number");
+
+    let method = Method::from_str(matches.value_of("method").expect("Error: Method is not given"));
     let keep_zeros = matches.is_present("keep-zeros");
 
     // Bin is for faster computation
     let mut bin = false;
-    if matches.is_present("absolute-threshold") && absolute_thresh == 1 && !bimbam_output {
+    if absolute_thresh == 1 {
         bin = true;
     }
 
-    if !matches.is_present("absolute-threshold") && !matches.is_present("method") && !bimbam_output
-    {
-        bin = true;
-        absolute_thresh = 1;
-    }
     let max_scale = matches.is_present("max-scale");
 
     // Dummy phenotype
@@ -81,22 +60,23 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
         pheno = matches.value_of("pheno").unwrap().parse()?;
     }
 
+    let threads = matches
+        .value_of("threads")
+        .unwrap_or("1")
+        .parse::<usize>()
+        .unwrap();
+
     info!("Input parameters");
     info!("Graph file: {}", graph_file);
     info!("Feature: {} -> {}", feature1, output_feature);
-    info!("Separator: {:?}", sep);
+    info!("Pan-SN: {}", if sep == "\n" {"None".to_string() } else { format!("{:?}", sep)});
     info!("Absolute threshold: {}", absolute_thresh);
-    info!("Method: {:?}", method.to_string());
-    info!("Relative threshold: {:?}", fraction);
+    info!("Method: {}", method.to_string());
+    info!("Fraction: {}", if matches.is_present("fraction") { matches.value_of("fraction").unwrap() } else { "None"});
     info!("Binary: {}", bin);
     info!("Keep zeros: {}", keep_zeros);
     info!("Max value scaling (only bimbam): {}", max_scale);
-    info!(
-        "Output format: {}",
-        if bimbam_output { "bimbam" } else { "plink" }
-    );
-    info!("Split: {}", split);
-    info!("Output prefix: {}", output_prefix);
+    info!("Threads: {}", threads);
     info!(
         "Dummy-Pheno: {}",
         if pheno == f64::MAX {
@@ -105,20 +85,42 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
             pheno.to_string()
         }
     );
+    info!(
+        "Output format: {}",
+        if bimbam_output { "bimbam" } else { "PLINK" }
+    );
+    info!("Output prefix: {}\n", output_prefix);
 
-    info!("Reading the graph");
-    // Read the graph and wrapper
-    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file(graph_file);
-    graph.walk_to_path(sep);
 
-    // Remove paths from the graph
-    if matches.is_present("paths") {
-        let mut file = File::open(matches.value_of("paths").unwrap()).unwrap();
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).unwrap();
-        // Remove paths
-        graph.paths.retain(|x| !contents.contains(&x.name));
+    let mut fraction = 0.0;
+    if matches.is_present("fraction") {
+        fraction = matches
+            .value_of("fraction")
+            .unwrap()
+            .parse::<f32>()
+            .expect("Error: Fraction is not a number");
     }
+    let mut dynamic = false;
+    if fraction > 1.0 || fraction < 0.0{
+        panic!("Fraction is not between 0 and 1");
+    }
+    if method != Method::Nothing && fraction == 0.0{
+        panic!("Method is given but fraction is not.");
+    } else if method == Method::Nothing && fraction != 0.0{
+        panic!("Fraction is given but method is not.");
+    } else if method != Method::Nothing && fraction != 0.0{
+        dynamic = true;
+    }
+    info!("Dynamic threshold: {}", dynamic);
+
+    info!("Read the graph");
+    // Read the graph and wrapper
+    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file_multi(graph_file, threads);
+    if graph.paths.is_empty() && sep == "\n" {
+        sep = "#"
+    }
+
+    graph.walk_to_path(sep);
 
     // Wrapper on PanSN
     let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, sep);
@@ -151,34 +153,41 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     let mut mw = MatrixWrapper::new();
 
     info!("Create the index");
-    mw.make_index(&graph, feature_enum);
-    info!("Index size: {}", mw.geno_names.len());
-    info!("Index size: {}", mw.geno_names.capacity());
+    mw.create_index(&graph, feature_enum);
 
-    info!("Create matrix");
+    info!("Read the graph into matrix");
     gfa_reader(&mut mw, &wrapper, bin, feature_enum);
 
     // Threshold calculation
     let mut thresh = Vec::new();
-    for x in mw.matrix_u16.iter() {
-        let mut b = x.clone();
-        weight_add(&mw.sample_index_u16, &mut b);
-
-        thresh.push(PackCompact::threshold(
-            &mut b, keep_zeros, fraction, std, method,
-        ));
-    }
 
     // If max_scale is true, threshold needs to be adjusted
-    if max_scale {
-        thresh.clear();
+    if max_scale && bimbam_output {
         for x in mw.matrix_u16.iter() {
             thresh.push(*x.iter().max().ok_or("Error: Empty vector")? as f32)
         }
+    } else {
+        if !dynamic {
+            thresh = vec![absolute_thresh as f32; mw.geno_names.len()];
+        } else {
+            for x in mw.matrix_u16.iter() {
+                let mut count_vec = x.clone();
+                diploid_adder(&mw.sample_index_u16, &mut count_vec);
+
+                thresh.push(PackCompact::threshold(
+                    &mut count_vec,
+                    keep_zeros,
+                    fraction,
+                    0.0,
+                    method,
+                ));
+            }
+        }
     }
+
     mw.write_wrapper(
         bimbam_output,
-        split,
+        1,
         output_prefix,
         thresh,
         feature_enum,
