@@ -29,7 +29,6 @@ use crate::cov::cov_main::cov_main;
 use crate::nearest::nearest_main::nearest_main;
 use std::error::Error;
 
-
 fn main() -> Result<(), Box<dyn Error>> {
     let matches = App::new("gfa2bin")
         .version("0.1.0")
@@ -470,9 +469,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .required(true),
                 )
 
-                .help_heading("Filter options")
+                .help_heading("Genotype filtering options")
                 .arg(
                     Arg::new("maf")
+                        .display_order(1)
                         .short('m')
                         .long("maf")
                         .about("Major allele frequency")
@@ -481,6 +481,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 )
                 .arg(
                     Arg::new("MAF")
+                        .display_order(2)
                         .short('M')
                         .long("MAF")
                         .about("Minor allele frequency")
@@ -488,18 +489,32 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .default_value("0.95"),
                 )
                 .arg(
-                    Arg::new("entry min")
-                        .short('e')
-                        .long("entries-min")
-                        .about("Minimum amount of entries")
+                    Arg::new("mac")
+                        .display_order(3)
+                        .long("mac")
+                        .about("Major allele count")
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::new("entry max")
-                        .short('E')
-                        .long("entries-max")
-                        .about("Maximum amount of entries")
+                    Arg::new("MAC")
+                        .long("MAC")
+                        .about("Minor allele count")
                         .takes_value(true),
+                )
+
+                .help_heading("Sample filtering options")
+                .arg(
+                    Arg::new("missing-rate")
+                        .long("missing-rate")
+                        .about("Filter sample which have less relative genotypes than this value. Value between 0.0 and 1.0")
+                        .takes_value(true)
+                        .default_value("0.2"),
+                )
+                .arg(
+                    Arg::new("missing-count")
+                        .long("missing-count")
+                        .about("Filter sample which have less genotypes than this value")
+                        .takes_value(true)
                 )
 
                 .help_heading("Output options")
@@ -623,6 +638,16 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .about("Output prefix for the new plink files")
                         .takes_value(true)
                         .required(true),
+                )
+
+                .help_heading("Performance")
+                .arg(
+                    Arg::new("threads")
+                        .short('t')
+                        .long("threads")
+                        .about("Number of threads")
+                        .takes_value(true)
+                        .default_value("1")
                 )
         )
         .get_matches();
