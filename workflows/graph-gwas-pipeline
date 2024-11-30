@@ -7,7 +7,7 @@ SCRIPT_PATH=$(realpath $0)
 WORKFLOW_DIR=$(dirname $SCRIPT_PATH)
 CORES=6
 
-# set -xv
+set -xv
 ###############################################################################
 # Check for command line arguments
 # If the user provides a different number of cores, use that instead of the default
@@ -26,7 +26,7 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    -b|--bootstrap)
+    -i|--init)
       BOOTSTRAP="true"
       shift
       ;;
@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]; do
       echo "Usage: $0 [-c|--cores <cores>] [-p|--profile <profile>] [snakemake arguments]"
       echo "  -c|--cores <cores>     Number of cores to use for the workflow (default: 6)"
       echo "  -p|--profile <profile> Cluster profile to use with snakemake"
-      echo "  -b|--bootstrap         Bootstrap the workflow"
+      echo "  -i|--init         Init a new workflow run in the current directory"
       echo "  [snakemake arguments]  Additional arguments to pass to snakemake"
       exit 0
       ;;
@@ -88,7 +88,7 @@ if [[ -n ${BOOTSTRAP} ]]; then
   # Check if config/config.yaml or ./config.yaml is already present, if so exit
   if [[ -f config/config.yaml || -f config.yaml ]]; then
     echo 'Config file config.yaml already exists in either ./config/ or ./'
-    echo 'Remove this first, if you want to run a fresh bootstrap.'
+    echo 'Remove this first, if you want to run a fresh init.'
     exit 1
   fi
 
@@ -142,13 +142,13 @@ if [[ -n ${PROFILE} ]]; then
             --use-conda \
             --profile ${PROFILE} \
             --cores ${CORES} \
-            $@
+            "$@"
   exit $?
 else
   snakemake -s ${WORKFLOW_DIR}/workflow/Snakefile \
             --configfile ${WORKFLOW_CONFIG} \
             --use-conda \
             --cores ${CORES} \
-            $@
+            "$@"
   exit $?
 fi

@@ -45,6 +45,12 @@ samples: "config/samples.csv"
 graph: "!!!CHANGETHIS!!!/to/your/graph.gfa"
 pan_sn_delimiter: "#"
 
+# If set to true, the the graph is converted to a linear fasta reference for
+# mapping. The mappings are then injected back into the graph.
+# This is the default behavior.
+use_fasta_ref: true
+
+
 
 ###############################################################################
 # Settings for "packs" input mode
@@ -65,22 +71,6 @@ packlist: "config/packlist.csv"
 ###############################################################################
 ###############################################################################
 
-##############################################################################
-# 01 - Prepare reference genome
-##############################################################################
-
-# Nothing to set (yet)
-
-
-##############################################################################
-# 02 - make pack files
-##############################################################################
-
-# If set to true, the the graph is converted to a linear fasta reference for
-# mapping. The mappings are then injected back into the graph.
-# This is the default behavior.
-use_fasta_ref: true
-
 
 ##############################################################################
 # 03 - make fambedbims
@@ -100,7 +90,7 @@ gfa2bin: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/gfa2bin/target/rel
 
 
 ##############################################################################
-# 05 - GWAS
+# 04 - GWAS
 ##############################################################################
 
 # Kinship matrix settings. A kinship matrix is needed for the GWAS analysis.

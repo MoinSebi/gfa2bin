@@ -9,7 +9,8 @@ rule target:
 rule create_fasta_reference:
     input:
         graph_file=config["graph"],
-        validation_file="results/00_validate_inputs/{reference_name}.graph_validation.txt"
+        validation_file="results/00_validate_inputs/{reference_name}.graph_validation.txt",
+        samples_validation_file="results/00_validate_inputs/sample_names_validation.txt"
     output:
         fasta_ref="results/01_fasta_ref/{reference_name}.all.fasta.gz",
         # These won't be used, but we need to make sure they are created

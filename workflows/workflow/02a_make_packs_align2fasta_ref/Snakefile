@@ -37,7 +37,7 @@ rule align_to_fasta_ref_with_bwa:
         fasta_ref="results/01_fasta_ref/{reference_name}.all.fasta.gz",
         fastq=get_fastq
     output:
-        bam_file="results/02_packs/{reference_name}.{sample}.bam"
+        bam_file=temp("results/02_packs/{reference_name}.{sample}.bam")
     shell:
         """
         bwa mem {input.fasta_ref} {input.fastq} -t {params.threads} | \
@@ -49,6 +49,7 @@ rule align_to_fasta_ref_with_bwa:
 rule inject_graph_with_bams:
 #    params:
 #        gfainject=config["gfainject"]
+    priority: 10000
     conda:
         "../envs/main.yaml"
     input:
@@ -71,6 +72,7 @@ rule inject_graph_with_bams:
 
 # Uses vg, gaf2pack as alternative, see above
 rule create_pack_files:
+    priority: 100000
     conda:
         "../envs/main.yaml"
     input:
