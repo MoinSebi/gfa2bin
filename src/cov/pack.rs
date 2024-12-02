@@ -2,10 +2,12 @@ use crate::core::core::MatrixWrapper;
 use crate::core::helper::{index2node_seq, merge_u32_to_u64};
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
+use std::thread::Thread;
 
 use packing_lib::core::core::{DataType, PackCompact};
 use packing_lib::normalize::convert_helper::Method;
 
+/// # Binary Pack to Binary Matrix
 pub fn bin2bin(matrix_w: &mut MatrixWrapper, input: &PackCompact, index: usize) {
     for (i, y) in input.bin_coverage.iter().enumerate() {
         if y == &true {
@@ -18,6 +20,7 @@ pub fn bin2bin(matrix_w: &mut MatrixWrapper, input: &PackCompact, index: usize) 
     }
 }
 
+/// # f32 Pack to Binary Matrix
 pub fn f32_to_bin(matrix_w: &mut MatrixWrapper, input: &PackCompact, thresh: f32, index: usize) {
     for (i, y) in input.normalized_coverage.iter().enumerate() {
         if y > &thresh {
@@ -30,6 +33,7 @@ pub fn f32_to_bin(matrix_w: &mut MatrixWrapper, input: &PackCompact, thresh: f32
     }
 }
 
+/// # f32 Pack to f32 Matrix
 pub fn f32_to_f32(matrix_w: &mut MatrixWrapper, input: &PackCompact, thresh: f32, index: usize) {
     for (i, y) in input.normalized_coverage.iter().enumerate() {
         if y > &thresh {
@@ -38,7 +42,11 @@ pub fn f32_to_f32(matrix_w: &mut MatrixWrapper, input: &PackCompact, thresh: f32
     }
 }
 
-pub fn read_pack1(is_plain: bool, filename: &str) -> PackCompact {
+/// # Read pack wrapper
+///
+/// - If the pack is plain, parse it
+/// - If the pack is compressed, read it
+pub fn read_pack_wrapper(is_plain: bool, filename: &str) -> PackCompact {
     if is_plain {
         PackCompact::parse_pack(filename)
     } else {
@@ -58,22 +66,38 @@ pub fn wrapper_reader123(buffer: &[u8]) -> PackCompact {
         PackCompact::read_f32(buffer)
     }
 }
+
+/// # Init geno names by index
+///
+/// Use either
+/// - `index` if `pc.node_index` is empty
+/// - `pc.node_index` if `pc.node_index` is not empty
 pub fn init_geno_names(
     mw: &mut MatrixWrapper,
     pc: &mut PackCompact,
     want_node: bool,
     index: &Vec<u32>,
 ) {
+
+    /// Check the index
     if pc.node_index.is_empty() {
         pc.node_index = index.clone();
     }
+    println!("Node index {:?}", pc.node_index);
 
-    if !pc.is_sequence || (want_node && pc.is_sequence) {
+
+    if want_node {
+
         mw.geno_names = remove_duplicates(&pc.node_index);
+
     } else {
         mw.geno_names = index2node_seq(&pc.node_index)
     }
 }
+
+/// # Init matrix
+///
+/// Based on the output
 pub fn init_matrix(
     mw: &mut MatrixWrapper,
     pc: &mut PackCompact,
@@ -81,7 +105,7 @@ pub fn init_matrix(
     bimbam: bool,
     len1: usize,
 ) {
-    // normalize coverage
+    // Create normalized coverage from coverage
     if pc.bin_coverage.is_empty() {
         if pc.normalized_coverage.is_empty() {
             if want_node {
@@ -99,6 +123,7 @@ pub fn init_matrix(
         return;
     }
 
+    // This is the important part
     if bimbam {
         mw.matrix_f32 = vec![vec![0.0; len1]; pc.normalized_coverage.len()];
     } else {
@@ -118,13 +143,15 @@ pub fn matrick_pack_wrapper(
     index_file: &Vec<u32>,
     index: usize,
     name: &String,
+    absolute: u32,
 ) {
+    // Add samples to matrix
     mw.sample_names.push(name.clone());
 
     if !index_file.is_empty() {
         pc.node_index = index_file.clone();
     }
-    // is pc bit
+
 
     if pc.bin_coverage.is_empty() {
         if want_node {
@@ -133,7 +160,11 @@ pub fn matrick_pack_wrapper(
             pc.normalized_coverage = pc.coverage.iter().map(|x| *x as f32).collect();
         }
 
-        let thresh = PackCompact::get_threshold(pc, keep_zeros, fraction, 0.0, method);
+        let mut thresh = PackCompact::get_threshold(pc, keep_zeros, fraction, 0.0, method);
+        if absolute > 0{
+            thresh = absolute as f32;
+        }
+
         if bimbam {
             f32_to_f32(mw, pc, thresh, index);
         } else {
@@ -213,9 +244,11 @@ pub fn matrix_pack_wrapper(
     }
 }
 
+
+///
 pub fn remove_duplicates(sorted_vec: &Vec<u32>) -> Vec<u64> {
-    let mut unique_vec: Vec<u32> = Vec::new();
-    let result = Vec::new();
+    let mut unique_vec: Vec<u32> = sorted_vec.iter().cloned().collect();
+    let mut result = Vec::new();
 
     // If the input vector is empty, return an empty vector
     if sorted_vec.is_empty() {
@@ -223,16 +256,7 @@ pub fn remove_duplicates(sorted_vec: &Vec<u32>) -> Vec<u64> {
     }
 
     // Add the first element of the sorted vector
-    unique_vec.push(sorted_vec[0]);
-
-    // Iterate through the sorted vector and add only distinct elements
-    for i in 1..sorted_vec.len() {
-        // If the current element is different from the previous one, add it to the unique vector
-        if sorted_vec[i] != sorted_vec[i - 1] {
-            unique_vec.push(sorted_vec[i]);
-        }
-    }
-    let mut result = Vec::new();
+    unique_vec.dedup();
 
     for x in unique_vec.iter() {
         result.push(merge_u32_to_u64(*x, 0));

@@ -197,7 +197,6 @@ pub fn index_file(file: &str, number: usize) -> Vec<[usize; 2]> {
     let oo = (0..number + 1)
         .map(|x| result[x * step_size])
         .collect::<Vec<usize>>();
-    
 
     (1..oo.len())
         .map(|x| [oo[x - 1], oo[x]])

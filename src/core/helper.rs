@@ -249,8 +249,17 @@ pub fn split_u64_to_u32s(value: u64) -> (u32, u32) {
     (high, low)
 }
 
+
+/// # Build index from a sorted vector
+///
+/// Merges two u32 together
+/// 1. node_id
+/// 2. seq_count
 pub fn index2node_seq(vector: &[u32]) -> Vec<u64> {
     let mut result = Vec::new();
+    if vector.is_empty() {
+        return result;
+    }
     let mut node_id = vector[0];
     let mut seq_count = 0;
     result.push(merge_u32_to_u64(node_id, seq_count));

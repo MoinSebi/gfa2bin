@@ -45,7 +45,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         .subcommand(
             App::new("graph")
-                .about("Convert GFA file (v1) to plink (bed, bim, fam). \n \
+                .about("Convert GFA file (v1) to PLINK (bed, bim, fam). \n \
                                 Threshold modifier are used used to create a (1) presence-absence matrix or (2) scaling in bimbam format.")
 
                 .setting(AppSettings::ArgRequiredElseHelp)
@@ -152,7 +152,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         .subcommand(
             App::new("cov")
-                .about("Conversion from a coverage information (plain-text or compressed)")
+                .about("Convert coverage information (plain-text or compressed)")
                 .setting(AppSettings::ArgRequiredElseHelp)
 
 
@@ -167,14 +167,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .arg(
                     Arg::new("pack compressed")
                         .short('c')
-                        .long("cp")
-                        .about("Concatenated bpack file (packing)")
+                        .long("pc")
+                        .about("Concatenated pc/pt/pn files (packing)")
                         .takes_value(true),
                 )
                 .arg(
                     Arg::new("pc-list")
                         .short('l')
-                        .long("cp-list")
+                        .long("pc-list")
                         .about("List of compressed pack files (one per line). Tab separated with sample name. Example [tair10   /path/to/file]")
                         .takes_value(true),
                 )
@@ -182,22 +182,26 @@ fn main() -> Result<(), Box<dyn Error>> {
                     Arg::new("index")
                         .short('i')
                         .long("index")
-                        .about("Index file is needed for compressed pack")
+                        .about("Index file is needed for compressed pack files. This includes 'pc-list' and 'pack compressed'")
                         .takes_value(true),
                 )
 
 
-                .help_heading("Threshold modifier")
+                .help_heading("Absolute thresholds")
                 .arg(Arg::new("absolute-threshold")
+                    .short('a')
                     .long("absolute-threshold")
                     .about("Set a absolute threshold")
                     .takes_value(true)
                     .display_order(0))
                 // Modification
+
+                .help_heading("Dynamic thresholds")
                 .arg(Arg::new("method")
                     .long("method")
-                    .about("Normalization method (mean|median|percentile|nothing) [default: nothing]")
+                    .about("Normalization method (mean|median|percentile) ")
                     .takes_value(true)
+                    .default_value("percentile")
                     .display_order(1)
                 )
 
@@ -205,6 +209,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .long("fraction")
                     .about("Fraction")
                     .takes_value(true)
+                    .default_value("0.1")
                     .display_order(2)
                 )
                 .arg(Arg::new("keep-zeros")
@@ -212,9 +217,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .about("Include non-covered entries (nodes or sequences) for dynamic threshold calculations (e.g mean)")
                     .display_order(4)
                 )
-                .arg(Arg::new("node")
-                    .long("node")
-                    .about("Use node instead of sequence")
+                .arg(Arg::new("sequence")
+                    .long("sequence")
+                    .about("Use sequence instead of nodes")
                     .display_order(5)
                 )
                 .arg(Arg::new("no-default")
@@ -226,7 +231,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 
 
-                .help_heading("Output parameter")
+                .help_heading("Output options")
                 .arg(
                     Arg::new("output")
                         .short('o')

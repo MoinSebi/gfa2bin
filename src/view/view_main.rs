@@ -1,10 +1,10 @@
+use crate::core::bfile::count_lines;
 use crate::core::core::MatrixWrapper;
 use bitvec::vec::BitVec;
 use clap::ArgMatches;
 use log::info;
 use std::fs::File;
 use std::io::Write;
-use crate::core::bfile::count_lines;
 use std::io::{BufRead, BufReader};
 
 /// # View main function
@@ -41,7 +41,8 @@ pub fn write_vcf(
     writeln!(
         writer,
         "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">"
-    ).expect("Error writing to file");
+    )
+    .expect("Error writing to file");
 
     // Read the bim file
     let fam = read_first_column_from_tsv(&format!("{}{}", filename_prefix, ".fam"))?;
@@ -51,7 +52,8 @@ pub fn write_vcf(
         "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t".to_string()
             + &fam.join("\t")
             + "\n"
-    ).expect("Error writing to file");
+    )
+    .expect("Error writing to file");
 
     let mut mw = MatrixWrapper::new();
     let bim_count = count_lines(&format!("{}{}", filename_prefix, ".bim"))?;
@@ -61,7 +63,8 @@ pub fn write_vcf(
         &format!("{}{}", filename_prefix, ".bed"),
         fam_count,
         bim_count,
-    ).expect("Error reading bed file");
+    )
+    .expect("Error reading bed file");
 
     let file_bim = File::open(format!("{}{}", filename_prefix, ".bim"))?;
     let reader_bim = BufReader::new(file_bim);
@@ -106,8 +109,6 @@ fn read_first_column_from_tsv(file_path: &str) -> Result<Vec<String>, std::io::E
 }
 
 impl MatrixWrapper {
-
-
     /// # Write a VCF file with dumb header
     pub fn write_vcf(&self, filename: &str) {
         let file = File::create(filename).unwrap();

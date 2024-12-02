@@ -56,10 +56,10 @@ fn cov_pn() -> Result<(), Box<dyn std::error::Error>> {
     // Read the buffer
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
-    assert_eq!(buffer.len(), 3 + 999);
+    assert_eq!(buffer.len(), 3 + 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.bim")?;
-    assert_eq!(content.lines().count(), 999);
+    assert_eq!(content.lines().count(), 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.fam")?;
     assert_eq!(content.lines().count(), 2);
@@ -83,10 +83,10 @@ fn cov_pack_pn() -> Result<(), Box<dyn std::error::Error>> {
     // Read the buffer
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
-    assert_eq!(buffer.len(), 3 + 999);
+    assert_eq!(buffer.len(), 3 + 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.bim")?;
-    assert_eq!(content.lines().count(), 999);
+    assert_eq!(content.lines().count(), 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.fam")?;
     assert_eq!(content.lines().count(), 2);
@@ -108,10 +108,10 @@ fn cov_pack1_pn() -> Result<(), Box<dyn std::error::Error>> {
     // Read the buffer
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
-    assert_eq!(buffer.len(), 3 + 999);
+    assert_eq!(buffer.len(), 3 + 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov.pack.bim")?;
-    assert_eq!(content.lines().count(), 999);
+    assert_eq!(content.lines().count(), 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov.pack.fam")?;
     assert_eq!(content.lines().count(), 2);
@@ -135,10 +135,10 @@ fn cov_pc() -> Result<(), Box<dyn std::error::Error>> {
     // Read the buffer
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
-    assert_eq!(buffer.len(), 3 + 999);
+    assert_eq!(buffer.len(), 3 + 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov.pc.bim")?;
-    assert_eq!(content.lines().count(), 999);
+    assert_eq!(content.lines().count(), 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov.pc.fam")?;
     assert_eq!(content.lines().count(), 2);
@@ -151,7 +151,7 @@ fn cov_pc() -> Result<(), Box<dyn std::error::Error>> {
 fn cov_pc2() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("cov")
-        .arg("--packcompressed")
+        .arg("--pc")
         .arg("data/example_data/packs/9986.compress.pc")
         .arg("-o")
         .arg("data/output/gfa2bin.cov2.pc")
@@ -162,10 +162,10 @@ fn cov_pc2() -> Result<(), Box<dyn std::error::Error>> {
     // Read the buffer
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
-    assert_eq!(buffer.len(), 3 + 999);
+    assert_eq!(buffer.len(), 3 + 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov2.pc.bim")?;
-    assert_eq!(content.lines().count(), 999);
+    assert_eq!(content.lines().count(), 67);
 
     let content = fs::read_to_string("data/output/gfa2bin.cov2.pc.fam")?;
     assert_eq!(content.lines().count(), 2);

@@ -1,14 +1,14 @@
+use crate::core::bfile::write_dummy_fam;
 use bitvec::order::Lsb0;
-use std::fs::File;
-use std::io::{BufWriter, Write};
 use bitvec::prelude::BitVec;
 use clap::ArgMatches;
 use gfa_reader::{Gfa, Pansn};
 use hashbrown::HashMap;
 use log::info;
 use rayon::prelude::*;
-use crate::core::bfile::write_dummy_fam;
+use std::fs::File;
 use std::io::{self, BufReader, Read};
+use std::io::{BufWriter, Write};
 use std::path::Path;
 
 /// Subpath main function
@@ -30,7 +30,6 @@ pub fn subpath_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
     info!("Threads: {}", threads);
     info!("Output prefix: {}\n", output_prefix);
 
-
     info!("Read graph file");
     let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file_multi(graph_file, threads);
 
@@ -39,7 +38,6 @@ pub fn subpath_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
         pansn = "#";
     }
     graph.walk_to_path(pansn);
-
 
     let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, pansn);
 
@@ -128,7 +126,6 @@ pub fn subpath_wrapper(
                     .expect("Not able to create block file"),
             ));
 
-
             for node_id in chunks {
                 // Result vec
                 let mut result_vec = get_traversals(*node_id, &node2index_hm, graph2, window);
@@ -142,7 +139,8 @@ pub fn subpath_wrapper(
                 }
 
                 // !Thiis mmight be wring
-                let vec_bitvec = traversal2bitvec(result_vec, sample_size, &is_diploid, &mut block, node_id);
+                let vec_bitvec =
+                    traversal2bitvec(result_vec, sample_size, &is_diploid, &mut block, node_id);
                 for (x, _item) in vec_bitvec.iter().enumerate() {
                     writeln!(
                         file_bim,
@@ -161,7 +159,6 @@ pub fn subpath_wrapper(
                 }
             }
         });
-
 
     info!("Concatenating files");
     let filenames1 = make_filename(out_prefix, threads);
@@ -311,8 +308,6 @@ pub fn get_bitvector(
     }
     bitvec_collection
 }
-
-
 
 /// Concatenate files and cleanup
 pub fn concatenate_files_and_cleanup<P: AsRef<Path>>(

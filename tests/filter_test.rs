@@ -15,7 +15,7 @@ fn filter_test() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("graph")
         .arg("-g")
-        .arg("./data/example_data/gfa/ecoli50.gfa")
+        .arg("./data/example_data/gfa/testGraph.gfa")
         .arg("-o")
         .arg("./data/output/gfa2bin.filter")
         .arg("-f")
@@ -33,7 +33,6 @@ fn filter_test() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-o")
         .arg("data/output/gfa2bin.filter.0.1");
     cmd.assert().success();
-
 
     //fs::remove_file("data/output/remove.feature.node.fam")?;
     Ok(())

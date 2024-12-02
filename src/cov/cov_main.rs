@@ -1,7 +1,7 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
 use crate::cov::pack::{
-    init_geno_names, init_matrix, matrick_pack_wrapper, read_pack1, wrapper_reader123,
+    init_geno_names, init_matrix, matrick_pack_wrapper, read_pack_wrapper, wrapper_reader123,
 };
 use clap::ArgMatches;
 use log::{info, warn};
@@ -16,12 +16,13 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
+    info!("Running 'gfa2bin cov'");
     // You have either a list of packs (plain-text) or a compressed pack (cat or list), but you need to provide an index
     if matches.is_present("pack")
-        | (matches.is_present("pack compressed") && matches.is_present("index"))
-        | (matches.is_present("pc-list") && matches.is_present("index"))
+        || (matches.is_present("pack compressed") && matches.is_present("index"))
+        || (matches.is_present("pc-list") && matches.is_present("index"))
     {
-        info!("Using packlist");
+        info!("Files provided");
     } else {
         if matches.is_present("pack compressed") {
             panic!("You need to provide an index file");
@@ -47,37 +48,26 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         .unwrap();
     let mut fraction = matches
         .value_of("fraction")
-        .unwrap_or("0.0")
+        .unwrap()
         .parse::<f32>()
-        .unwrap();
-    let mut method = Method::from_str(matches.value_of("method").unwrap_or("nothing"));
+        .expect("Could not parse fraction");
+    let mut method = Method::from_str(matches.value_of("method").unwrap());
+
     let keep_zeros = matches.is_present("keep-zeros");
-    let want_node = matches.is_present("node");
+    let want_node = !matches.is_present("sequence");
     // Output modification
+
+    // Output
     let bimbam = matches.is_present("bimbam");
 
-    if !matches.is_present("fraction")
-        && method == Method::Nothing
-        && !matches.is_present("absolute-threshold")
-    {
-        info!("No method or fraction given, using default");
-        method = Method::Percentile;
-        fraction = 0.1;
-    }
-
+    let mut dyna = true;
     if absolute_thresh > 0 {
-        method = Method::Absolute;
-        fraction = 0.0;
+        dyna = false;
         // if not, give method and fraction
-    } else if method == Method::Nothing && fraction != 0.0 {
-        warn!("No method or fraction given");
-        panic!("Exiting");
-    } else if fraction == 0.0 {
-        warn!("Relative threshold is 0");
-        panic!("Exiting");
     } else if method == Method::Nothing {
-        warn!("No method or fraction given");
-        panic!("Exiting");
+        panic!("You need to provide a method");
+    } else if fraction == 0.0 || fraction < 0.0 {
+        panic!("You need to provide a fraction");
     }
 
     let mut pheno = f64::MAX;
@@ -85,15 +75,18 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         pheno = matches.value_of("pheno").unwrap().parse()?;
     }
 
-    info!("Input parameters");
     info!("Feature: {}", Alignment.to_string1());
-    info!("Absolute threshold: {}", absolute_thresh);
+    info!(
+        "Absolute threshold: {}",
+        if absolute_thresh == 0 {
+            "None".to_string()
+        } else {
+            absolute_thresh.to_string()
+        }
+    );
     info!("Method: {}", method.to_string());
-    info!("Relative threshold: {:?}", fraction);
-    info!("Standard deviation: {}", 0.0);
+    info!("Fraction: {}", fraction);
     info!("Keep zeros: {}", keep_zeros);
-    info!("Output format: {}", if bimbam { "bimbam" } else { "plink" });
-    info!("Output prefix: {}", output_prefix);
     info!(
         "Dummy-Pheno: {}",
         if pheno == f64::MAX {
@@ -102,6 +95,9 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
             pheno.to_string()
         }
     );
+    info!("Type: {}", if want_node { "Node" } else { "Sequence" });
+    info!("Output format: {}", if bimbam { "bimbam" } else { "PLINK" });
+    info!("Output prefix: {}\n", output_prefix);
 
     // Initialize the matrix wrapper
     let mut mw = MatrixWrapper::new();
@@ -109,21 +105,28 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
 
     info!("Reading the input");
     if matches.is_present("pack") {
-        info!("Reading 'pack'");
+        info!("Reading plain-text pack");
         // Read the first data
         let files_list = read_file_lines(pack_list.unwrap()).unwrap();
-        let mut first_file = read_pack1(true, &files_list[0][1]);
-        init_geno_names(&mut mw, &mut first_file, want_node, &vec![]);
+        let mut pack_first = read_pack_wrapper(true, &files_list[0][1]);
+        init_geno_names(&mut mw, &mut pack_first, want_node, &vec![]);
         init_matrix(
             &mut mw,
-            &mut first_file,
+            &mut pack_first,
             want_node,
             bimbam,
             files_list.len(),
         );
 
+
+
         for (index, x) in files_list.iter().enumerate() {
             let mut pc = PackCompact::parse_pack(&x[1]);
+
+            if pc.node_index != pack_first.node_index {
+                panic!("The pack files are not the same");
+            }
+
             matrick_pack_wrapper(
                 &mut mw,
                 &mut pc,
@@ -135,6 +138,7 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                 &vec![],
                 index,
                 &x[0],
+                absolute_thresh,
             );
         }
         // Compressed back (bin/u16, seq/node)
@@ -144,18 +148,33 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         // Compressed pack list
         if matches.is_present("pc-list") {
             info!("Reading pc-list");
+            // Read the samples and path
             let cpack_list = read_file_lines(cpacklist.unwrap()).unwrap();
-            let mut first_file = read_pack1(false, &cpack_list[0][1]);
-            init_geno_names(&mut mw, &mut first_file, want_node, &index_file);
+
+            // Read the first file
+            let mut pack_first = read_pack_wrapper(false, &cpack_list[0][1]);
+
+            if !pack_first.is_sequence && !want_node {
+                panic!("The first file is not a sequence, but you want a node");
+            }
+            // Geno names based on the index
+            init_geno_names(&mut mw, &mut pack_first, want_node, &index_file);
+
+            //
             init_matrix(
                 &mut mw,
-                &mut first_file,
+                &mut pack_first,
                 want_node,
                 bimbam,
                 cpack_list.len(),
             );
+            let mut pack_first = read_pack_wrapper(false, &cpack_list[0][1]);
+
             for (index, x) in cpack_list.iter().enumerate() {
                 let mut pc = PackCompact::read_wrapper(&x[1]);
+                if pc.node_index != pack_first.node_index {
+                    panic!("The pack files are not the same");
+                }
                 matrick_pack_wrapper(
                     &mut mw,
                     &mut pc,
@@ -167,8 +186,12 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                     &index_file,
                     index,
                     &x[0],
+                    absolute_thresh
                 );
             }
+
+
+            // Concatenated compressed pack
         } else if matches.is_present("pack compressed") {
             info!("Reading 'pack compressed'");
             let file_pack = cpack.unwrap();
@@ -185,15 +208,24 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                 _length,
                 _name,
             ) = PackCompact::get_meta(&buffer);
+
+            // Chunks
             let mut chunks = buffer.chunks((bytes + 86) as usize);
             let number_chunks = chunks.len();
-            let mut first_file = wrapper_reader123(chunks.next().unwrap());
-            init_geno_names(&mut mw, &mut first_file, want_node, &index_file);
-            init_matrix(&mut mw, &mut first_file, want_node, bimbam, number_chunks);
+
+
+            let mut pack_first = wrapper_reader123(chunks.next().unwrap());
+            init_geno_names(&mut mw, &mut pack_first, want_node, &index_file);
+            init_matrix(&mut mw, &mut pack_first, want_node, bimbam, number_chunks);
             let chunks = buffer.chunks((bytes + 86) as usize);
+            pack_first.node_index = vec![];
 
             for (index, chunk) in chunks.enumerate() {
                 let mut pc = wrapper_reader123(chunk);
+                if pc.node_index != pack_first.node_index {
+                    panic!("The pack files are not the same");
+                }
+
                 let name = pc.name.clone();
                 matrick_pack_wrapper(
                     &mut mw,
@@ -206,11 +238,14 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                     &index_file,
                     index,
                     &name,
+                    absolute_thresh
                 );
             }
+
         }
     }
 
+    // Sample index
     mw.sample_index_u16 = mw
         .sample_names
         .iter()
@@ -218,6 +253,7 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         .map(|x| [x.0, x.0])
         .collect();
 
+    // Set feature style
     let feature_enum = Feature::Alignment;
 
     let thresh = mw
@@ -238,12 +274,12 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
-/// Read a file and return a vector of lines
+/// Read a file and return each line in a vector
 ///
-/// They contains files
+/// Check if entry is a path
 fn read_file_lines(file_path: &str) -> io::Result<Vec<[String; 2]>> {
     // Open the file
-    let file = File::open(file_path)?;
+    let file = File::open(file_path).expect("Can not open file");
     let reader = io::BufReader::new(file);
 
     // Create a vector to store the entries

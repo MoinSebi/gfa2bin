@@ -1,12 +1,12 @@
-use std::fmt::format;
 use crate::remove::remove_main::copy_file;
+use std::fmt::format;
 
+use crate::split::split_main::index_file;
 use clap::ArgMatches;
 use log::info;
 use std::fs;
 use std::fs::File;
 use std::io::{self, BufRead, Read, Write};
-use crate::split::split_main::index_file;
 
 /// # Merge main
 ///
@@ -80,7 +80,8 @@ pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>
     }
     let mut fam_content_first = "".to_string();
     if fams.len() > 0 {
-        fam_content_first += &fs::read_to_string(fams[0].to_string() + ".fam").expect(format!("Could not read FAM file {}", fams[0].to_string() + ".fam").as_str());
+        fam_content_first += &fs::read_to_string(fams[0].to_string() + ".fam")
+            .expect(format!("Could not read FAM file {}", fams[0].to_string() + ".fam").as_str());
     }
     for fam_entry in fams.iter().skip(1) {
         let fam_content = fs::read_to_string(fam_entry.to_string() + ".fam")?;

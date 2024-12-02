@@ -43,7 +43,11 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
         .parse::<u32>()
         .expect("Error: Absolute threshold is not a number");
 
-    let method = Method::from_str(matches.value_of("method").expect("Error: Method is not given"));
+    let method = Method::from_str(
+        matches
+            .value_of("method")
+            .expect("Error: Method is not given"),
+    );
     let keep_zeros = matches.is_present("keep-zeros");
 
     // Bin is for faster computation
@@ -69,10 +73,24 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     info!("Input parameters");
     info!("Graph file: {}", graph_file);
     info!("Feature: {} -> {}", feature1, output_feature);
-    info!("Pan-SN: {}", if sep == "\n" {"None".to_string() } else { format!("{:?}", sep)});
+    info!(
+        "Pan-SN: {}",
+        if sep == "\n" {
+            "None".to_string()
+        } else {
+            format!("{:?}", sep)
+        }
+    );
     info!("Absolute threshold: {}", absolute_thresh);
     info!("Method: {}", method.to_string());
-    info!("Fraction: {}", if matches.is_present("fraction") { matches.value_of("fraction").unwrap() } else { "None"});
+    info!(
+        "Fraction: {}",
+        if matches.is_present("fraction") {
+            matches.value_of("fraction").unwrap()
+        } else {
+            "None"
+        }
+    );
     info!("Binary: {}", bin);
     info!("Keep zeros: {}", keep_zeros);
     info!("Max value scaling (only bimbam): {}", max_scale);
@@ -91,7 +109,6 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     );
     info!("Output prefix: {}\n", output_prefix);
 
-
     let mut fraction = 0.0;
     if matches.is_present("fraction") {
         fraction = matches
@@ -101,14 +118,14 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
             .expect("Error: Fraction is not a number");
     }
     let mut dynamic = false;
-    if fraction > 1.0 || fraction < 0.0{
+    if fraction > 1.0 || fraction < 0.0 {
         panic!("Fraction is not between 0 and 1");
     }
-    if method != Method::Nothing && fraction == 0.0{
+    if method != Method::Nothing && fraction == 0.0 {
         panic!("Method is given but fraction is not.");
-    } else if method == Method::Nothing && fraction != 0.0{
+    } else if method == Method::Nothing && fraction != 0.0 {
         panic!("Fraction is given but method is not.");
-    } else if method != Method::Nothing && fraction != 0.0{
+    } else if method != Method::Nothing && fraction != 0.0 {
         dynamic = true;
     }
     info!("Dynamic threshold: {}", dynamic);
