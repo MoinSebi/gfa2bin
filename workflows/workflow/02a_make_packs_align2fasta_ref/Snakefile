@@ -75,14 +75,17 @@ rule create_pack_files:
     priority: 100000
     conda:
         "../envs/main.yaml"
+    params:
+        packing_tool=config["packing_tool"]
     input:
         gam_file="results/02_packs/{reference_name}.{sample}.gam",
         gfa=config["graph"]
     output:
-        pack_file="results/02_packs/{reference_name}.{sample}.pack"
+        pack_file="results/02_packs/{reference_name}.{sample}.pc"
     shell:
         """
-        vg pack -x {input.gfa} -g {input.gam_file} -d > {output.pack_file}
+        vg pack -x {input.gfa} -g {input.gam_file} -d | \
+        {params.packing_tool} compress --pack - --output {output.pack_file}
         """
 
 #------------------------------------------------------------------------------------------------

@@ -51,6 +51,8 @@ pan_sn_delimiter: "#"
 use_fasta_ref: true
 
 
+# Path to the packing tool executable, required for compressing pack files.
+packing_tool: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/packing/target/release/packing"
 
 ###############################################################################
 # Settings for "packs" input mode

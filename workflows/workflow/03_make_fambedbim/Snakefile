@@ -21,9 +21,9 @@ rule target:
 
 rule create_pack_list_file:
     input:
-        pack_files=expand("results/02_packs/{reference_name}.{sample}.pack", reference_name=config["reference_name"], sample=samples.index),
+        pack_files=expand("results/02_packs/{reference_name}.{sample}.pc", reference_name=config["reference_name"], sample=samples.index),
     output:
-        pack_list_file="results/03_make_fambedbim/{reference_name}.{mode}.pack_list.txt"
+        pack_list_file="results/03_make_fambedbim/{reference_name}.{mode}.pc_list.txt"
     run:
         # Write each pack file into the pack list file
         with open(output.pack_list_file, "w") as f:
@@ -31,7 +31,22 @@ rule create_pack_list_file:
                 print(sample)
                 f.write(str(sample) + '\t' + pack_file + "\n")
 
-# /tmp/global2/svorbrugg/tmp/1001g
+rule create_graph_pc_index:
+    params:
+        packing_tool=config["packing_tool"]
+    input:
+        graph_file=config["graph"],
+        pack_list_file="results/03_make_fambedbim/{reference_name}.{mode}.pc_list.txt"
+    output:
+        graph_index="results/03_make_fambedbim/{reference_name}.{mode}.graph_index"
+    shell:
+        """
+        {params.packing_tool} index --gfa {input.graph_file} --output {output.graph_index}
+        """
+
+
+
+
 rule create_fam_bed_files:
     params:
         output_prefix="results/03_make_fambedbim/{reference_name}.{mode}",
@@ -39,16 +54,17 @@ rule create_fam_bed_files:
         normalization_method_fraction=config["normalization_method_fraction"],
         gfa2bin=config["gfa2bin"]
     input:
-        pack_list_file="results/03_make_fambedbim/{reference_name}.{mode}.pack_list.txt",
-        pack_files=expand("results/02_packs/{reference_name}.{sample}.pack", reference_name=config["reference_name"], sample=samples.index)
-        # Index?
+        pack_list_file="results/03_make_fambedbim/{reference_name}.{mode}.pc_list.txt",
+        pack_files=expand("results/02_packs/{reference_name}.{sample}.pc", reference_name=config["reference_name"], sample=samples.index),
+        graph_index="results/03_make_fambedbim/{reference_name}.{mode}.graph_index"
     output:
         fam_file="results/03_make_fambedbim/{reference_name}.{mode}.fam",
         bed_file="results/03_make_fambedbim/{reference_name}.{mode}.bed",
         bim_file="results/03_make_fambedbim/{reference_name}.{mode}.bim"
     shell:
         """
-        {params.gfa2bin} cov --packlist {input.pack_list_file} \
+        {params.gfa2bin} cov --pc-list {input.pack_list_file} \
+        --index {input.graph_index} \
         --node \
         --output {params.output_prefix} \
         --method {params.normalization_method} \

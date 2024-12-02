@@ -7,6 +7,9 @@ graph: "testdata/graphs/2155413.gfa"
 reference_name: "1001g_plus_pan"
 pan_sn_delimiter: "#"
 
+# Path to the packing tool executable, required for compressing pack files.
+packing_tool: "/ebio/abt6_projects7/small_projects/svorbrugg/tools/packing/target/release/packing"
+
 # 01 - Prepare reference genome
 # Nothing to set (yet)
 

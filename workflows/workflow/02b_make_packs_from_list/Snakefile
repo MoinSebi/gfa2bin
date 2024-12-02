@@ -17,14 +17,16 @@ rule target:
         pack_files=expand("results/02_packs/{reference_name}.{sample}.pack", reference_name=config["reference_name"], sample=samples.index),
 
 
-rule create_pack_file_link:
+rule create_compressed_pack_file:
+    params:
+        packing_tool=config["packing_tool"]
     input:
         pack_file=get_packs,
         validation_file="results/00_validate_inputs/sample_names_validation.txt",
         validate_input_graph="results/00_validate_inputs/{reference_name}.graph_validation.txt"
     output:
-        pack_file="results/02_packs/{reference_name}.{sample}.pack"
+        pack_file="results/02_packs/{reference_name}.{sample}.pc"
     shell:
         """
-        ln -s $(realpath {input.pack_file}) {output.pack_file}
+        {params.packing_tool} compress --pack {input.pack_file} --output {output.pack_file}
         """
