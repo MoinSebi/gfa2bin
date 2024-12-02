@@ -87,30 +87,17 @@ def plot(result4: pd.DataFrame, filename: str):
     plt.figure(figsize = (10,5))
     for x in paths:
         dfbt1 = result4.loc[result4["path"] == x]
-        dfbt1 = dfbt1.loc[dfbt1["distance"] < 0]
-        # Map "dist" values to colors using the "oranges" colormap
         colors1 = sm.to_rgba(dfbt1["distance"])
 
-        # Plot with a single marker style (e.g., 'o')
         plt.scatter(dfbt1["position"] + rollingm, dfbt1["log"], s=12, marker="o", c=colors1, alpha = 0.5)
         ticks.append(int(np.mean([rollingm, rollingm + max(dfbt1["position"])])))
-        dfbt1 = result4.loc[result4["path"] == x]
-        dfbt1 = dfbt1.loc[dfbt1["distance"] > 0]
-        # Map "dist" values to colors using the "oranges" colormap
-        colors1 = sm.to_rgba(dfbt1["distance"])
-
-        # Plot with a single marker style (e.g., 'o')
-        plt.scatter(dfbt1["position"] + rollingm, dfbt1["log"], s=12, marker="o", c=colors1, alpha = 0.5)
-        print(dfbt1["position"])
-        #ticks.append(int(np.mean([ro'llingm, rollingm + max(dfbt1["position"])])))
-
-
-        rollingm += max(dfbt1["position"]) + 10000
+        rollingm += max(dfbt1["position"])
         print(rollingm)
 
     plt.ylabel("-log$_{10}$ ($\it{P}$ value)")
     plt.xlabel("Reference name")
-    plt.xticks(ticks=ticks, labels=tick_labels)
+    plt.xticks(ticks=ticks, labels=tick_labels, rotation=90)
+    plt.tight_layout()
     plt.savefig(filename + ".manhattan.pdf")
     plt.close()
 

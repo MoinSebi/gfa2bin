@@ -36,8 +36,8 @@ def plotting_manhattan(df: pd.DataFrame, filename: str):
     plt.scatter([int(x) for x in df["pos"]],df["log"], s = 3, color = "blue")
     plt.axhline(y=-np.log10(0.05/(len(df))), color='r', linestyle='-')
     plt.xlabel("Node id")
-    plt.ylabel("-log(p)")
-    plt.savefig(filename + ".manhatten.pdf")
+    plt.ylabel("-log$_{10}$ ($\it{P}$ value)")
+    plt.savefig(filename + ".manhattan.pdf")
     plt.close()
 
 
