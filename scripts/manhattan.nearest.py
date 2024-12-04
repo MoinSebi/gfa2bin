@@ -93,7 +93,6 @@ def plot(result4: pd.DataFrame, filename: str):
         plt.scatter(dfbt1["position"] + rollingm, dfbt1["log"], s=12, marker="o", c=colors1, alpha = 0.5)
         ticks.append(int(np.mean([rollingm, rollingm + max(dfbt1["position"])])))
         rollingm += max(dfbt1["position"])
-        print(rollingm)
 
     plt.ylabel("-log$_{10}$ ($\it{P}$ value)")
     plt.xlabel("Reference name")
@@ -106,9 +105,9 @@ def plot(result4: pd.DataFrame, filename: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manhattan plotter from GEMMA input (nodes).")
-    parser.add_argument('-i', '--input', type=str, help='Path to the input file', required=True)
-    parser.add_argument('-o', '--output', type=str, help='Path to the output file', required=True)
-    parser.add_argument('-d', '--distance', type=str, help="Distance file", required=True)
+    parser.add_argument('-i', '--input', type=str, help='Path to the input file (GEMMA assoc)', required=True)
+    parser.add_argument('-o', '--output', type=str, help='Path to the output file (pdf, png, jpg)', required=True)
+    parser.add_argument('-d', '--distance', type=str, help="Distance file from 'gfa2bin nearest'", required=True)
     args = parser.parse_args()
 
     logging.info(f"Reading input file: {args.input}")

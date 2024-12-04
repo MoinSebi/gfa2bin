@@ -27,8 +27,15 @@ def read_assoc(filename: str) -> pd.DataFrame:
     return df
 
 
-def plotting_manhattan(df2: pd.DataFrame, filename: str):
-    df = df2.loc[df2["log"] > 2]
+def plotting_manhattan(input_df: pd.DataFrame, filename: str):
+    """
+    Plotting nodes-based manhattan plot
+
+    :param input_df: Dataframe with the associations
+    :param filename: Output filename
+    :return: None
+    """
+    df = input_df.loc[input_df["log"] > 2]
 
     plt.figure(figsize=(10,6))
 
@@ -39,14 +46,14 @@ def plotting_manhattan(df2: pd.DataFrame, filename: str):
     plt.ylabel("-log$_{10}$ ($\it{P}$ value)")
     plt.ylim([1.5, max(df["log"]) + 1])
     plt.tight_layout()
-    plt.savefig(filename + ".manhattan.pdf")
+    plt.savefig(filename)
     plt.close()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manhattan plotter from GEMMA input (nodes).")
-    parser.add_argument('-i', '--input', type=str, help='Path to the input file', required=True)
-    parser.add_argument('-o', '--output', type=str, help='Path to the output file', required=True)
+    parser.add_argument('-i', '--input', type=str, help='Path to the input file (GEMMA assoc)', required=True)
+    parser.add_argument('-o', '--output', type=str, help='Path to the output file (pdf, png, jpg)', required=True)
     args = parser.parse_args()
 
     logging.info(f"Reading input file: {args.input}")
