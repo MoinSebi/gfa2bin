@@ -27,8 +27,8 @@ def read_assoc(filename: str) -> pd.DataFrame:
     return df
 
 
-def plotting_manhattan(df: pd.DataFrame, filename: str):
-    df = df.loc[df["log"] > 2]
+def plotting_manhattan(df2: pd.DataFrame, filename: str):
+    df = df2.loc[df2["log"] > 2]
 
     plt.figure(figsize=(10,6))
 
@@ -37,6 +37,8 @@ def plotting_manhattan(df: pd.DataFrame, filename: str):
     plt.axhline(y=-np.log10(0.05/(len(df))), color='r', linestyle='-')
     plt.xlabel("Node id")
     plt.ylabel("-log$_{10}$ ($\it{P}$ value)")
+    plt.ylim([1.5, max(df["log"]) + 1])
+    plt.tight_layout()
     plt.savefig(filename + ".manhattan.pdf")
     plt.close()
 

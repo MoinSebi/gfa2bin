@@ -82,9 +82,10 @@ def plot(result4: pd.DataFrame, filename: str):
     norm = Normalize(vmin=-1, vmax=1000)
     sm = ScalarMappable(cmap=cmap, norm=norm)
     paths = list(set(result4["path"]))
-    ticks = []#
+    paths = sorted(paths)
+    ticks = []
     tick_labels = paths
-    plt.figure(figsize = (10,5))
+    plt.figure(figsize = (10,6))
     for x in paths:
         dfbt1 = result4.loc[result4["path"] == x]
         colors1 = sm.to_rgba(dfbt1["distance"])
@@ -97,6 +98,7 @@ def plot(result4: pd.DataFrame, filename: str):
     plt.ylabel("-log$_{10}$ ($\it{P}$ value)")
     plt.xlabel("Reference name")
     plt.xticks(ticks=ticks, labels=tick_labels, rotation=90)
+    plt.ylim([1.5, max(result4["log"]) + 1])
     plt.tight_layout()
     plt.savefig(filename + ".manhattan.pdf")
     plt.close()
