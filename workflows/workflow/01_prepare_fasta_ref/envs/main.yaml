@@ -1,7 +1,0 @@
-name: graph-gwas-pipeline
-channels:
-  - conda-forge
-  - bioconda
-  - nodefaults
-dependencies:
-  - odgi=0.8.2

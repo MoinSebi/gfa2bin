@@ -2,21 +2,71 @@ import pandas as pd
 
 
 #Load the samples
-samples = pd.read_csv(config["samples"], sep="\t|;|,").set_index("sample", drop=False)
+#samples = pd.read_csv(config["samples"], sep="\t|;|,").set_index("sample", drop=False)
+#Load the samples
+if config["input_mode"] == "reads":
+    samples = pd.read_csv(config["samples"], sep="\t|;|,",dtype=str).set_index("sample", drop=False)
+else:
+    samples = pd.read_csv(config["packlist"], sep="\t|;|,",dtype=str).set_index("sample", drop=False)
+
 # samples = samples.drop_duplicates()
 # samples.index.names = ["sample_id"]
+
+mode = f"{config['normalization_method']}_{config['normalization_method_fraction']}"
 
 
 rule target:
     input:
-        fam_file=expand("results/03_make_fambedbim/{reference_name}.{mode}.fam", reference_name=config["reference_name"], mode=config["threshold_mode"]),
+        fam_file=expand("results/03_make_fambedbim/{reference_name}.{mode}.fam", reference_name=config["reference_name"], mode=mode),
 
-# gfa2bin cov
-rule create_fam_file:
+rule create_pack_list_file:
     input:
-        pc_file=expand("results/02_packs/{{reference_name}}.{sample}.pc", sample=samples.index),
+        pack_files=expand("results/02_packs/{reference_name}.{sample}.pc", reference_name=config["reference_name"], sample=samples.index),
     output:
-        fam_file="results/03_make_fambedbim/{reference_name}.{mode}.fam"
-    shell:
-        "touch -f {output.fam_file}"
+        pack_list_file="results/03_make_fambedbim/{reference_name}.{mode}.pc_list.txt"
+    run:
+        # Write each pack file into the pack list file
+        with open(output.pack_list_file, "w") as f:
+            for (pack_file, sample) in zip(input.pack_files, samples.index):
+                print(sample)
+                f.write(str(sample) + '\t' + pack_file + "\n")
 
+rule create_graph_pc_index:
+    params:
+        packing_tool=config["packing_tool"]
+    input:
+        graph_file=config["graph"],
+        pack_list_file="results/03_make_fambedbim/{reference_name}.{mode}.pc_list.txt"
+    output:
+        graph_index="results/03_make_fambedbim/{reference_name}.{mode}.graph_index"
+    shell:
+        """
+        {params.packing_tool} index --gfa {input.graph_file} --output {output.graph_index}
+        """
+
+
+
+
+rule create_fam_bed_files:
+    params:
+        output_prefix="results/03_make_fambedbim/{reference_name}.{mode}",
+        normalization_method=config["normalization_method"],
+        normalization_method_fraction=config["normalization_method_fraction"],
+        gfa2bin=config["gfa2bin"]
+    input:
+        pack_list_file="results/03_make_fambedbim/{reference_name}.{mode}.pc_list.txt",
+        pack_files=expand("results/02_packs/{reference_name}.{sample}.pc", reference_name=config["reference_name"], sample=samples.index),
+        graph_index="results/03_make_fambedbim/{reference_name}.{mode}.graph_index"
+    output:
+        fam_file="results/03_make_fambedbim/{reference_name}.{mode}.fam",
+        bed_file="results/03_make_fambedbim/{reference_name}.{mode}.bed",
+        bim_file="results/03_make_fambedbim/{reference_name}.{mode}.bim"
+    shell:
+        """
+        {params.gfa2bin} cov --pc-list {input.pack_list_file} \
+        --index {input.graph_index} \
+        --node \
+        --output {params.output_prefix} \
+        --method {params.normalization_method} \
+        --fraction {params.normalization_method_fraction}
+        """

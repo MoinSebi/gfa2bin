@@ -1,0 +1,91 @@
+$schema: "https://json-schema.org/draft-06/schema#"
+type: object
+required:
+  - phenotypes
+  - graph
+  - reference_name
+  - normalization_method
+  - normalization_method_fraction
+properties:
+  input_mode:
+    type: string
+    enum:
+      - reads
+      - packs
+    default: "reads"
+    description: "Mode for input data."
+  samples:
+    type: string
+    description: "Path to the samples file."
+  phenotypes:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      minProperties: 1
+      maxProperties: 1
+      additionalProperties: false
+      patternProperties:
+        "^[a-zA-Z0-9_]+$":
+          type: string
+          description: "Path to the phenotype file for this phenotype."
+  graph:
+    type: string
+    description: "Path to the GFA file for the graph."
+  reference_name:
+    type: string
+    description: "Reference name used in the configuration."
+  pan_sn_delimiter:
+    type: string
+    maxLength: 1
+    default: "#"
+    description: "Single character used as the delimiter for pan-sn."
+  use_fasta_ref:
+    type: boolean
+    default: true
+    description: "Flag to indicate if FASTA reference is used."
+  normalization_method:
+    type: string
+    enum:
+      - percentile
+      - other_method
+    description: "Method for normalization (e.g., percentile)."
+  normalization_method_fraction:
+    type: string
+    pattern: "^(0(\\.\\d+)?|1(\\.0+)?)$"
+    description: "Fraction for normalization, as a string between '0' and '1'."
+  packlist:
+    type: string
+    description: "Path to the packlist file."
+  gfa2bin:
+    type: string
+    default: ""
+    description: "Path to the gfa2bin tool."
+  kinship_method:
+    type: string
+    enum:
+      - file
+      - graph
+    default: "file"
+    description: "Method used for kinship calculation."
+  kinship_matrix:
+    type: string
+    default: ""
+    description: "Path to the kinship matrix file."
+  gemma_model_parameters:
+    type: string
+    default: "-lmm 2"
+    description: "Parameters for the GEMMA model."
+  create_qq_plots:
+    type: boolean
+    default: false
+    description: "Flag to indicate if QQ plots are created."
+  create_manhattan_node_plots:
+    type: boolean
+    default: false
+    description: "Flag to indicate if Manhattan plots with nodes on X axis are created."
+
+  mock_gemma_output:
+    type: string
+    default: ""
+    description: "Path to the mock GEMMA output file."

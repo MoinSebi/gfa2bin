@@ -1,0 +1,32 @@
+import pandas as pd
+
+wf_basedir = workflow.current_basedir
+
+##### Helper functions #####
+def get_packs(wildcards):
+    """Get pack file of given sample."""
+    pack = samples.loc[(wildcards.sample), "pack"]
+    return pack
+
+#Load the samples/packs
+samples = pd.read_csv(config["packlist"], sep=",", dtype=str).set_index("sample", drop=False)
+
+
+rule target:
+    input:
+        pack_files=expand("results/02_packs/{reference_name}.{sample}.pack", reference_name=config["reference_name"], sample=samples.index),
+
+
+rule create_compressed_pack_file:
+    params:
+        packing_tool=config["packing_tool"]
+    input:
+        pack_file=get_packs,
+        validation_file="results/00_validate_inputs/sample_names_validation.txt",
+        validate_input_graph="results/00_validate_inputs/{reference_name}.graph_validation.txt"
+    output:
+        pack_file="results/02_packs/{reference_name}.{sample}.pc"
+    shell:
+        """
+        {params.packing_tool} compress --pack {input.pack_file} --output {output.pack_file}
+        """
