@@ -4,7 +4,7 @@ use crate::cov::pack::{
     init_geno_names, init_matrix, matrick_pack_wrapper, read_pack_wrapper, wrapper_reader123,
 };
 use clap::ArgMatches;
-use log::{info, warn};
+use log::{info};
 
 use crate::core::helper::Feature::Alignment;
 
@@ -46,12 +46,12 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         .unwrap_or("0")
         .parse::<u32>()
         .unwrap();
-    let mut fraction = matches
+    let fraction = matches
         .value_of("fraction")
         .unwrap()
         .parse::<f32>()
         .expect("Could not parse fraction");
-    let mut method = Method::from_str(matches.value_of("method").unwrap());
+    let method = Method::from_str(matches.value_of("method").unwrap());
 
     let keep_zeros = matches.is_present("keep-zeros");
     let want_node = !matches.is_present("sequence");
@@ -66,7 +66,7 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
         // if not, give method and fraction
     } else if method == Method::Nothing {
         panic!("You need to provide a method");
-    } else if fraction == 0.0 || fraction < 0.0 {
+    } else if fraction <= 0.0 {
         panic!("You need to provide a fraction");
     }
 
@@ -118,8 +118,6 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
             files_list.len(),
         );
 
-
-
         for (index, x) in files_list.iter().enumerate() {
             let mut pc = PackCompact::parse_pack(&x[1]);
 
@@ -168,7 +166,7 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                 bimbam,
                 cpack_list.len(),
             );
-            let mut pack_first = read_pack_wrapper(false, &cpack_list[0][1]);
+            let pack_first = read_pack_wrapper(false, &cpack_list[0][1]);
 
             for (index, x) in cpack_list.iter().enumerate() {
                 let mut pc = PackCompact::read_wrapper(&x[1]);
@@ -186,10 +184,9 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                     &index_file,
                     index,
                     &x[0],
-                    absolute_thresh
+                    absolute_thresh,
                 );
             }
-
 
             // Concatenated compressed pack
         } else if matches.is_present("pack compressed") {
@@ -212,7 +209,6 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
             // Chunks
             let mut chunks = buffer.chunks((bytes + 86) as usize);
             let number_chunks = chunks.len();
-
 
             let mut pack_first = wrapper_reader123(chunks.next().unwrap());
             init_geno_names(&mut mw, &mut pack_first, want_node, &index_file);
@@ -238,10 +234,9 @@ pub fn cov_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> 
                     &index_file,
                     index,
                     &name,
-                    absolute_thresh
+                    absolute_thresh,
                 );
             }
-
         }
     }
 

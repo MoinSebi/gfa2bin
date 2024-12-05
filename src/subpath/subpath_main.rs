@@ -100,7 +100,7 @@ pub fn subpath_wrapper(
     graph: &Gfa<u32, (), ()>,
     window: usize,
     node2index_hm: Vec<(usize, usize, usize, usize, HashMap<u32, Vec<usize>>)>,
-    blocks: bool,
+    _blocks: bool,
     out_prefix: &str,
     threads: usize,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -144,13 +144,9 @@ pub fn subpath_wrapper(
                 for (x, _item) in vec_bitvec.iter().enumerate() {
                     writeln!(
                         file_bim,
-                        "{}\t{}\t{}\t{}\t{}\t{}",
-                        "graph",
+                        "graph\t{}\t0\t{}\tA\tT",
                         node_id.to_string() + "_" + &window.to_string() + "_" + &x.to_string(),
-                        "0",
-                        node_id.to_string(),
-                        "A",
-                        "T",
+                        node_id,
                     )
                     .unwrap();
 

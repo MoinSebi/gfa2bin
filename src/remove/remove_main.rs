@@ -3,12 +3,12 @@ use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
 use crate::merge::merge_main::read_list;
 use clap::ArgMatches;
-use log::{info, warn};
+use log::{info};
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
 use std::io;
-use std::io::{BufRead, BufReader, BufWriter, Error, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 
 /// Function for 'gfa2bin remove'
 ///

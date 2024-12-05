@@ -1,8 +1,8 @@
 use assert_cmd::prelude::*;
-use std::fs; // Add methods on commands
+ // Add methods on commands
 
-use std::fs::File;
-use std::io::{BufRead, BufReader, Read};
+
+
 use std::process::Command;
 
 // cargo run -- graph -g data/example_data/testGraph.gfa -f node -o data/example_data/node.remove

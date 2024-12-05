@@ -1,7 +1,7 @@
 use crate::remove::remove_main::copy_file;
-use std::fmt::format;
 
-use crate::split::split_main::index_file;
+
+
 use clap::ArgMatches;
 use log::info;
 use std::fs;
@@ -79,9 +79,9 @@ pub fn check_fams(fams: &Vec<String>) -> Result<bool, Box<dyn std::error::Error>
         return Ok(false);
     }
     let mut fam_content_first = "".to_string();
-    if fams.len() > 0 {
+    if !fams.is_empty() {
         fam_content_first += &fs::read_to_string(fams[0].to_string() + ".fam")
-            .expect(format!("Could not read FAM file {}", fams[0].to_string() + ".fam").as_str());
+            .unwrap_or_else(|_| panic!("Could not read FAM file {}", fams[0].to_string() + ".fam"));
     }
     for fam_entry in fams.iter().skip(1) {
         let fam_content = fs::read_to_string(fam_entry.to_string() + ".fam")?;

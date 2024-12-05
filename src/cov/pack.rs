@@ -2,7 +2,7 @@ use crate::core::core::MatrixWrapper;
 use crate::core::helper::{index2node_seq, merge_u32_to_u64};
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
-use std::thread::Thread;
+
 
 use packing_lib::core::core::{DataType, PackCompact};
 use packing_lib::normalize::convert_helper::Method;
@@ -78,17 +78,13 @@ pub fn init_geno_names(
     want_node: bool,
     index: &Vec<u32>,
 ) {
-
     /// Check the index
     if pc.node_index.is_empty() {
         pc.node_index = index.clone();
     }
 
-
     if want_node {
-
         mw.geno_names = remove_duplicates(&pc.node_index);
-
     } else {
         mw.geno_names = index2node_seq(&pc.node_index)
     }
@@ -151,7 +147,6 @@ pub fn matrick_pack_wrapper(
         pc.node_index = index_file.clone();
     }
 
-
     if pc.bin_coverage.is_empty() {
         if want_node {
             pc.calc_node_cov();
@@ -160,7 +155,7 @@ pub fn matrick_pack_wrapper(
         }
 
         let thresh;
-        if absolute > 0{
+        if absolute > 0 {
             thresh = absolute as f32;
         } else {
             thresh = PackCompact::get_threshold(pc, keep_zeros, fraction, 0.0, method);
@@ -245,10 +240,9 @@ pub fn matrix_pack_wrapper(
     }
 }
 
-
 ///
 pub fn remove_duplicates(sorted_vec: &Vec<u32>) -> Vec<u64> {
-    let mut unique_vec: Vec<u32> = sorted_vec.iter().cloned().collect();
+    let mut unique_vec: Vec<u32> = sorted_vec.to_vec();
     let mut result = Vec::new();
 
     // If the input vector is empty, return an empty vector

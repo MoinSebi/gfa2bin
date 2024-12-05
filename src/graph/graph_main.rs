@@ -1,7 +1,7 @@
 use crate::core::core::MatrixWrapper;
 use crate::core::helper::Feature;
-use std::fs::File;
-use std::io::Read;
+
+
 
 use crate::graph::parser::{diploid_adder, gfa_reader};
 
@@ -10,7 +10,7 @@ use gfa_reader::{Gfa, Pansn};
 use log::{info, warn};
 use packing_lib::core::core::PackCompact;
 use packing_lib::normalize::convert_helper::Method;
-use std::path::Path;
+
 use std::process;
 
 /// # Main function for 'gfa2bin graph'
@@ -37,16 +37,13 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
     let output_prefix = matches.value_of("output").unwrap();
 
     // Threshold
-    let mut absolute_thresh = matches
+    let absolute_thresh = matches
         .value_of("absolute-threshold")
         .unwrap()
         .parse::<u32>()
         .expect("Error: Absolute threshold is not a number");
 
-    let method = Method::from_str(
-        matches
-            .value_of("method").unwrap_or("nothing")
-    );
+    let method = Method::from_str(matches.value_of("method").unwrap_or("nothing"));
     let keep_zeros = matches.is_present("keep-zeros");
 
     // Bin is for faster computation
@@ -117,7 +114,7 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
             .expect("Error: Fraction is not a number");
     }
     let mut dynamic = false;
-    if fraction > 1.0 || fraction < 0.0 {
+    if !(0.0..=1.0).contains(&fraction) {
         panic!("Fraction is not between 0 and 1");
     }
     if method != Method::Nothing && fraction == 0.0 {
@@ -182,22 +179,20 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
         for x in mw.matrix_u16.iter() {
             thresh.push(*x.iter().max().ok_or("Error: Empty vector")? as f32)
         }
+    } else if !dynamic {
+        thresh = vec![absolute_thresh as f32; mw.geno_names.len()];
     } else {
-        if !dynamic {
-            thresh = vec![absolute_thresh as f32; mw.geno_names.len()];
-        } else {
-            for x in mw.matrix_u16.iter() {
-                let mut count_vec = x.clone();
-                diploid_adder(&mw.sample_index_u16, &mut count_vec);
+        for x in mw.matrix_u16.iter() {
+            let mut count_vec = x.clone();
+            diploid_adder(&mw.sample_index_u16, &mut count_vec);
 
-                thresh.push(PackCompact::threshold(
-                    &mut count_vec,
-                    keep_zeros,
-                    fraction,
-                    0.0,
-                    method,
-                ));
-            }
+            thresh.push(PackCompact::threshold(
+                &mut count_vec,
+                keep_zeros,
+                fraction,
+                0.0,
+                method,
+            ));
         }
     }
 

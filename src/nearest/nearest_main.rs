@@ -58,7 +58,7 @@ pub fn nearest_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
     graph.walk_to_path("#");
 
     // Requested nodes
-    let mut requested_nodes: Vec<u32>;
+    let requested_nodes: Vec<u32>;
     if matches.is_present("nodes") {
         info!(
             "Reading requested nodes from {}",

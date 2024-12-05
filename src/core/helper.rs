@@ -249,7 +249,6 @@ pub fn split_u64_to_u32s(value: u64) -> (u32, u32) {
     (high, low)
 }
 
-
 /// # Build index from a sorted vector
 ///
 /// Merges two u32 together
