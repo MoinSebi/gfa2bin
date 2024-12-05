@@ -42,7 +42,7 @@ rs2, G, C, 0.98, 0.04, 1.00'
 
 ## Graph to PLINK
 ### 1. *graph* - Converting from graphs directly
-Convert a graph in gfa format to a plink or bimbam format. You are able to specify which feature (```-f ```) you want to use as entry. We support nodes (1), edges (1+2+), and directed nodes (1+). Path can be merged to samples using the [PanSN-spec](https://github.com/pangenome/PanSN-spec), which is highly recommended.  
+Convert a graph in gfa format to a plink or bimbam format. You are able to specify which feature (```-f ```) you want to use to genotype. We support nodes (1), edges (1+2+), and directed nodes (1+). Path can be merged to samples using the [PanSN-spec](https://github.com/pangenome/PanSN-spec), which is highly recommended.  
 We count occurrence of each feature in each path/sample in the graph and use them as genotypes. A detailed description of the output can be found here. 
 
 ##### Diploid
@@ -57,7 +57,7 @@ gfa2bin graph -g input.gfa -o output -f dirnode -m mean -r 0.5 --pansn '#'
 ````
 
 ---
-### 2. *Subpath* - Include neighboring information
+### 2. *subpath* - Include neighboring information
 Other than the "graph" subcommand, this subcommand is able to include neighboring information for a node and convert it. In general, we iterate over each node in the graph, extract the subpaths (+/- X steps away from the origin) traversing this node, and collect all subpaths. Subpath-groups (same subpath found in different paths) are then used as genotypes. 
 
 #### Example usage: 
@@ -96,7 +96,7 @@ Those marked with "*" need an additional index, that can be created using the pa
 ## Modify your PLINK
 
 ---
-### Remove
+### *Remove*
 Remove samples or genotypes from the PLINK files (bed, bim, fam). 
 
 #### Example usage: 
@@ -105,7 +105,7 @@ Remove samples or genotypes from the PLINK files (bed, bim, fam).
 ````
 
 ---
-### Filter
+### *Filter*
 Filter entries or samples from a PLINK file. 
 
 **Samples can be filtered by:**
@@ -120,7 +120,7 @@ Filter entries or samples from a PLINK file.
 - ``--mac`` Minor allele count)
 
 ---
-### Split and merge
+### *Split and merge*
 #### Split 
 Split a single PLINK file (bed, bim, fam) into multiple parts of the same size. This might be preferred if the testing data set is very big and performing GWAS takes a lot of time and downstream multithreading not is possible. 
 
@@ -155,7 +155,7 @@ gfa2bin merge --bed-list input_files -o merge.output
 ## Other functions
 
 ---
-### View 
+### *View* 
 
 Convert a PLINK files (bed, bim, fam) to a vcf-like file format. This method might be useful for general inspection of the generated genotypes. File might be of huge size dependent on input. 
 
@@ -167,7 +167,7 @@ gfa2bin view -p plink.prefix -o plink.output.vcf
 ---
 ### *Find* 
 
-Extract the genomic positions of a given list of genotypes. This methods outputs a [BED file](https://www.ensembl.org/info/website/upload/bed.html)) of those paths, where such genotypes can be found. If users might need more than just the exact position, additional ```--length``` information can be added, which will return also the region "neighboring" the node, adding the additional length to each site.
+Extract the genomic positions of a given list of genotypes. This methods outputs a [BED file](https://www.ensembl.org/info/website/upload/bed.html) of those paths, where such genotypes can be found. If users might need more than just the exact position, additional ```--length``` information can be added, which will return also the region "neighboring" the node, adding the additional length to each site.
 
 #### Example usage
 ````text
@@ -205,5 +205,6 @@ cat reference_paths.txt
 | 4    | 2        | 0        | 10       | a#1#Chr1 |
 | 2    | 2        | -1       | 10       | a#1#Chr1 |
 | 5    | 5        | -1       | 15       | a#1#Chr1 |
+
 **Comment:** The 'distance' column represents the distance (in bp) between the input node and the reference node. 'position' is the position of the reference node in the reference path. Distance of -1 means that the node is a reference node and 0 means that the node is one node away from the reference node (no nodes, bp in between). 
 

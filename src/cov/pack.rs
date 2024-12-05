@@ -83,7 +83,6 @@ pub fn init_geno_names(
     if pc.node_index.is_empty() {
         pc.node_index = index.clone();
     }
-    println!("Node index {:?}", pc.node_index);
 
 
     if want_node {
