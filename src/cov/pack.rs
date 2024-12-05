@@ -159,9 +159,11 @@ pub fn matrick_pack_wrapper(
             pc.normalized_coverage = pc.coverage.iter().map(|x| *x as f32).collect();
         }
 
-        let mut thresh = PackCompact::get_threshold(pc, keep_zeros, fraction, 0.0, method);
+        let thresh;
         if absolute > 0{
             thresh = absolute as f32;
+        } else {
+            thresh = PackCompact::get_threshold(pc, keep_zeros, fraction, 0.0, method);
         }
 
         if bimbam {

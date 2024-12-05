@@ -176,7 +176,7 @@ impl MatrixWrapper {
         let mut remove_index_vec = Vec::new();
         for (index, bitvec) in self.matrix_bit.iter().enumerate() {
             let mut count = 0;
-            for y in bitvec.iter() {
+            for y in bitvec.iter().step_by(2) {
                 if y == true {
                     count += 1;
                 }
@@ -186,6 +186,7 @@ impl MatrixWrapper {
                 remove_index_vec.push(index);
             }
         }
+        info!("Removing {} SNPs", remove_index_vec.len());
         self.remove_by_index(&remove_index_vec);
         remove_index_vec
     }
