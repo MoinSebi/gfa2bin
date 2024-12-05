@@ -31,7 +31,7 @@ fn remove_genotype() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-o")
         .arg("data/output/remove.feature.node")
         .arg("--genotypes")
-        .arg("/home/svorbrugg/code/gfa2bin/data/example_data/additional_input/nodes.txt");
+        .arg("./data/example_data/additional_input/nodes.txt");
     cmd.assert().success();
 
     let mut b = File::open("data/output/remove.feature.node.bed").unwrap();
@@ -67,7 +67,7 @@ fn remove_samples() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-o")
         .arg("data/output/gfa2bin.remove.samples")
         .arg("--samples")
-        .arg("/home/svorbrugg/code/gfa2bin/data/example_data/additional_input/mod_path.txt");
+        .arg("./data/example_data/additional_input/mod_path.txt");
     cmd.assert().success();
     fs::remove_file("./data/output/gfa2bin.remove2.bed")?;
     fs::remove_file("./data/output/gfa2bin.remove2.bim")?;
@@ -79,9 +79,9 @@ fn remove_samples() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(buffer.len(), 3 + 9);
     assert_eq!(buffer[3], 31);
     //fs::remove_file("data/output/remove.feature.node.fam")?;
-    fs::remove_file("data/output/gfa2bin.remove.samples.bed")?;
-    fs::remove_file("data/output/gfa2bin.remove.samples.bim")?;
-    fs::remove_file("data/output/gfa2bin.remove.samples.fam")?;
+    fs::remove_file("./data/output/gfa2bin.remove.samples.bed")?;
+    fs::remove_file("./data/output/gfa2bin.remove.samples.bim")?;
+    fs::remove_file("./data/output/gfa2bin.remove.samples.fam")?;
 
     Ok(())
 }
