@@ -51,7 +51,7 @@ pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
 /// Each line one path
 pub fn read_list(file: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut list: Vec<String> = Vec::new();
-    let file = fs::File::open(file).expect("Could not open file");
+    let file = fs::File::open(file).expect(format!("Could not open file {}", file).as_str());
     let reader = io::BufReader::new(file);
     for line in reader.lines() {
         list.push(line?);

@@ -12,7 +12,7 @@ fn split_test() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-g")
         .arg("./data/example_data/gfa/testGraph.gfa")
         .arg("-o")
-        .arg("./data/output/gfa2bin.split")
+        .arg("./data/output/gfa2bin.split1")
         .arg("-f")
         .arg("node")
         .arg("--pansn")
@@ -22,11 +22,11 @@ fn split_test() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("split")
         .arg("-p")
-        .arg("data/output/gfa2bin.split")
+        .arg("data/output/gfa2bin.split1")
         .arg("-s")
         .arg("3")
         .arg("-o")
-        .arg("data/output/gfa2bin.split.split1");
+        .arg("data/output/gfa2bin.split1.split1");
     cmd.assert().success();
 
     Ok(())
@@ -59,7 +59,7 @@ fn merge_test() -> Result<(), Box<dyn std::error::Error>> {
 
     let status = Command::new("sh")
         .arg("-c")
-        .arg("realpath ./data/output/gfa2bin.split2.split*.bed > data/output/gfa2bin.split2.split.list")
+        .arg("realpath ./data/output/gfa2bin.split2.split*.bed > ./data/output/gfa2bin.split2.split.list")
         .status()?;
 
     if status.success() {
@@ -68,13 +68,12 @@ fn merge_test() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Command failed with status: {}", status);
     }
 
-    println!("dashjdhas");
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("merge")
         .arg("--bed-list")
-        .arg("data/output/gfa2bin.split2.split.list")
+        .arg("./data/output/gfa2bin.split2.split.list")
         .arg("-o")
-        .arg("data/output/gfa2bin.merge");
+        .arg("./data/output/gfa2bin.merge");
     cmd.assert().success();
 
     Ok(())

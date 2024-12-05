@@ -85,10 +85,10 @@ fn cov_pack_pn() -> Result<(), Box<dyn std::error::Error>> {
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 67);
 
-    let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.bim")?;
+    let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.bim").expect("Could not read BIM file");
     assert_eq!(content.lines().count(), 67);
 
-    let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.fam")?;
+    let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.fam").expect("Could not read FAM file");
     assert_eq!(content.lines().count(), 2);
     // Buffer should be 8 samples + header
     Ok(())

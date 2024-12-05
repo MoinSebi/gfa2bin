@@ -17,7 +17,7 @@ fn remove_genotype() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-g")
         .arg("./data/example_data/gfa/testGraph.gfa")
         .arg("-o")
-        .arg("./data/output/gfa2bin.graph.node2")
+        .arg("./data/output/gfa2bin.graph.remove1")
         .arg("-f")
         .arg("node")
         .arg("--pansn")
@@ -27,7 +27,7 @@ fn remove_genotype() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("remove")
         .arg("-p")
-        .arg("./data/output/gfa2bin.graph.node2")
+        .arg("./data/output/gfa2bin.graph.remove1")
         .arg("-o")
         .arg("data/output/remove.feature.node")
         .arg("--genotypes")
@@ -53,7 +53,7 @@ fn remove_samples() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-g")
         .arg("./data/example_data/gfa/testGraph.gfa")
         .arg("-o")
-        .arg("./data/output/gfa2bin.remove")
+        .arg("./data/output/gfa2bin.remove2")
         .arg("-f")
         .arg("node")
         .arg("--pansn")
@@ -63,15 +63,15 @@ fn remove_samples() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gfa2bin")?;
     cmd.arg("remove")
         .arg("-p")
-        .arg("./data/output/gfa2bin.remove")
+        .arg("./data/output/gfa2bin.remove2")
         .arg("-o")
         .arg("data/output/gfa2bin.remove.samples")
         .arg("--samples")
         .arg("/home/svorbrugg/code/gfa2bin/data/example_data/additional_input/mod_path.txt");
     cmd.assert().success();
-    fs::remove_file("./data/output/gfa2bin.remove.bed")?;
-    fs::remove_file("./data/output/gfa2bin.remove.bim")?;
-    fs::remove_file("./data/output/gfa2bin.remove.fam")?;
+    fs::remove_file("./data/output/gfa2bin.remove2.bed")?;
+    fs::remove_file("./data/output/gfa2bin.remove2.bim")?;
+    fs::remove_file("./data/output/gfa2bin.remove2.fam")?;
 
     let mut b = File::open("data/output/gfa2bin.remove.samples.bed").unwrap();
     let mut buffer = Vec::new();
