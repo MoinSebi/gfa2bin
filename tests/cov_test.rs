@@ -50,18 +50,18 @@ fn cov_pn() -> Result<(), Box<dyn std::error::Error>> {
         .arg("-i")
         .arg("data/example_data/packs/9986.1k.pi")
         .arg("-o")
-        .arg("data/output/gfa2bin.cov.merge.pn");
+        .arg("data/output/gfa2bin.cov.merge1.pn");
     cmd.assert().success();
-    let mut b = File::open("data/output/gfa2bin.cov.merge.pn.bed").unwrap();
+    let mut b = File::open("data/output/gfa2bin.cov.merge1.pn.bed").unwrap();
     // Read the buffer
     let mut buffer = Vec::new();
     b.read_to_end(&mut buffer).unwrap();
     assert_eq!(buffer.len(), 3 + 67);
 
-    let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.bim")?;
+    let content = fs::read_to_string("data/output/gfa2bin.cov.merge1.pn.bim")?;
     assert_eq!(content.lines().count(), 67);
 
-    let content = fs::read_to_string("data/output/gfa2bin.cov.merge.pn.fam")?;
+    let content = fs::read_to_string("data/output/gfa2bin.cov.merge1.pn.fam")?;
     assert_eq!(content.lines().count(), 2);
     // Buffer should be 8 samples + header
     Ok(())
