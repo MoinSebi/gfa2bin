@@ -31,7 +31,7 @@ pub fn merge_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
         panic!("Fam files are not the same");
     }
 
-    info!("Merging files");
+    info!("Merging FAM files");
     copy_file(
         &format!("{}{}", names[0], ".fam"),
         &format!("{}{}", out_file, ".fam"),

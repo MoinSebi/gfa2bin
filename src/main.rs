@@ -92,9 +92,8 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .arg(Arg::new("method")
                     .short('m')
                     .long("method")
-                    .about("Normalization method (mean|median|percentile|nothing)")
+                    .about("Normalization method (mean|median|percentile)")
                     .takes_value(true)
-                    .default_value("nothing")
                     .display_order(1)
                 )
                 .arg(Arg::new("fraction")
@@ -251,7 +250,6 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .about("Output bimbam format [default: plink]"),
                 ),
         )
-
 
 
 
@@ -488,7 +486,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .long("maf")
                         .about("Major allele frequency")
                         .takes_value(true)
-                        .default_value("0.05"),
+                        .default_value("0.95"),
                 )
                 .arg(
                     Arg::new("MAF")
@@ -497,7 +495,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .long("MAF")
                         .about("Minor allele frequency")
                         .takes_value(true)
-                        .default_value("0.95"),
+                        .default_value("0.05"),
                 )
                 .arg(
                     Arg::new("mac")
@@ -631,8 +629,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                     .about("Prefix of the reference nodes")
                     .takes_value(true))
                 .arg(Arg::new("references")
+                    .short('r')
                     .long("references")
-                    .about("Reference nodes")
+                    .about("List of references")
                     .takes_value(true))
 
                 .help_heading("Node options ")

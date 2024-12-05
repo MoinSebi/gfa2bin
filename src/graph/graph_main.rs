@@ -45,8 +45,7 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
 
     let method = Method::from_str(
         matches
-            .value_of("method")
-            .expect("Error: Method is not given"),
+            .value_of("method").unwrap_or("nothing")
     );
     let keep_zeros = matches.is_present("keep-zeros");
 

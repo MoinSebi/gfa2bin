@@ -84,11 +84,13 @@ Comparable to ``graph`` subcommand, we offer additional normalization on sample-
 Those marked with "*" need an additional index, that can be created using the packing method.
 
 #### Example usage: 
-````text
-./target/release/gfa2bin cov --pack-list pack.list.txt -o output.plink
+````text 
+./target/release/gfa2bin cov --packlist pack.list.txt -o output.plink
 ````
 
 ---
+
+
 
 ---
 ## Modify your PLINK
@@ -159,8 +161,6 @@ Convert a PLINK files (bed, bim, fam) to a vcf-like file format. This method mig
 
 #### Example usage: 
 ````text
-# Example 
-
 gfa2bin view -p plink.prefix -o plink.output.vcf
 ````
 
@@ -171,7 +171,7 @@ Extract the genomic positions of a given list of genotypes. This methods outputs
 
 #### Example usage
 ````text
-./target/release/gfa2bin find -g graph.gfa -f feature.list.txt -o output.find.txt
+gfa2bin find -g graph.gfa -f feature.list.txt -o output.find.txt
 ````
 
 ---

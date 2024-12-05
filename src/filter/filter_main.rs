@@ -182,7 +182,7 @@ impl MatrixWrapper {
                 }
             }
             let maf1 = count as f64 / bitvec.len() as f64;
-            if maf1 < maf || maf1 > MAF {
+            if maf1 < MAF || maf1 > maf {
                 remove_index_vec.push(index);
             }
         }

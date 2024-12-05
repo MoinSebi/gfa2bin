@@ -21,7 +21,8 @@ pub fn view_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>>
     info!("Output file: {}", output_prefix);
 
     info!("Writing output (vcf)");
-    write_vcf(plink_file, output_prefix)?;
+    write_vcf(plink_file, output_prefix).expect("Error writing to file");
+    info!("Done");
     Ok(())
 }
 
@@ -57,7 +58,6 @@ pub fn write_vcf(
 
     let mut mw = MatrixWrapper::new();
     let bim_count = count_lines(&format!("{}{}", filename_prefix, ".bim"))?;
-    info!("bim count: {}", bim_count);
     let fam_count = count_lines(&format!("{}{}", filename_prefix, ".fam"))?;
     mw.read_bed(
         &format!("{}{}", filename_prefix, ".bed"),
