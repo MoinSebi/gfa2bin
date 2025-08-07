@@ -2,7 +2,7 @@ use crate::core::bfile::write_dummy_fam;
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use clap::ArgMatches;
-use gfa_reader::{Gfa, Pansn};
+use gfa_reader::{check_numeric_compact_gfafile, Gfa, Pansn};
 use hashbrown::HashMap;
 use log::info;
 use rayon::prelude::*;
@@ -16,46 +16,52 @@ use std::path::Path;
 /// Extract the subpath from a graph for each node
 pub fn subpath_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     info!("Running 'gfa2bin subpath'");
+    info!("Numeric check");
+    let num_com = check_numeric_compact_gfafile(matches.value_of("gfa").unwrap());
 
-    // Read the arguments from the command line
-    let graph_file = matches.value_of("gfa").unwrap();
-    let output_prefix = matches.value_of("output").unwrap();
-    let window: usize = matches.value_of("step").unwrap().parse().unwrap();
-    let threads: usize = matches.value_of("threads").unwrap().parse().unwrap();
-    let mut pansn = matches.value_of("PanSN").unwrap();
-    // Check the arguments
-    info!("Graph file: {}", graph_file);
-    info!("PanSN: {}", pansn);
-    info!("Window length: {}", window);
-    info!("Threads: {}", threads);
-    info!("Output prefix: {}\n", output_prefix);
+    if !num_com.0 {
+        panic!("GFA file is not numeric, please use a numeric GFA file.");
+    } else {
+        // Read the arguments from the command line
+        let graph_file = matches.value_of("gfa").unwrap();
+        let output_prefix = matches.value_of("output").unwrap();
+        let window: usize = matches.value_of("step").unwrap().parse().unwrap();
+        let threads: usize = matches.value_of("threads").unwrap().parse().unwrap();
+        let mut pansn = matches.value_of("PanSN").unwrap();
+        // Check the arguments
+        info!("Graph file: {}", graph_file);
+        info!("PanSN: {}", pansn);
+        info!("Window length: {}", window);
+        info!("Threads: {}", threads);
+        info!("Output prefix: {}\n", output_prefix);
 
-    info!("Read graph file");
-    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file_multi(graph_file, threads);
+        info!("Read graph file");
+        let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file_multi(graph_file, threads);
 
-    info!("Convert walks to paths");
-    if graph.paths.is_empty() && pansn == "\n" {
-        pansn = "#";
+        info!("Convert walks to paths");
+        if graph.paths.is_empty() && pansn == "\n" {
+            pansn = "#";
+        }
+        graph.walk_to_path(pansn);
+
+        let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, pansn);
+
+        info!("Indexing graph");
+        let index_gfa_pos = gfa_index(&wrapper);
+
+        info!("Extracting subpath");
+        subpath_wrapper(
+            &wrapper,
+            &graph,
+            window,
+            index_gfa_pos,
+            matches.is_present("blocks"),
+            output_prefix,
+            threads,
+        )?;
+        write_dummy_fam(&wrapper, &format!("{}.fam", output_prefix))?;
+        info!("Done");
     }
-    graph.walk_to_path(pansn);
-
-    let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, pansn);
-
-    info!("Indexing graph");
-    let index_gfa_pos = gfa_index(&wrapper);
-
-    info!("Extracting subpath");
-    subpath_wrapper(
-        &wrapper,
-        &graph,
-        window,
-        index_gfa_pos,
-        matches.is_present("blocks"),
-        output_prefix,
-        threads,
-    )?;
-    write_dummy_fam(&wrapper, &format!("{}.fam", output_prefix))?;
-    info!("Done");
     Ok(())
 }
 

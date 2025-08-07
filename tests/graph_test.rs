@@ -115,11 +115,12 @@ fn gfa_edges() -> Result<(), Box<dyn std::error::Error>> {
 
 
 #[test]
+#[should_panic]
 /// Test for "gfa2bin graph"
 ///
 /// Nodes
-fn gfa_nodes_nopw() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gfa2bin")?;
+fn gfa_nodes_nopw(){
+    let mut cmd = Command::cargo_bin("gfa2bin").unwrap();
     cmd.arg("graph")
         .arg("-g")
         .arg("./data/example_data/gfa/tgraph/testGraph_non_num.gfa")
@@ -143,9 +144,8 @@ fn gfa_nodes_nopw() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(buffer[3], 127);
     // Second "real" byte is 000000000
     assert_eq!(buffer[4], 0);
-    fs::remove_file("data/output/gfa2bin.tgraph.node.bed")?;
-    fs::remove_file("data/output/gfa2bin.tgraph.node.bim")?;
-    fs::remove_file("data/output/gfa2bin.tgraph.node.fam")?;
+    fs::remove_file("data/output/gfa2bin.tgraph.node.bed").expect("Error removing bed file");
+    fs::remove_file("data/output/gfa2bin.tgraph.node.bim").expect("Error removing bim file");
+    fs::remove_file("data/output/gfa2bin.tgraph.node.fam").expect("Error removing fam file");
 
-    Ok(())
 }

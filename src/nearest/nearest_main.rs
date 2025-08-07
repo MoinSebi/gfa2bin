@@ -1,5 +1,5 @@
 use clap::ArgMatches;
-use gfa_reader::Gfa;
+use gfa_reader::{check_numeric_compact_gfafile, Gfa};
 use hashbrown::{HashMap, HashSet};
 use log::info;
 use std::fs::File;
@@ -51,45 +51,51 @@ pub fn nearest_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Erro
     info!("Threads: {}", threads);
     info!("Output file: {}\n", output_file);
 
-    info!("Read GFA file");
-    let mut graph = Gfa::parse_gfa_file_multi(graph_file, threads.parse().unwrap());
+    info!("Numeric check");
+    let num_com = check_numeric_compact_gfafile(matches.value_of("gfa").unwrap());
 
-    info!("Convert walks to path with '#' separator");
-    graph.walk_to_path("#");
+    if !num_com.0{
+        panic!("GFA file is not numeric, please use a numeric GFA file.");
+    } else {
+        info!("Read GFA file");
+        let mut graph = Gfa::parse_gfa_file_multi(graph_file, threads.parse().unwrap());
 
-    // Requested nodes
-    let requested_nodes: Vec<u32>;
-    if matches.is_present("nodes") {
-        info!(
-            "Reading requested nodes from {}",
-            matches.value_of("nodes").unwrap()
+        info!("Convert walks to path with '#' separator");
+        graph.walk_to_path("#");
+
+        // Requested nodes
+        let requested_nodes: Vec<u32>;
+        if matches.is_present("nodes") {
+            info!(
+                "Reading requested nodes from {}",
+                matches.value_of("nodes").unwrap()
+            );
+            requested_nodes = read_input(matches.value_of("nodes").unwrap()).unwrap();
+        } else {
+            info!("No nodes provided, all nodes will be considered");
+            requested_nodes = graph.segments.iter().map(|x| x.id).collect();
+        }
+
+        // Which path are "reference" paths
+        let mut ref_list = Vec::new();
+        if matches.is_present("references") {
+            ref_list = read_input(matches.value_of("references").unwrap())?;
+        } else if matches.is_present("prefix") {
+            ref_list = by_prefix(matches.value_of("prefix").unwrap(), &graph)?;
+        } else {
+            panic!("You need to provide either a reference list or a prefix")
+        }
+
+        info!("Finding closest reference node for each node");
+        let closest_node_vec = read_nodes(
+            &graph,
+            &ref_list,
+            &requested_nodes.iter().cloned().collect::<HashSet<u32>>(),
         );
-        requested_nodes = read_input(matches.value_of("nodes").unwrap()).unwrap();
-    } else {
-        info!("No nodes provided, all nodes will be considered");
-        requested_nodes = graph.segments.iter().map(|x| x.id).collect();
+
+        info!("Writing output to {}", output_file);
+        write_file(closest_node_vec, output_file, &graph, &ref_list).unwrap();
     }
-
-    // Which path are "reference" paths
-    let mut ref_list = Vec::new();
-    if matches.is_present("references") {
-        ref_list = read_input(matches.value_of("references").unwrap())?;
-    } else if matches.is_present("prefix") {
-        ref_list = by_prefix(matches.value_of("prefix").unwrap(), &graph)?;
-    } else {
-        panic!("You need to provide either a reference list or a prefix")
-    }
-
-    info!("Finding closest reference node for each node");
-    let closest_node_vec = read_nodes(
-        &graph,
-        &ref_list,
-        &requested_nodes.iter().cloned().collect::<HashSet<u32>>(),
-    );
-
-    info!("Writing output to {}", output_file);
-    write_file(closest_node_vec, output_file, &graph, &ref_list).unwrap();
-
     Ok(())
 }
 

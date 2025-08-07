@@ -1,10 +1,11 @@
 use crate::core::helper::merge_u32_to_u64;
 use clap::ArgMatches;
-use gfa_reader::Gfa;
+use gfa_reader::{check_numeric_compact_gfafile, Gfa};
 use std::cmp::PartialEq;
 use std::fs::File;
 use std::io::Write;
 use std::io::{BufRead, BufReader};
+use log::info;
 
 /// Main function for find subcommand
 pub fn find_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
@@ -16,14 +17,23 @@ pub fn find_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>>
         .unwrap()
         .parse::<usize>()
         .unwrap();
+    info!("Numeric check");
+    let num_com = check_numeric_compact_gfafile(matches.value_of("gfa").unwrap());
 
-    let a = determine_type(feature_file)?;
-    find_easy(
-        &Gfa::parse_gfa_file(graph_file),
-        &a,
-        read_file_lines(feature_file, &a)?,
-        output,
-    )?;
+    if num_com.0 {
+        let a = determine_type(feature_file)?;
+        find_easy(
+            &Gfa::parse_gfa_file(graph_file),
+            &a,
+            read_file_lines(feature_file, &a)?,
+            output,
+        )?;
+    } else {
+        panic!("GFA file is not numeric, please use a numeric GFA file.");
+    }
+
+
+
     Ok(())
 }
 
