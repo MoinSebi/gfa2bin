@@ -200,15 +200,14 @@ pub fn read_nodes(
 ) -> Vec<(u32, i64, i64)> {
     let mut distance = 0;
     let mut reference_node = 0;
-    let nodes_hs = get_ref_nodes(graph, names);
+    let ref_nodes = get_ref_nodes(graph, names);
     let mut result_hm = init_hm(graph, checked_nodes);
     for path in graph.paths.iter() {
         if !names.contains(&path.name) {
             for node in path.nodes.iter() {
-                if nodes_hs.contains(node) {
+                if ref_nodes.contains(node) {
                     distance = 0;
                     reference_node = *node;
-                    *result_hm.get_mut(node).unwrap() = [*node as i64, -1]
                 } else {
                     if checked_nodes.contains(node) && result_hm[node][1] > distance {
                         *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
@@ -217,10 +216,9 @@ pub fn read_nodes(
                 }
             }
             for node in path.nodes.iter().rev() {
-                if nodes_hs.contains(node) {
+                if ref_nodes.contains(node) {
                     distance = 0;
                     reference_node = *node;
-                    *result_hm.get_mut(node).unwrap() = [*node as i64, -1]
                 } else {
                     if checked_nodes.contains(node) && result_hm[node][1] > distance {
                         *result_hm.get_mut(node).unwrap() = [reference_node as i64, distance]
