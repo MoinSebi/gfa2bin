@@ -6,7 +6,7 @@ use crate::core::helper::Feature;
 use crate::graph::parser::{diploid_adder, gfa_reader};
 
 use clap::ArgMatches;
-use gfa_reader::{Gfa, Pansn};
+use gfa_reader::{check_numeric_compact_gfafile, Gfa, Pansn};
 use log::{info, warn};
 use packing_lib::core::core::PackCompact;
 use packing_lib::normalize::convert_helper::Method;
@@ -125,28 +125,33 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
         dynamic = true;
     }
     info!("Dynamic threshold: {}", dynamic);
-
-    info!("Read the graph");
-    // Read the graph and wrapper
-    let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file_multi(graph_file, threads);
-    if graph.paths.is_empty() && sep == "\n" {
-        sep = "#"
-    }
-
-    graph.walk_to_path(sep);
-
-    // Wrapper on PanSN
-    let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, sep);
-
-    // Check diploid
-    let mut is_diploid = false;
-    for x in wrapper.genomes.iter() {
-        if x.haplotypes.len() == 2 {
-            is_diploid = true;
+    info!("Numeric check");
+    let num_com = check_numeric_compact_gfafile(matches.value_of("gfa").unwrap());
+    if num_com.0 {
+        if !num_com.1 {
+            warn!("The GFA file is not sorted.")
         }
-        if x.haplotypes.len() > 2 {
-            warn!("More than 2 haplotypes");
-            warn!(
+        info!("Read the graph");
+        // Read the graph and wrapper
+        let mut graph: Gfa<u32, (), ()> = Gfa::parse_gfa_file_multi(graph_file, threads);
+        if graph.paths.is_empty() && sep == "\n" {
+            sep = "#"
+        }
+
+        graph.walk_to_path(sep);
+
+        // Wrapper on PanSN
+        let wrapper: Pansn<u32, (), ()> = Pansn::from_graph(&graph.paths, sep);
+
+        // Check diploid
+        let mut is_diploid = false;
+        for x in wrapper.genomes.iter() {
+            if x.haplotypes.len() == 2 {
+                is_diploid = true;
+            }
+            if x.haplotypes.len() > 2 {
+                warn!("More than 2 haplotypes");
+                warn!(
                 "Haplotypes are {}",
                 x.haplotypes
                     .iter()
@@ -154,56 +159,60 @@ pub fn graph_main(matches: &ArgMatches) -> Result<(), Box<dyn std::error::Error>
                     .collect::<Vec<String>>()
                     .join(", ")
             );
-            warn!("Will only take the first 2 haplotypes")
+                warn!("Will only take the first 2 haplotypes")
+            }
         }
-    }
 
-    info!("Diploid: {}", is_diploid);
-    info!("Number of samples: {}", wrapper.genomes.len());
-    info!("Number of paths: {}", graph.paths.len());
+        info!("Diploid: {}", is_diploid);
+        info!("Number of samples: {}", wrapper.genomes.len());
+        info!("Number of paths: {}", graph.paths.len());
 
-    // This is the matrix
-    let mut mw = MatrixWrapper::new();
+        // This is the matrix
+        let mut mw = MatrixWrapper::new();
 
-    info!("Create the index");
-    mw.create_index(&graph, feature_enum);
+        info!("Create the index");
+        mw.create_index(&graph, feature_enum);
 
-    info!("Read the graph into matrix");
-    gfa_reader(&mut mw, &wrapper, bin, feature_enum);
+        info!("Read the graph into matrix");
+        gfa_reader(&mut mw, &wrapper, bin, feature_enum);
 
-    // Threshold calculation
-    let mut thresh = Vec::new();
+        // Threshold calculation
+        let mut thresh = Vec::new();
 
-    // If max_scale is true, threshold needs to be adjusted
-    if max_scale && bimbam_output {
-        for x in mw.matrix_u16.iter() {
-            thresh.push(*x.iter().max().ok_or("Error: Empty vector")? as f32)
+        // If max_scale is true, threshold needs to be adjusted
+        if max_scale && bimbam_output {
+            for x in mw.matrix_u16.iter() {
+                thresh.push(*x.iter().max().ok_or("Error: Empty vector")? as f32)
+            }
+        } else if !dynamic {
+            thresh = vec![absolute_thresh as f32; mw.geno_names.len()];
+        } else {
+            for x in mw.matrix_u16.iter() {
+                let mut count_vec = x.clone();
+                diploid_adder(&mw.sample_index_u16, &mut count_vec);
+
+                thresh.push(PackCompact::threshold(
+                    &mut count_vec,
+                    keep_zeros,
+                    fraction,
+                    0.0,
+                    method,
+                ));
+            }
         }
-    } else if !dynamic {
-        thresh = vec![absolute_thresh as f32; mw.geno_names.len()];
+
+        mw.write_wrapper(
+            bimbam_output,
+            1,
+            output_prefix,
+            thresh,
+            feature_enum,
+            pheno,
+            !keep_zeros,
+        );
     } else {
-        for x in mw.matrix_u16.iter() {
-            let mut count_vec = x.clone();
-            diploid_adder(&mw.sample_index_u16, &mut count_vec);
-
-            thresh.push(PackCompact::threshold(
-                &mut count_vec,
-                keep_zeros,
-                fraction,
-                0.0,
-                method,
-            ));
-        }
+        panic!("ERROR: The node IDs in the GFA file are not numeric");
     }
 
-    mw.write_wrapper(
-        bimbam_output,
-        1,
-        output_prefix,
-        thresh,
-        feature_enum,
-        pheno,
-        !keep_zeros,
-    );
     Ok(())
 }

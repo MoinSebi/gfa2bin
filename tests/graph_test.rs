@@ -111,3 +111,41 @@ fn gfa_edges() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+
+
+#[test]
+/// Test for "gfa2bin graph"
+///
+/// Nodes
+fn gfa_nodes_nopw() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gfa2bin")?;
+    cmd.arg("graph")
+        .arg("-g")
+        .arg("./data/example_data/gfa/tgraph/testGraph_non_num.gfa")
+        .arg("-o")
+        .arg("./data/output/gfa2bin.tgraph.node")
+        .arg("-f")
+        .arg("node")
+        .arg("--pansn")
+        .arg("#");
+    cmd.assert().success();
+    let mut b = File::open("data/output/gfa2bin.tgraph.node.bed").unwrap();
+
+    // Read the buffer
+    let mut buffer = Vec::new();
+    b.read_to_end(&mut buffer).unwrap();
+
+    // Buffer should be 8 samples + header
+    assert_eq!(buffer.len(), 3 + (9 * 2));
+
+    // First "real" byte is 00
+    assert_eq!(buffer[3], 127);
+    // Second "real" byte is 000000000
+    assert_eq!(buffer[4], 0);
+    fs::remove_file("data/output/gfa2bin.tgraph.node.bed")?;
+    fs::remove_file("data/output/gfa2bin.tgraph.node.bim")?;
+    fs::remove_file("data/output/gfa2bin.tgraph.node.fam")?;
+
+    Ok(())
+}
