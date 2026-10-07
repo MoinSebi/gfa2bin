@@ -208,7 +208,3 @@ cat reference_paths.txt
 
 **Comment:** The 'distance' column represents the distance (in bp) between the input node and the reference node. 'position' is the position of the reference node in the reference path. Distance of -1 means that the node is a reference node and 0 means that the node is one node away from the reference node (no nodes, bp in between). 
 
-## TODO 
-- [ ] Examples markdown 
-- [ ] Fix bimbam bug 
-- [ ] Error-tests for all subcommands
